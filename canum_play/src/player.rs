@@ -12,11 +12,13 @@ impl Plugin for PlayerPlugin {
 #[derive(Component, Default)]
 #[require(
     Animation,
-    RigidBody::Kinematic,
-    Collider::circle(16.0),
+    Transform::from_translation(Vec3::new(0.0, 0.0, 24.37)),
+    RigidBody::Dynamic,
+    Collider::circle(10.0),
     PlayerShoot,
     PlayerAcc,
-    crate::general::SpeedShrink(400.0)
+    crate::movements::SpeedShrink(800.0),
+    crate::movements::Dash
 )]
 pub struct Player;
 
@@ -32,7 +34,6 @@ pub struct PlayerShoot(pub f32);
 #[derive(Component, Default, Debug)]
 pub struct PlayerAcc {
     pub linear: f32,
-    pub angular: f32,
     pub changed: bool,
 }
 
@@ -57,32 +58,10 @@ fn decay_player_acc(
         &mut PlayerAcc,
         &mut LinearVelocity,
         &mut AngularVelocity,
+        &mut crate::movements::DashTimers,
         &Rotation,
     )>,
 ) {
-    for (mut acc, mut linear_velocity, mut angular_velocity, rotation) in q_player.iter_mut() {
-        if !acc.changed {
-            acc.linear = (acc.linear - 0.05).max(0.0);
-            acc.angular = (acc.angular - 0.1).max(0.0);
-            if rotation.cos < 0.99 {
-                angular_velocity.0 = -rotation.as_radians().signum() * (1.01 - rotation.cos) * 10.0;
-            }
-            if linear_velocity.length_squared() > 0.01 {
-                linear_velocity.0 *= 0.8;
-            }
-        }
-    }
-}
-
-fn respond_player_move(
-    event: On<PlayerMove>,
-    mut q_player: Query<(
-        &mut PlayerAcc,
-        &mut LinearVelocity,
-        &mut AngularVelocity,
-        &Transform,
-    )>,
-) -> Result<()> {
     fn wrap_angle(angle: f32) -> f32 {
         if angle > std::f32::consts::PI {
             angle - std::f32::consts::PI * 2.0
@@ -93,32 +72,65 @@ fn respond_player_move(
         }
     }
 
-    let (mut acc, mut linear_velocity, mut angular_velocity, transform) =
-        q_player.get_mut(event.entity)?;
+    for (mut acc, mut linear_velocity, mut angular_velocity, mut dash_timers, rotation) in
+        q_player.iter_mut()
+    {
+        if !acc.changed {
+            dash_timers.total.finish();
+            acc.linear = (acc.linear - 0.05).max(0.0);
+            if rotation.cos < 0.99 {
+                angular_velocity.0 = -rotation.as_radians().signum() * (1.01 - rotation.cos) * 10.0;
+            }
+            if linear_velocity.length_squared() > 0.01 {
+                linear_velocity.0 *= 0.8;
+            }
+        }
+        {
+            let target_rotation = linear_velocity.to_angle();
+            let current_rotation = wrap_angle(rotation.as_radians() + std::f32::consts::FRAC_PI_2);
+            let diff = wrap_angle(target_rotation - current_rotation);
+            if diff.abs() > 1e-2 {
+                let base = linear_velocity.length() / 100.0
+                    * (15.0f32)
+                    * (diff.abs() / std::f32::consts::PI + 0.05);
+                if (0.0..std::f32::consts::PI).contains(&diff) {
+                    angular_velocity.0 = base;
+                } else {
+                    angular_velocity.0 = -base;
+                }
+            } else {
+                angular_velocity.0 = 0.0;
+            }
+        }
+    }
+}
+
+fn respond_player_move(
+    event: On<PlayerMove>,
+    mut q_player: Query<(
+        &mut PlayerAcc,
+        &mut LinearVelocity,
+        &crate::movements::DashTimers,
+    )>,
+) -> Result<()> {
+    const PLAYER_SPEED: f32 = 200.0;
+
+    let (mut acc, mut linear_velocity, dash_timers) = q_player.get_mut(event.entity)?;
     acc.changed = true;
     acc.linear += (1.0 - acc.linear) * 0.333;
-    acc.angular += (1.0 - acc.angular) * 0.666;
     {
+        let original_speed = linear_velocity.length();
+        let target_speed = if dash_timers.total.is_finished() {
+            PLAYER_SPEED
+        } else {
+            PLAYER_SPEED.max(original_speed)
+        };
         let target_velocity =
-            Vec2::new(event.rot.cos() * event.mult, event.rot.sin() * event.mult) * 150.0;
+            Vec2::new(event.rot.cos(), event.rot.sin()) * event.mult * target_speed;
         let diff = target_velocity - linear_velocity.0;
         let diff_len = diff.length();
         if let Some(diff) = diff.try_normalize() {
             linear_velocity.0 += diff * acc.linear * (10.0f32).min(diff_len);
-        }
-    }
-    {
-        let current_rotation =
-            wrap_angle(transform.rotation.to_euler(EulerRot::ZYX).0 + std::f32::consts::FRAC_PI_2);
-        let diff = wrap_angle(event.rot - current_rotation);
-        if diff.abs() > 1e-2 {
-            if (0.0..std::f32::consts::PI).contains(&diff) {
-                angular_velocity.0 = acc.angular * 10.0;
-            } else {
-                angular_velocity.0 = -acc.angular * 10.0;
-            }
-        } else {
-            angular_velocity.0 = 0.0;
         }
     }
     Ok(())

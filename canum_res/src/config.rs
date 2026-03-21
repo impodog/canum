@@ -7,6 +7,8 @@ pub struct Display {
     pub fullscreen: bool,
     pub window_size: (u32, u32),
     pub virtual_size: (u32, u32),
+    #[serde(skip)]
+    pub half_virtual_size: (f32, f32),
 }
 impl Default for Display {
     fn default() -> Self {
@@ -14,6 +16,7 @@ impl Default for Display {
             fullscreen: false,
             window_size: (1920, 1080),
             virtual_size: (800, 450),
+            half_virtual_size: (400.0, 225.0),
         }
     }
 }
@@ -148,6 +151,8 @@ pub static CONFIG: LazyLock<Config> =
         Ok(content) => {
             let mut config: Config =
                 toml::from_str(content.as_str()).expect("canum.toml failed to parse");
+            config.display.half_virtual_size.0 = config.display.virtual_size.0 as f32 * 0.5;
+            config.display.half_virtual_size.1 = config.display.virtual_size.1 as f32 * 0.5;
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
             config.sprites = Sprites::load(config.sprites_path.clone());

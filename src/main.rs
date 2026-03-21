@@ -20,9 +20,16 @@ fn main() {
             PreUpdate,
             |mut commands: Commands, mut flag: Local<bool>| {
                 if !*flag {
-                    let entity = commands.spawn(canum_play::player::Player).id();
+                    let entity = commands
+                        .spawn((
+                            canum_play::player::Player,
+                            canum_res::Animation::new("Cyan", Vec2::new(20.0, 20.0)),
+                            canum_play::health::IntegerHealth::default(),
+                        ))
+                        .id();
                     commands.insert_resource(canum_play::player::PrimaryPlayer(entity));
                     *flag = true;
+                    commands.trigger(canum_play::setup::StartSession {});
                 }
             },
         )

@@ -1,1 +1,1 @@
-(keyboard:(move_right:KeyD,move_up:KeyW,move_left:KeyA,move_down:KeyS))
+(keyboard:(move_right:ArrowRight,move_up:ArrowUp,move_left:ArrowLeft,move_down:ArrowDown,dash:KeyX),appearance:(player:"Cyan"))

@@ -11,21 +11,36 @@ impl Plugin for CanumSavePlugin {
     }
 }
 
+/// User customizable appearances.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Appearance {
+    pub player: String,
+}
+impl Default for Appearance {
+    fn default() -> Self {
+        Self {
+            player: "Cyan".to_owned(),
+        }
+    }
+}
+
 /// User keyboard binding configurations.
-#[derive(Resource, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Keyboard {
     pub move_right: KeyCode,
     pub move_up: KeyCode,
     pub move_left: KeyCode,
     pub move_down: KeyCode,
+    pub dash: KeyCode,
 }
 impl Default for Keyboard {
     fn default() -> Self {
         Self {
-            move_right: KeyCode::KeyD,
-            move_up: KeyCode::KeyW,
-            move_left: KeyCode::KeyA,
-            move_down: KeyCode::KeyS,
+            move_right: KeyCode::ArrowRight,
+            move_up: KeyCode::ArrowUp,
+            move_left: KeyCode::ArrowLeft,
+            move_down: KeyCode::ArrowDown,
+            dash: KeyCode::KeyX,
         }
     }
 }
@@ -33,6 +48,7 @@ impl Default for Keyboard {
 #[derive(Resource, Debug, Default, Serialize, Deserialize)]
 pub struct Save {
     pub keyboard: Keyboard,
+    pub appearance: Appearance,
 }
 
 fn read_save(mut commands: Commands) -> Result<()> {

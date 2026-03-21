@@ -1,9 +1,13 @@
 pub mod controls;
-pub mod general;
+pub mod health;
+pub mod movements;
 pub mod player;
 mod prelude;
+pub mod setup;
 
 use bevy::prelude::*;
+
+pub use setup::SessionOnly;
 
 pub struct CanumPlayPlugin;
 
@@ -12,7 +16,9 @@ impl Plugin for CanumPlayPlugin {
         app.add_plugins((
             player::PlayerPlugin,
             controls::ControlsPlugin,
-            general::GeneralPlugin,
+            movements::MovementsPlugin,
+            health::HealthPlugin,
+            setup::SetupPlugin,
         ));
     }
 }
