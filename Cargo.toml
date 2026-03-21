@@ -1,0 +1,28 @@
+[package]
+name = "canum"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+resolver = "3"
+members = ["canum_*"]
+
+[dependencies]
+avian2d = { version = "0.6.0", default-features = false, features = [
+  "default-collider",
+  "2d",
+  "debug-plugin",
+  "f32",
+  "parallel",
+  "parry-f32"
+] }
+bevy = { version = "0.18.1", default-features = false, features = [
+  "2d",
+  "multi_threaded"
+] }
+canum_play = { path = "canum_play" }
+canum_res = { path = "canum_res" }
+canum_save = { path = "canum_save" }
+
+[profile.dev]
+opt-level = 1

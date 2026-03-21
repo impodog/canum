@@ -1,0 +1,18 @@
+[package]
+name = "canum_res"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.18.1", default-features = false, features = [
+  "bevy_asset",
+  "bevy_sprite",
+  "bevy_sprite_render",
+  "bevy_text",
+  "png",
+] }
+log = "0.4.29"
+rand = "0.10.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+toml = "1.0.7"
