@@ -13,8 +13,12 @@ fn keyboard_controls(
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     save: Res<Save>,
     key: Res<ButtonInput<KeyCode>>,
+    mut q_player: Query<&crate::player::attack::Weapons>,
 ) {
     let Some(primary_player) = primary_player.map(|player| **player) else {
+        return;
+    };
+    let Ok(weapons) = q_player.get_mut(primary_player) else {
         return;
     };
     let mut direction = Vec2::default();
@@ -42,5 +46,19 @@ fn keyboard_controls(
                 base_velocity: direction.normalize(),
             })
         }
+    }
+    if let Some(primary_weapon) = weapons.first().copied().flatten()
+        && key.pressed(save.keyboard.primary_attack)
+    {
+        commands.trigger(crate::player::attack::Attack {
+            entity: primary_weapon,
+        });
+    }
+    if let Some(secondary_weapon) = weapons.last().copied().flatten()
+        && key.pressed(save.keyboard.secondary_attack)
+    {
+        commands.trigger(crate::player::attack::Attack {
+            entity: secondary_weapon,
+        });
     }
 }

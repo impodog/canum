@@ -1,0 +1,7 @@
+{
+  "sprites": {
+    "Filed": [
+      { "path": "filed.png", "size": [5, 10], "count": 4, "interval": 75 }
+    ]
+  }
+}

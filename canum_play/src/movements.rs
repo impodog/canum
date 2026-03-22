@@ -52,8 +52,8 @@ impl Dash {
 impl Default for Dash {
     fn default() -> Self {
         Self {
-            max_speed: 400.0,
-            total_duration: 0.25,
+            max_speed: 450.0,
+            total_duration: 0.20,
             invincible_duration: 0.04,
             cooldown_duration: 0.4,
         }

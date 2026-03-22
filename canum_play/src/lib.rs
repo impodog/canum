@@ -1,8 +1,9 @@
+mod prelude;
+
 pub mod controls;
 pub mod health;
 pub mod movements;
 pub mod player;
-mod prelude;
 pub mod setup;
 
 use bevy::prelude::*;

@@ -1,7 +1,11 @@
 //! Loads and handles user save profiles.
 
 use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
+pub(crate) use serde::{Deserialize, Serialize};
+
+mod appearance;
+mod controls;
+mod progress;
 
 pub struct CanumSavePlugin;
 impl Plugin for CanumSavePlugin {
@@ -11,44 +15,11 @@ impl Plugin for CanumSavePlugin {
     }
 }
 
-/// User customizable appearances.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Appearance {
-    pub player: String,
-}
-impl Default for Appearance {
-    fn default() -> Self {
-        Self {
-            player: "Cyan".to_owned(),
-        }
-    }
-}
-
-/// User keyboard binding configurations.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Keyboard {
-    pub move_right: KeyCode,
-    pub move_up: KeyCode,
-    pub move_left: KeyCode,
-    pub move_down: KeyCode,
-    pub dash: KeyCode,
-}
-impl Default for Keyboard {
-    fn default() -> Self {
-        Self {
-            move_right: KeyCode::ArrowRight,
-            move_up: KeyCode::ArrowUp,
-            move_left: KeyCode::ArrowLeft,
-            move_down: KeyCode::ArrowDown,
-            dash: KeyCode::KeyX,
-        }
-    }
-}
-
 #[derive(Resource, Debug, Default, Serialize, Deserialize)]
 pub struct Save {
-    pub keyboard: Keyboard,
-    pub appearance: Appearance,
+    pub keyboard: controls::Keyboard,
+    pub appearance: appearance::Appearance,
+    pub progress: progress::Progress,
 }
 
 fn read_save(mut commands: Commands) -> Result<()> {

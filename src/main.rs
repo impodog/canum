@@ -11,21 +11,31 @@ fn main() {
                     ..Default::default()
                 })
                 .set(ImagePlugin::default_nearest()),
-            avian2d::PhysicsPlugins::default().with_length_unit(32.0),
+            avian2d::PhysicsPlugins::default()
+                .with_length_unit(32.0)
+                .with_collision_hooks::<canum_play::health::FriendlyHooks>(),
             canum_res::CanumResPlugin,
             canum_save::CanumSavePlugin,
             canum_play::CanumPlayPlugin,
         ))
+        .add_systems(PostStartup, |mut commands: Commands| {
+            commands.insert_resource(avian2d::prelude::Gravity::ZERO);
+        })
         .add_systems(
             PreUpdate,
             |mut commands: Commands, mut flag: Local<bool>| {
                 if !*flag {
+                    let primary_weapon = commands
+                        .spawn(canum_play::player::attack::Filed::default())
+                        .id();
                     let entity = commands
                         .spawn((
                             canum_play::player::Player,
+                            canum_play::player::attack::Weapons(vec![Some(primary_weapon), None]),
                             canum_res::Animation::new("Cyan", Vec2::new(20.0, 20.0)),
                             canum_play::health::IntegerHealth::default(),
                         ))
+                        .add_child(primary_weapon)
                         .id();
                     commands.insert_resource(canum_play::player::PrimaryPlayer(entity));
                     *flag = true;

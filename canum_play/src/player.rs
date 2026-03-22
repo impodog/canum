@@ -1,3 +1,5 @@
+pub mod attack;
+
 use crate::prelude::*;
 
 pub(super) struct PlayerPlugin;
@@ -6,6 +8,7 @@ impl Plugin for PlayerPlugin {
         app.add_observer(respond_player_move);
         app.add_systems(FixedPreUpdate, init_player_acc);
         app.add_systems(FixedPostUpdate, decay_player_acc);
+        app.add_plugins(attack::PlayerAttackPlugin);
     }
 }
 
@@ -15,10 +18,14 @@ impl Plugin for PlayerPlugin {
     Transform::from_translation(Vec3::new(0.0, 0.0, 24.37)),
     RigidBody::Dynamic,
     Collider::circle(10.0),
+    Mass(10.0),
+    CollisionEventsEnabled,
     PlayerShoot,
     PlayerAcc,
+    attack::Weapons,
     crate::movements::SpeedShrink(800.0),
-    crate::movements::Dash
+    crate::movements::Dash,
+    crate::health::Friendly(true)
 )]
 pub struct Player;
 
@@ -56,6 +63,7 @@ fn init_player_acc(mut q_player: Query<&mut PlayerAcc>) {
 fn decay_player_acc(
     mut q_player: Query<(
         &mut PlayerAcc,
+        &mut PlayerShoot,
         &mut LinearVelocity,
         &mut AngularVelocity,
         &mut crate::movements::DashTimers,
@@ -72,8 +80,14 @@ fn decay_player_acc(
         }
     }
 
-    for (mut acc, mut linear_velocity, mut angular_velocity, mut dash_timers, rotation) in
-        q_player.iter_mut()
+    for (
+        mut acc,
+        mut player_shoot,
+        mut linear_velocity,
+        mut angular_velocity,
+        mut dash_timers,
+        rotation,
+    ) in q_player.iter_mut()
     {
         if !acc.changed {
             dash_timers.total.finish();
@@ -102,6 +116,7 @@ fn decay_player_acc(
                 angular_velocity.0 = 0.0;
             }
         }
+        player_shoot.0 = linear_velocity.to_angle();
     }
 }
 

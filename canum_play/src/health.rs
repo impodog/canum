@@ -1,6 +1,8 @@
+use bevy::ecs::system::SystemParam;
+
 use crate::prelude::*;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) struct HealthPlugin;
 impl Plugin for HealthPlugin {
@@ -9,6 +11,8 @@ impl Plugin for HealthPlugin {
             FixedPostUpdate,
             (work_invincibility_timer, add_observer_to_integer_health),
         );
+        app.add_systems(FixedUpdate, deal_contact_damage);
+        app.add_systems(FixedPostUpdate, init_contact_damage);
     }
 }
 
@@ -82,6 +86,83 @@ fn work_invincibility_timer(
     Ok(())
 }
 
+/// Marks if an entity is friendly to player.
+#[derive(Component, Default, Deref, DerefMut)]
+#[require(ActiveCollisionHooks::FILTER_PAIRS)]
+pub struct Friendly(pub bool);
+pub const FRIENDLY: Friendly = Friendly(true);
+pub const UNFRIENDLY: Friendly = Friendly(false);
+
+/// This prevents friendly objects from interacting with each other.
+#[derive(SystemParam)]
+pub struct FriendlyHooks<'w, 's> {
+    q_friendly: Query<'w, 's, &'static Friendly>,
+}
+impl<'w, 's> CollisionHooks for FriendlyHooks<'w, 's> {
+    fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
+        let Ok([friendly1, friendly2]) = self.q_friendly.get_many([collider1, collider2]) else {
+            return true;
+        };
+        friendly1.0 ^ friendly2.0
+    }
+}
+
+/// Marks an entity to deal contact damage. This can either be used on enemies or projectiles.
+#[derive(Component, Debug, Default)]
+#[require(Friendly, CollidingEntities)]
+pub struct ContactDamage {
+    pub value: i32,
+    /// Prevents multiple hits.
+    pub projectile: bool,
+    pub order: u8,
+}
+/// Stores the projectile's contact history, preventing multiple hits.
+#[derive(Component, Debug, Deref, DerefMut, Default)]
+struct ProjectileContacted(BTreeSet<Entity>);
+
+fn init_contact_damage(commands: ParallelCommands, q_added: Query<Entity, Added<ContactDamage>>) {
+    q_added.par_iter().for_each(|entity| {
+        commands.command_scope(|mut commands| {
+            commands
+                .entity(entity)
+                .insert(ProjectileContacted::default());
+        });
+    });
+}
+
+fn deal_contact_damage(
+    commands: ParallelCommands,
+    mut q_contact_damage: Query<(
+        &ContactDamage,
+        &CollidingEntities,
+        &Friendly,
+        Option<&mut ProjectileContacted>,
+    )>,
+    q_friendly: Query<&Friendly>,
+) {
+    q_contact_damage.par_iter_mut().for_each(
+        |(contact_damage, colliding_entities, friendly, mut contacted)| {
+            for entity in colliding_entities.iter() {
+                if contacted
+                    .as_mut()
+                    .is_none_or(|contacted| contacted.insert(*entity))
+                    && q_friendly
+                        .get(*entity)
+                        .is_ok_and(|target_friendly| target_friendly.0 ^ friendly.0)
+                {
+                    commands.command_scope(|mut commands| {
+                        commands.trigger(Damage {
+                            entity: *entity,
+                            order: contact_damage.order,
+                            value: contact_damage.value,
+                        });
+                    })
+                }
+            }
+        },
+    );
+}
+
 /// Basic player health bar, allowing to take only integer number of damage.
 #[derive(Component, Debug)]
 #[require(Shields)]
@@ -93,7 +174,7 @@ pub struct IntegerHealth {
 impl Default for IntegerHealth {
     fn default() -> Self {
         Self {
-            count: 7,
+            count: 6,
             invinc_order: 200,
             invinc_time: 0.5,
         }
