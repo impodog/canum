@@ -30,14 +30,18 @@ pub struct Boundaries;
 fn setup_session(
     _event: On<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
+    save: Res<Save>,
     mut commands: Commands,
 ) {
     const BOUNDARY_THICKNESS: f32 = 32.0;
     const BOUNDARY_THICKNESS_HALF: f32 = BOUNDARY_THICKNESS * 0.5;
+
+    // Despawn previous entities
     for entity in q_session_only.iter() {
         commands.entity(entity).despawn();
     }
-    info!("SETUP");
+
+    // Spawn boundaries to restrict player and enemy
     commands.spawn((
         Boundaries,
         Collider::rectangle(32.0, CONFIG.display.virtual_size.1 as f32),
@@ -74,4 +78,55 @@ fn setup_session(
             0.0,
         )),
     ));
+
+    // Spawn player and its weapons, health
+    let mut weapons = Vec::new();
+    for weapon in save
+        .progress
+        .selected_weapons
+        .iter()
+        .take(save.progress.weapon_slots)
+    {
+        match weapon.as_str() {
+            "Filed" => {
+                let entity = commands.spawn(crate::player::attack::Filed::default()).id();
+                weapons.push(Some(entity));
+            }
+            "None" | "" => {
+                weapons.push(None);
+            }
+            _ => {
+                warn!("Unknown player weapon {weapon}");
+                weapons.push(None);
+            }
+        }
+    }
+    let player = commands
+        .spawn((
+            crate::player::Player,
+            Animation::new("Cyan", Vec2::new(20.0, 20.0)),
+            crate::player::attack::Weapons(weapons.clone()),
+        ))
+        .add_children(
+            weapons
+                .iter()
+                .filter_map(|entity| *entity)
+                .collect::<Vec<_>>()
+                .as_slice(),
+        )
+        .id();
+    match save.progress.selected_health.as_str() {
+        "Basic" => {
+            commands
+                .entity(player)
+                .insert(crate::health::IntegerHealth::default());
+        }
+        health => {
+            warn!("Unknown player health {health}, using default");
+            commands
+                .entity(player)
+                .insert(crate::health::IntegerHealth::default());
+        }
+    }
+    commands.insert_resource(crate::player::PrimaryPlayer(player));
 }

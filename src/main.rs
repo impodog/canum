@@ -25,19 +25,6 @@ fn main() {
             PreUpdate,
             |mut commands: Commands, mut flag: Local<bool>| {
                 if !*flag {
-                    let primary_weapon = commands
-                        .spawn(canum_play::player::attack::Filed::default())
-                        .id();
-                    let entity = commands
-                        .spawn((
-                            canum_play::player::Player,
-                            canum_play::player::attack::Weapons(vec![Some(primary_weapon), None]),
-                            canum_res::Animation::new("Cyan", Vec2::new(20.0, 20.0)),
-                            canum_play::health::IntegerHealth::default(),
-                        ))
-                        .add_child(primary_weapon)
-                        .id();
-                    commands.insert_resource(canum_play::player::PrimaryPlayer(entity));
                     *flag = true;
                     commands.trigger(canum_play::setup::StartSession {});
                 }

@@ -115,8 +115,8 @@ fn decay_player_acc(
             } else {
                 angular_velocity.0 = 0.0;
             }
+            player_shoot.0 = current_rotation;
         }
-        player_shoot.0 = linear_velocity.to_angle();
     }
 }
 

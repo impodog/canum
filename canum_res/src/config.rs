@@ -30,7 +30,7 @@ pub struct Client {
 impl Default for Client {
     fn default() -> Self {
         Self {
-            framerate: 60,
+            framerate: 100,
             frame_duration: Duration::from_secs_f32(1.0 / 60.0),
         }
     }
@@ -60,9 +60,23 @@ const fn return_750() -> u32 {
     750
 }
 
-/// Configuration for sprites in the game.
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct SoundDetails {
+    /// Sound file path.
+    pub path: PathBuf,
+    #[serde(default = "return_1_0")]
+    pub volume: f32,
+    /// The sound loops between the point to end. If None, the sound only plays once.
+    #[serde(default)]
+    pub loop_point: Option<f32>,
+}
+const fn return_1_0() -> f32 {
+    1.0
+}
+
+/// Configuration for assets in the game.
 #[derive(Default, Deserialize, Debug, Clone)]
-pub struct Sprites {
+pub struct AssetsConfig {
     /// Any child configurations that will be merged into this config.
     #[serde(default)]
     pub include: Vec<PathBuf>,
@@ -72,25 +86,28 @@ pub struct Sprites {
     /// Defines tinting style aliases.
     #[serde(default)]
     pub tinting: HashMap<String, Color>,
+    /// Map from aliases to sound details.
+    #[serde(default)]
+    pub sounds: HashMap<String, SoundDetails>,
 }
 
-impl Sprites {
+impl AssetsConfig {
     pub fn load(path: PathBuf) -> Self {
         let base_path = path
             .parent()
             .expect("Config file should be a file with a parent directory");
-        let mut config: Sprites = match std::fs::read_to_string(&path) {
+        let mut config: AssetsConfig = match std::fs::read_to_string(&path) {
             Ok(content) => match serde_json::from_str(&content) {
                 Ok(config) => {
-                    log::info!("Sprite config loaded at {path:?}");
+                    log::info!("Assets config loaded at {path:?}");
                     config
                 }
                 Err(err) => {
-                    panic!("Failed to parse sprite config: {err}");
+                    panic!("Failed to parse assets config: {err}");
                 }
             },
             Err(err) => {
-                log::error!("Unable to read sprite config {path:?}(skipped): {err}");
+                log::error!("Unable to read assets config {path:?}(skipped): {err}");
                 Default::default()
             }
         };
@@ -102,18 +119,30 @@ impl Sprites {
                     atlas.path = new_path;
                     new_list.push(atlas);
                 } else {
-                    log::error!("Unable to read configurated image path: {new_path:?}(skipped)");
+                    log::error!("Unable to read configured image path: {new_path:?}(skipped)");
                 }
             }
             *list = new_list;
         }
+        for sound in config.sounds.values_mut() {
+            let new_path = base_path.join(&sound.path);
+            if let Ok(new_path) = new_path.canonicalize() {
+                sound.path = new_path;
+            } else {
+                log::error!("Unable to read configured sound path: {new_path:?}(skipped)")
+            }
+        }
         for sub_path in config.include.drain(..) {
             let sub_path = base_path.join(&sub_path);
-            let Sprites {
-                sprites, tinting, ..
-            } = Sprites::load(sub_path);
+            let AssetsConfig {
+                include: _,
+                sprites,
+                tinting,
+                sounds,
+            } = AssetsConfig::load(sub_path);
             config.sprites.extend(sprites);
-            config.tinting.extend(tinting)
+            config.tinting.extend(tinting);
+            config.sounds.extend(sounds)
         }
         config
     }
@@ -140,9 +169,9 @@ pub struct Config {
     #[serde(default)]
     pub client: Client,
     #[serde(default)]
-    pub sprites_path: PathBuf,
+    pub assets_path: PathBuf,
     #[serde(skip)]
-    pub sprites: Sprites,
+    pub assets: AssetsConfig,
     #[serde(default)]
     pub fonts: Fonts,
 }
@@ -155,8 +184,7 @@ pub static CONFIG: LazyLock<Config> =
             config.display.half_virtual_size.1 = config.display.virtual_size.1 as f32 * 0.5;
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
-            config.sprites = Sprites::load(config.sprites_path.clone());
-            log::info!("Loaded sprites: {:?}", config.sprites);
+            config.assets = AssetsConfig::load(config.assets_path.clone());
             config
         }
         Err(err) => {

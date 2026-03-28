@@ -83,7 +83,7 @@ pub(crate) fn modify_animation(
     mut atlas_handles: ResMut<AnimationAtlasHandles>,
 ) {
     let default_sprite = config::CONFIG
-        .sprites
+        .assets
         .sprites
         .get("Empty")
         .and_then(|sprites| sprites.first())
@@ -105,7 +105,7 @@ pub(crate) fn modify_animation(
             } else {
                 *visibility = Visibility::Inherited;
             }
-            let Some(config) = config::CONFIG.sprites.sprites.get(&animation.name) else {
+            let Some(config) = config::CONFIG.assets.sprites.get(&animation.name) else {
                 *sprite = default_sprite.clone();
                 return;
             };

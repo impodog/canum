@@ -1,11 +1,24 @@
 use super::*;
 use crate::prelude::*;
+use bevy::ecs::lifecycle::HookContext;
+use canum_res::sound::Sound;
 
 pub(super) struct PlayerAttackPlugin;
 
 impl Plugin for PlayerAttackPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedPostUpdate, (init_weapons, init_filed));
+        app.world_mut()
+            .register_component_hooks::<SoundWeaponCue>()
+            .on_add(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .entity(entity)
+                    .observe(sound_weapon_cue_start)
+                    .observe(sound_weapon_cue_end);
+            });
+        app.add_observer(propagate_attack_down)
+            .add_observer(propagate_attack_release_down);
     }
 }
 
@@ -13,6 +26,32 @@ impl Plugin for PlayerAttackPlugin {
 #[derive(EntityEvent, Debug)]
 pub struct Attack {
     pub entity: Entity,
+}
+/// Informs the player weapon that the player released the attack key.
+#[derive(EntityEvent, Debug)]
+pub struct AttackRelease {
+    pub entity: Entity,
+}
+
+fn propagate_attack_down(event: On<Attack>, mut commands: Commands, q_children: Query<&Children>) {
+    let Ok(children) = q_children.get(event.entity) else {
+        return;
+    };
+    for child in children {
+        commands.trigger(Attack { entity: *child });
+    }
+}
+fn propagate_attack_release_down(
+    event: On<AttackRelease>,
+    mut commands: Commands,
+    q_children: Query<&Children>,
+) {
+    let Ok(children) = q_children.get(event.entity) else {
+        return;
+    };
+    for child in children {
+        commands.trigger(AttackRelease { entity: *child });
+    }
 }
 
 /// The weapons that the player chooses.
@@ -30,13 +69,34 @@ fn init_weapons(mut q_weapons: Query<&mut Weapons>, save: Res<Save>) {
 /// Marks a player-spawn projectile.
 #[derive(Component)]
 #[require(
+    crate::movements::Projectile,
     crate::health::Friendly(true),
-    Animation,
-    RigidBody::Kinematic,
-    Collider,
-    crate::health::ContactDamage
+    crate::health::ContactDamage,
+    Animation
 )]
 pub struct PlayerProjectile;
+
+/// Marks a `Sound` to be played only when the player holds the weapon key.
+#[derive(Component)]
+#[require(Sound)]
+pub struct SoundWeaponCue;
+
+fn sound_weapon_cue_start(event: On<Attack>, mut q_sound: Query<&mut Sound>) {
+    let Ok(mut sound) = q_sound.get_mut(event.entity) else {
+        return;
+    };
+    if sound.paused {
+        sound.paused = false;
+    }
+}
+fn sound_weapon_cue_end(event: On<AttackRelease>, mut q_sound: Query<&mut Sound>) {
+    let Ok(mut sound) = q_sound.get_mut(event.entity) else {
+        return;
+    };
+    if !sound.paused {
+        sound.paused = true;
+    }
+}
 
 #[derive(Component, Debug)]
 #[require(FiledTimer, Transform)]
@@ -70,7 +130,13 @@ fn init_filed(
 ) {
     for (entity, mut filed_timer, filed) in q_filed.iter_mut() {
         filed_timer.interval = Timer::from_seconds(filed.interval, TimerMode::Repeating);
-        commands.entity(entity).observe(filed_shoot);
+        commands
+            .entity(entity)
+            .observe(filed_shoot)
+            .insert(children![(
+                SoundWeaponCue,
+                canum_res::sound::Sound::new("Filed").paused(),
+            )]);
     }
 }
 fn filed_shoot(
@@ -99,7 +165,7 @@ fn filed_shoot(
             PlayerProjectile,
             transform,
             Animation::new("Filed", filed.size),
-            Collider::capsule(filed.size.x, filed.size.y),
+            Collider::capsule(filed.size.x + 0.5, filed.size.y),
             LinearVelocity(direction * filed.speed),
         ));
     }

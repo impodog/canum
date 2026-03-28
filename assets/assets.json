@@ -1,0 +1,3 @@
+{
+  "include": ["sprites/sprites.json", "sounds/sounds.json"]
+}

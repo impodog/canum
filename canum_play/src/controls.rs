@@ -47,18 +47,26 @@ fn keyboard_controls(
             })
         }
     }
-    if let Some(primary_weapon) = weapons.first().copied().flatten()
-        && key.pressed(save.keyboard.primary_attack)
-    {
-        commands.trigger(crate::player::attack::Attack {
-            entity: primary_weapon,
-        });
+    if let Some(primary_weapon) = weapons.first().copied().flatten() {
+        if key.pressed(save.keyboard.primary_attack) {
+            commands.trigger(crate::player::attack::Attack {
+                entity: primary_weapon,
+            });
+        } else if key.just_released(save.keyboard.primary_attack) {
+            commands.trigger(crate::player::attack::AttackRelease {
+                entity: primary_weapon,
+            });
+        }
     }
-    if let Some(secondary_weapon) = weapons.last().copied().flatten()
-        && key.pressed(save.keyboard.secondary_attack)
-    {
-        commands.trigger(crate::player::attack::Attack {
-            entity: secondary_weapon,
-        });
+    if let Some(secondary_weapon) = weapons.last().copied().flatten() {
+        if key.pressed(save.keyboard.secondary_attack) {
+            commands.trigger(crate::player::attack::Attack {
+                entity: secondary_weapon,
+            });
+        } else if key.just_released(save.keyboard.secondary_attack) {
+            commands.trigger(crate::player::attack::AttackRelease {
+                entity: secondary_weapon,
+            });
+        }
     }
 }

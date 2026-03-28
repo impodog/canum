@@ -14,12 +14,13 @@ avian2d = { version = "0.6.0", default-features = false, features = [
   "debug-plugin",
   "f32",
   "parallel",
-  "parry-f32"
+  "parry-f32",
 ] }
 bevy = { version = "0.18.1", default-features = false, features = [
   "2d",
   "debug",
-  "multi_threaded"
+  "multi_threaded",
+  "wav",
 ] }
 canum_play = { path = "canum_play" }
 canum_res = { path = "canum_res" }

@@ -1,6 +1,7 @@
 mod prelude;
 
 pub mod controls;
+pub mod enemy;
 pub mod health;
 pub mod movements;
 pub mod player;
