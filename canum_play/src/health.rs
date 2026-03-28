@@ -7,10 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            FixedPostUpdate,
-            (work_invincibility_timer, add_observer_to_integer_health),
-        );
+        app.add_systems(FixedPostUpdate, (work_invincibility_timer,));
         app.add_systems(FixedUpdate, deal_contact_damage);
         app.add_systems(FixedPostUpdate, init_contact_damage);
     }
@@ -32,9 +29,10 @@ pub struct Damage {
 pub struct Shields(BTreeMap<u8, i32>);
 impl Shields {
     /// Try to absorb as much damage as possible using shield, and then return the remaining amount.
-    pub fn take_damage(&mut self, mut damage: i32) -> i32 {
+    pub fn take_damage(&mut self, mut damage: i32, order: u8) -> i32 {
         while damage > 0
             && let Some(mut entry) = self.last_entry()
+            && *entry.key() > order
         {
             let value = *entry.get();
             if value > damage {
@@ -90,8 +88,11 @@ fn work_invincibility_timer(
 #[derive(Component, Default, Deref, DerefMut)]
 #[require(ActiveCollisionHooks::FILTER_PAIRS)]
 pub struct Friendly(pub bool);
-pub const FRIENDLY: Friendly = Friendly(true);
-pub const UNFRIENDLY: Friendly = Friendly(false);
+
+impl Friendly {
+    pub const FRIENDLY: Friendly = Friendly(true);
+    pub const UNFRIENDLY: Friendly = Friendly(false);
+}
 
 /// This prevents friendly objects from interacting with each other.
 #[derive(SystemParam)]
@@ -161,49 +162,4 @@ fn deal_contact_damage(
             }
         },
     );
-}
-
-/// Basic player health bar, allowing to take only integer number of damage.
-#[derive(Component, Debug)]
-#[require(Shields)]
-pub struct IntegerHealth {
-    pub count: i32,
-    pub invinc_order: u8,
-    pub invinc_time: f32,
-}
-impl Default for IntegerHealth {
-    fn default() -> Self {
-        Self {
-            count: 6,
-            invinc_order: 200,
-            invinc_time: 0.5,
-        }
-    }
-}
-fn add_observer_to_integer_health(
-    mut commands: Commands,
-    q_health: Query<Entity, Added<IntegerHealth>>,
-) {
-    for entity in q_health.iter() {
-        commands.entity(entity).observe(integer_take_damage);
-    }
-}
-fn integer_take_damage(
-    event: On<Damage>,
-    mut commands: Commands,
-    mut q_health: Query<(&mut IntegerHealth, &mut Shields)>,
-) -> Result<()> {
-    let (mut health, mut shields) = q_health.get_mut(event.entity)?;
-    let damage = shields.take_damage(event.value);
-    if damage <= 0 {
-        return Ok(());
-    }
-    health.count = health.count.saturating_sub(1);
-    commands
-        .entity(event.entity)
-        .insert(children![InvincibilityTimer::new(
-            health.invinc_time,
-            health.invinc_order
-        )]);
-    Ok(())
 }

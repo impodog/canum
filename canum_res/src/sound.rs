@@ -62,6 +62,7 @@ pub(super) fn start_playing_sound(
                     },
                     start_position: details.loop_point.map(Duration::from_secs_f32),
                     paused: sound.paused,
+                    volume: Volume::Linear(details.volume),
                     ..Default::default()
                 },
             ));

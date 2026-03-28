@@ -2,3 +2,15 @@ pub(crate) use avian2d::prelude::*;
 pub(crate) use bevy::prelude::*;
 pub(crate) use canum_res::{Animation, config::CONFIG};
 pub(crate) use canum_save::Save;
+
+#[macro_export]
+macro_rules! static_system_id {
+    ($app: expr, $name: ident, $in: ty, $system: expr) => {
+        static $name: std::sync::OnceLock<bevy::ecs::system::SystemId<$in>> =
+            std::sync::OnceLock::new();
+        $name.set($app.register_system($system)).unwrap();
+    };
+    ($app: expr, $name: ident, $system: expr) => {
+        $crate::static_system_id!($app, $name, (), $system);
+    };
+}

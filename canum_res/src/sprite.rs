@@ -31,8 +31,8 @@ impl Default for Animation {
     }
 }
 
-#[derive(Resource, Default, Debug)]
-pub(crate) struct AnimationAtlasHandles(HashMap<String, Handle<TextureAtlasLayout>>);
+#[derive(Resource, Default, Debug, Deref, DerefMut)]
+pub struct AnimationAtlasHandles(HashMap<String, Handle<TextureAtlasLayout>>);
 
 fn convert_to_sprite(
     name: String,

@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "BasicHp": [{ "path": "basichp.png", "count": 5, "interval": 50 }]
+  }
+}

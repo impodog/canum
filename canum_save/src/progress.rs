@@ -14,7 +14,7 @@ impl Default for Progress {
             weapon_slots: 1,
             unlocked_dash: false,
             selected_weapons: vec!["Filed".to_owned()],
-            selected_health: "Basic".to_string(),
+            selected_health: "BasicHp".to_string(),
         }
     }
 }

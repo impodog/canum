@@ -1,4 +1,5 @@
 pub mod attack;
+pub mod health;
 
 use crate::prelude::*;
 
@@ -8,7 +9,7 @@ impl Plugin for PlayerPlugin {
         app.add_observer(respond_player_move);
         app.add_systems(FixedPreUpdate, init_player_acc);
         app.add_systems(FixedPostUpdate, decay_player_acc);
-        app.add_plugins(attack::PlayerAttackPlugin);
+        app.add_plugins((attack::PlayerAttackPlugin, health::PlayerHealthPlugin));
     }
 }
 

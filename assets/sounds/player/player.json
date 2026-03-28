@@ -1,6 +1,7 @@
 {
   "sounds": {
-    "Filed": { "path": "filed.wav", "loop_point": 0.0 },
-    "Dash": { "path": "dash.wav" }
+    "Filed": { "path": "filed.wav", "loop_point": 0.0, "volume": 0.9 },
+    "Dash": { "path": "dash.wav", "volume": 1.5 },
+    "BasicHp_Damage": { "path": "basichp_damage.wav" }
   }
 }

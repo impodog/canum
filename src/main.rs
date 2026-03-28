@@ -17,6 +17,7 @@ fn main() {
             canum_res::CanumResPlugin,
             canum_save::CanumSavePlugin,
             canum_play::CanumPlayPlugin,
+            canum_ui::CanumUiPlugin,
         ))
         .add_systems(PostStartup, |mut commands: Commands| {
             commands.insert_resource(avian2d::prelude::Gravity::ZERO);
@@ -27,6 +28,21 @@ fn main() {
                 if !*flag {
                     *flag = true;
                     commands.trigger(canum_play::setup::StartSession {});
+                }
+            },
+        )
+        .add_systems(
+            PreUpdate,
+            |mut commands: Commands,
+             primary_player: Option<Res<canum_play::player::PrimaryPlayer>>| {
+                if let Some(primary_player) = primary_player
+                    && rand::random_bool(0.005)
+                {
+                    commands.trigger(canum_play::health::Damage {
+                        entity: primary_player.0,
+                        value: 1,
+                        order: 255,
+                    });
                 }
             },
         )

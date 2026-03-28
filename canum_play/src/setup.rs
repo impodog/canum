@@ -12,6 +12,11 @@ impl Plugin for SetupPlugin {
 pub struct StartSession {
     // TODO
 }
+/// Sent after responding to `StartSession` with extra information, used for spawning UIs.
+#[derive(Event, Debug)]
+pub struct PostStartSession {
+    pub health_entity: Entity,
+}
 
 #[derive(Resource, Debug, Default)]
 pub struct CurrentSession {
@@ -115,18 +120,20 @@ fn setup_session(
                 .as_slice(),
         )
         .id();
-    match save.progress.selected_health.as_str() {
-        "Basic" => {
-            commands
-                .entity(player)
-                .insert(crate::health::IntegerHealth::default());
-        }
+    let health_entity = match save.progress.selected_health.as_str() {
+        "BasicHp" => commands
+            .entity(player)
+            .insert(crate::player::health::IntegerHealth::default())
+            .id(),
         health => {
             warn!("Unknown player health {health}, using default");
             commands
                 .entity(player)
-                .insert(crate::health::IntegerHealth::default());
+                .insert(crate::player::health::IntegerHealth::default())
+                .id()
         }
-    }
+    };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
+
+    commands.trigger(PostStartSession { health_entity });
 }
