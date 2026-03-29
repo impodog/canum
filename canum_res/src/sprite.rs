@@ -10,6 +10,7 @@ pub struct Animation {
     pub scale: Vec2,
     pub once: bool,
     pub color: Color,
+    pub visibility: Visibility,
 }
 #[derive(Default, Debug, Component)]
 pub(crate) struct AnimationClock {
@@ -26,6 +27,7 @@ impl Animation {
             scale: Vec2::new(1.0, 1.0),
             once: false,
             color: Color::default(),
+            visibility: Visibility::default(),
         }
     }
     /// Creates a once-animation. This sends itself `AnimationComplete` after complete playing.
@@ -35,6 +37,10 @@ impl Animation {
     }
     pub fn with_color(mut self, color: Color) -> Self {
         self.color = color;
+        self
+    }
+    pub fn with_visibility(mut self, visibility: Visibility) -> Self {
+        self.visibility = visibility;
         self
     }
 }
@@ -116,7 +122,7 @@ pub(crate) fn modify_animation(
             if animation.name.is_empty() {
                 *visibility = Visibility::Hidden;
             } else {
-                *visibility = Visibility::Inherited;
+                *visibility = animation.visibility;
             }
             let Some(config) = config::CONFIG.assets.sprites.get(&animation.name) else {
                 *sprite = default_sprite.clone();

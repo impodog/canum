@@ -49,10 +49,13 @@ fn add_background(
         ),
         Changed<Background>,
     >,
+    q_background_image: Query<(), With<BackgroundSubImage>>,
 ) {
     for (entity, sprite, background, mut info, children, mut transform) in q_background.iter_mut() {
         for child in children.iter() {
-            commands.entity(child).despawn();
+            if q_background_image.get(child).is_ok() {
+                commands.entity(child).despawn();
+            }
         }
         transform.translation.z = -24.37;
         let x = (CONFIG.display.virtual_size.0 as f32 / background.size.x).ceil() as usize | 1;

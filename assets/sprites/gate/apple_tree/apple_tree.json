@@ -13,6 +13,13 @@
         "size": [400, 225],
         "offset": [400, 0]
       }
+    ],
+    "Apple_TreeBoss": [
+      {
+        "path": "apple_tree.png",
+        "size": [400, 225],
+        "offset": [800, 0]
+      }
     ]
   }
 }

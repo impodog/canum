@@ -9,6 +9,8 @@ pub struct Display {
     pub virtual_size: (u32, u32),
     #[serde(skip)]
     pub half_virtual_size: (f32, f32),
+    #[serde(skip)]
+    pub screen_size: bevy::prelude::Vec2,
 }
 impl Default for Display {
     fn default() -> Self {
@@ -17,6 +19,7 @@ impl Default for Display {
             window_size: (1920, 1080),
             virtual_size: (800, 450),
             half_virtual_size: (400.0, 225.0),
+            screen_size: bevy::prelude::Vec2::new(800.0, 450.0),
         }
     }
 }
@@ -182,6 +185,10 @@ pub static CONFIG: LazyLock<Config> =
                 toml::from_str(content.as_str()).expect("canum.toml failed to parse");
             config.display.half_virtual_size.0 = config.display.virtual_size.0 as f32 * 0.5;
             config.display.half_virtual_size.1 = config.display.virtual_size.1 as f32 * 0.5;
+            config.display.screen_size = bevy::prelude::Vec2::new(
+                config.display.virtual_size.0 as f32,
+                config.display.virtual_size.1 as f32,
+            );
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
             config.assets = AssetsConfig::load(config.assets_path.clone());

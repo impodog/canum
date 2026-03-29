@@ -1,11 +1,15 @@
+use bevy::time::Stopwatch;
+
 use crate::prelude::*;
 
 pub(super) struct SetupPlugin;
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<CurrentSession>();
+        app.init_resource::<CurrentSession>()
+            .init_resource::<FightTime>();
         app.add_observer(setup_session);
         app.init_state::<PlayState>().init_state::<Fight>();
+        app.add_systems(PreUpdate, tick_fight_time);
     }
 }
 
@@ -17,6 +21,9 @@ pub enum PlayState {
 
 #[derive(States, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deref, DerefMut)]
 pub struct Fight(pub String);
+
+#[derive(Resource, Debug, Default, Deref, DerefMut)]
+pub struct FightTime(pub Stopwatch);
 
 #[derive(Event, Debug)]
 pub struct StartSession {
@@ -153,6 +160,12 @@ fn setup_session(
         health_entity,
     });
 
+    commands.insert_resource(FightTime::default());
+
     play_state.set(PlayState::Play);
     fight.set(Fight(event.fight.clone()));
+}
+
+fn tick_fight_time(time: Res<Time>, mut fight_time: ResMut<FightTime>) {
+    fight_time.tick(time.delta());
 }
