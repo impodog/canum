@@ -1,0 +1,18 @@
+{
+  "sprites": {
+    "Apple_TreeEmpty": [
+      {
+        "path": "apple_tree.png",
+        "size": [400, 225],
+        "offset": [0, 0]
+      }
+    ],
+    "Apple_Tree": [
+      {
+        "path": "apple_tree.png",
+        "size": [400, 225],
+        "offset": [400, 0]
+      }
+    ]
+  }
+}

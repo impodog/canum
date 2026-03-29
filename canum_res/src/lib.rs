@@ -7,6 +7,7 @@ pub use sprite::*;
 
 mod framerate;
 
+pub mod background;
 pub mod camera;
 pub mod sound;
 pub mod window;
@@ -35,5 +36,6 @@ impl Plugin for CanumResPlugin {
                 sound::update_sound,
             ),
         );
+        app.add_plugins(background::BackgroundPlugin);
     }
 }

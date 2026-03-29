@@ -12,7 +12,7 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
             avian2d::PhysicsPlugins::default()
-                .with_length_unit(32.0)
+                .with_length_unit(16.0)
                 .with_collision_hooks::<canum_play::health::FriendlyHooks>(),
             canum_res::CanumResPlugin,
             canum_save::CanumSavePlugin,
@@ -27,7 +27,9 @@ fn main() {
             |mut commands: Commands, mut flag: Local<bool>| {
                 if !*flag {
                     *flag = true;
-                    commands.trigger(canum_play::setup::StartSession {});
+                    commands.trigger(canum_play::setup::StartSession {
+                        fight: "Apple".to_owned(),
+                    });
                 }
             },
         )

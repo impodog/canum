@@ -5,16 +5,27 @@ impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<CurrentSession>();
         app.add_observer(setup_session);
+        app.init_state::<PlayState>().init_state::<Fight>();
     }
 }
 
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum PlayState {
+    #[default]
+    Play,
+}
+
+#[derive(States, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deref, DerefMut)]
+pub struct Fight(pub String);
+
 #[derive(Event, Debug)]
 pub struct StartSession {
-    // TODO
+    pub fight: String,
 }
 /// Sent after responding to `StartSession` with extra information, used for spawning UIs.
 #[derive(Event, Debug)]
 pub struct PostStartSession {
+    pub fight: String,
     pub health_entity: Entity,
 }
 
@@ -33,10 +44,12 @@ pub struct SessionOnly;
 pub struct Boundaries;
 
 fn setup_session(
-    _event: On<StartSession>,
+    event: On<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
     save: Res<Save>,
     mut commands: Commands,
+    mut play_state: ResMut<NextState<PlayState>>,
+    mut fight: ResMut<NextState<Fight>>,
 ) {
     const BOUNDARY_THICKNESS: f32 = 32.0;
     const BOUNDARY_THICKNESS_HALF: f32 = BOUNDARY_THICKNESS * 0.5;
@@ -135,5 +148,11 @@ fn setup_session(
     };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
 
-    commands.trigger(PostStartSession { health_entity });
+    commands.trigger(PostStartSession {
+        fight: event.fight.clone(),
+        health_entity,
+    });
+
+    play_state.set(PlayState::Play);
+    fight.set(Fight(event.fight.clone()));
 }

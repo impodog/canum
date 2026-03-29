@@ -43,12 +43,10 @@ fn integer_take_damage(
         return Ok(());
     }
     health.count = health.count.saturating_sub(1);
-    commands
-        .entity(event.entity)
-        .insert(children![InvincibilityTimer::new(
-            health.invinc_time,
-            health.invinc_order
-        )]);
+    commands.spawn((
+        ChildOf(event.entity),
+        InvincibilityTimer::new(health.invinc_time, health.invinc_order),
+    ));
     commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
     Ok(())
 }

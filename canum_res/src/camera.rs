@@ -101,11 +101,12 @@ pub(crate) fn setup_camera(
                 config::CONFIG.display.window_size.0 as f32,
                 config::CONFIG.display.window_size.1 as f32,
             )),
-            rect: Some(Rect::new(
-                0.0,
-                0.0,
-                resolution.x as f32,
-                resolution.y as f32,
+            rect: Some(Rect::from_center_size(
+                Vec2::new(
+                    config::CONFIG.display.window_size.0 as f32 * 0.5,
+                    config::CONFIG.display.window_size.1 as f32 * 0.5,
+                ),
+                Vec2::new(resolution.x as f32, resolution.y as f32),
             )),
             ..Default::default()
         },

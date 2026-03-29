@@ -2,8 +2,10 @@ mod health;
 mod prelude;
 mod setup;
 
-pub mod sprite;
-pub use sprite::{Animation, AnimationComplete};
+pub mod image;
+pub use image::{Animation, AnimationComplete};
+
+pub mod transition;
 
 use prelude::*;
 
@@ -13,8 +15,9 @@ impl Plugin for CanumUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             setup::SetupPlugin,
-            sprite::SpritePlugin,
+            image::SpritePlugin,
             health::HealthPlugin,
+            transition::TransitionPlugin,
         ));
     }
 }

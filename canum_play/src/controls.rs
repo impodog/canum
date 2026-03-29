@@ -58,7 +58,9 @@ fn keyboard_controls(
             });
         }
     }
-    if let Some(secondary_weapon) = weapons.last().copied().flatten() {
+    if weapons.len() >= 2
+        && let Some(secondary_weapon) = weapons.last().copied().flatten()
+    {
         if key.pressed(save.keyboard.secondary_attack) {
             commands.trigger(crate::player::attack::Attack {
                 entity: secondary_weapon,

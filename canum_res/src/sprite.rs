@@ -8,6 +8,8 @@ pub struct Animation {
     pub name: String,
     pub size: Vec2,
     pub scale: Vec2,
+    pub once: bool,
+    pub color: Color,
 }
 #[derive(Default, Debug, Component)]
 pub(crate) struct AnimationClock {
@@ -22,7 +24,18 @@ impl Animation {
             name: name.into(),
             size,
             scale: Vec2::new(1.0, 1.0),
+            once: false,
+            color: Color::default(),
         }
+    }
+    /// Creates a once-animation. This sends itself `AnimationComplete` after complete playing.
+    pub fn once(mut self) -> Self {
+        self.once = true;
+        self
+    }
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
     }
 }
 impl Default for Animation {
@@ -121,6 +134,7 @@ pub(crate) fn modify_animation(
                 &mut layouts,
                 &mut atlas_handles,
             );
+            sprite.color = animation.color;
             sprite.custom_size = Some(animation.size * animation.scale);
             clock.timer = Timer::new(
                 Duration::from_millis(atlas.interval as u64),
@@ -130,16 +144,32 @@ pub(crate) fn modify_animation(
         });
 }
 
+#[derive(EntityEvent, Deref, DerefMut)]
+pub struct AnimationComplete(pub Entity);
+
 pub(crate) fn tick_animation(
-    mut query: Query<(&mut Sprite, &mut AnimationClock)>,
+    commands: ParallelCommands,
+    mut query: Query<(Entity, &Animation, &mut Sprite, &mut AnimationClock)>,
     time: Res<Time>,
 ) {
-    query.par_iter_mut().for_each(|(mut sprite, mut clock)| {
-        if !clock.timer.duration().is_zero() && clock.timer.tick(time.delta()).just_finished() {
-            let Some(texture_atlas) = &mut sprite.texture_atlas else {
-                return;
-            };
-            texture_atlas.index = (texture_atlas.index + 1) % clock.total;
-        }
-    });
+    query
+        .par_iter_mut()
+        .for_each(|(entity, animation, mut sprite, mut clock)| {
+            if !clock.timer.duration().is_zero() && clock.timer.tick(time.delta()).just_finished() {
+                let Some(texture_atlas) = &mut sprite.texture_atlas else {
+                    return;
+                };
+                let next_index = (texture_atlas.index + 1) % clock.total;
+                if next_index != 0 || !animation.once {
+                    texture_atlas.index = next_index;
+                } else {
+                    commands.command_scope(|mut commands| {
+                        commands.trigger(AnimationComplete(entity));
+                    });
+                    // Prevents clock from triggering again.
+                    clock.timer = Timer::default();
+                    clock.timer.finish();
+                }
+            }
+        });
 }

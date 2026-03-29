@@ -33,12 +33,10 @@ fn setup_ui(
         .id();
     match save.progress.selected_health.as_str() {
         "BasicHp" => {
-            commands
-                .entity(left_top)
-                .insert(children![crate::health::integer_health(
-                    event.health_entity,
-                    6
-                )]);
+            commands.spawn((
+                ChildOf(left_top),
+                crate::health::integer_health(event.health_entity, 6),
+            ));
         }
         _ => {
             warn!("Unknown health type. No UI available.")

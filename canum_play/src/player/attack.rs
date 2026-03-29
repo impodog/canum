@@ -9,7 +9,7 @@ impl Plugin for PlayerAttackPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedPostUpdate, (init_weapons, init_filed));
         app.world_mut()
-            .register_component_hooks::<SoundWeaponCue>()
+            .register_component_hooks::<WeaponSoundCue>()
             .on_add(|mut world, HookContext { entity, .. }| {
                 world
                     .commands()
@@ -79,7 +79,7 @@ pub struct PlayerProjectile;
 /// Marks a `Sound` to be played only when the player holds the weapon key.
 #[derive(Component)]
 #[require(Sound)]
-pub struct SoundWeaponCue;
+pub struct WeaponSoundCue;
 
 fn sound_weapon_cue_start(event: On<Attack>, mut q_sound: Query<&mut Sound>) {
     let Ok(mut sound) = q_sound.get_mut(event.entity) else {
@@ -134,7 +134,7 @@ fn init_filed(
             .entity(entity)
             .observe(filed_shoot)
             .insert(children![(
-                SoundWeaponCue,
+                WeaponSoundCue,
                 canum_res::sound::Sound::new("Filed").paused(),
             )]);
     }
