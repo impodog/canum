@@ -1870,6 +1870,7 @@ dependencies = [
  "bevy",
  "canum_play",
  "canum_res",
+ "canum_s1",
  "canum_save",
  "canum_ui",
  "rand 0.10.0",
@@ -1895,6 +1896,17 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+]
+
+[[package]]
+name = "canum_s1"
+version = "0.1.0"
+dependencies = [
+ "avian2d",
+ "bevy",
+ "canum_play",
+ "canum_res",
+ "canum_save",
 ]
 
 [[package]]

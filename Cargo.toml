@@ -24,6 +24,7 @@ bevy = { version = "0.18.1", default-features = false, features = [
 ] }
 canum_play = { path = "canum_play" }
 canum_res = { path = "canum_res" }
+canum_s1 = { path = "canum_s1" }
 canum_save = { path = "canum_save" }
 canum_ui = { path = "canum_ui" }
 rand = "0.10.0"

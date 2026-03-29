@@ -19,9 +19,11 @@ fn main() {
             canum_play::CanumPlayPlugin,
             canum_ui::CanumUiPlugin,
         ))
-        .add_systems(PostStartup, |mut commands: Commands| {
-            commands.insert_resource(avian2d::prelude::Gravity::ZERO);
-        })
+        .add_plugins((canum_s1::CanumS1Plugin,))
+        .insert_resource(Time::<Fixed>::from_hz(
+            canum_res::config::CONFIG.client.update_freq as f64,
+        ))
+        .insert_resource(avian2d::prelude::Gravity::ZERO)
         .add_systems(
             PreUpdate,
             |mut commands: Commands, mut flag: Local<bool>| {

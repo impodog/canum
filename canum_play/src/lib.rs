@@ -21,6 +21,7 @@ impl Plugin for CanumPlayPlugin {
             movements::MovementsPlugin,
             health::HealthPlugin,
             setup::SetupPlugin,
+            enemy::EnemyPlugin,
         ));
     }
 }

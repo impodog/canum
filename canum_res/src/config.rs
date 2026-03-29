@@ -29,12 +29,17 @@ pub struct Client {
     pub framerate: u32,
     #[serde(skip)]
     pub frame_duration: Duration,
+    pub update_freq: f32,
+    #[serde(skip)]
+    pub update_duration: f32,
 }
 impl Default for Client {
     fn default() -> Self {
         Self {
             framerate: 100,
             frame_duration: Duration::from_secs_f32(1.0 / 60.0),
+            update_freq: 64.0,
+            update_duration: 1.0 / 64.0,
         }
     }
 }
@@ -191,6 +196,7 @@ pub static CONFIG: LazyLock<Config> =
             );
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
+            config.client.update_duration = 1.0 / config.client.update_freq;
             config.assets = AssetsConfig::load(config.assets_path.clone());
             config
         }
