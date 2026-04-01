@@ -28,7 +28,7 @@ impl Default for IntegerHealth {
         Self {
             count: 6,
             invinc_order: 200,
-            invinc_time: 0.5,
+            invinc_time: 1.0,
         }
     }
 }

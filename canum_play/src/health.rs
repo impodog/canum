@@ -86,7 +86,7 @@ fn work_invincibility_timer(
 
 /// Marks if an entity is friendly to player.
 #[derive(Component, Default, Deref, DerefMut)]
-#[require(ActiveCollisionHooks::FILTER_PAIRS)]
+#[require(ActiveCollisionHooks::FILTER_PAIRS, CollisionEventsEnabled)]
 pub struct Friendly(pub bool);
 
 impl Friendly {
@@ -96,15 +96,25 @@ impl Friendly {
 
 /// This prevents friendly objects from interacting with each other.
 #[derive(SystemParam)]
-pub struct FriendlyHooks<'w, 's> {
+pub struct PhysicsHooks<'w, 's> {
     q_friendly: Query<'w, 's, &'static Friendly>,
+    q_no: Query<'w, 's, &'static crate::projectile::NoCollideBoundary>,
+    q_boundary: Query<'w, 's, &'static crate::setup::Boundaries>,
 }
-impl<'w, 's> CollisionHooks for FriendlyHooks<'w, 's> {
+impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
     fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
-        let Ok([friendly1, friendly2]) = self.q_friendly.get_many([collider1, collider2]) else {
-            return true;
-        };
-        friendly1.0 ^ friendly2.0
+        if let Ok([friendly1, friendly2]) = self.q_friendly.get_many([collider1, collider2]) {
+            if friendly1.0 == friendly2.0 {
+                return false;
+            }
+        }
+        if self.q_no.get(collider1).is_ok() && self.q_boundary.get(collider2).is_ok() {
+            return false;
+        }
+        if self.q_boundary.get(collider1).is_ok() && self.q_no.get(collider2).is_ok() {
+            return false;
+        }
+        true
     }
 }
 
@@ -121,13 +131,18 @@ pub struct ContactDamage {
 #[derive(Component, Debug, Deref, DerefMut, Default)]
 struct ProjectileContacted(BTreeSet<Entity>);
 
-fn init_contact_damage(commands: ParallelCommands, q_added: Query<Entity, Added<ContactDamage>>) {
-    q_added.par_iter().for_each(|entity| {
-        commands.command_scope(|mut commands| {
-            commands
-                .entity(entity)
-                .insert(ProjectileContacted::default());
-        });
+fn init_contact_damage(
+    commands: ParallelCommands,
+    q_added: Query<(Entity, &ContactDamage), Added<ContactDamage>>,
+) {
+    q_added.par_iter().for_each(|(entity, contact_damage)| {
+        if contact_damage.projectile {
+            commands.command_scope(|mut commands| {
+                commands
+                    .entity(entity)
+                    .insert(ProjectileContacted::default());
+            });
+        }
     });
 }
 

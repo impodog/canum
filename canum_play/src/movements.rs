@@ -7,7 +7,6 @@ impl Plugin for MovementsPlugin {
         app.add_systems(FixedUpdate, do_speed_shrink);
         app.add_systems(FixedPreUpdate, refresh_dash_timers);
         app.add_systems(FixedUpdate, perform_dash);
-        app.add_systems(FixedPostUpdate, remove_out_of_bound_projectiles);
         app.add_observer(start_dash);
     }
 }
@@ -126,34 +125,4 @@ fn perform_dash(
                 shields.remove(&Dash::SHIELD_ORDER);
             }
         });
-}
-
-/// Marks a projectile either by player or enemy.
-#[derive(Component, Debug, Default)]
-#[require(
-    crate::SessionOnly,
-    Transform,
-    Collider,
-    RigidBody::Kinematic,
-    crate::health::Friendly
-)]
-pub struct Projectile;
-
-fn remove_out_of_bound_projectiles(
-    commands: ParallelCommands,
-    q_projectile: Query<(Entity, &Transform), With<Projectile>>,
-) {
-    let virtual_size = (
-        CONFIG.display.virtual_size.0 as f32,
-        CONFIG.display.virtual_size.1 as f32,
-    );
-    q_projectile.par_iter().for_each(|(entity, transform)| {
-        if transform.translation.x.abs() > virtual_size.0
-            || transform.translation.y.abs() > virtual_size.1
-        {
-            commands.command_scope(|mut commands| {
-                commands.entity(entity).despawn();
-            });
-        }
-    });
 }

@@ -1,5 +1,6 @@
 /target
 *.aup3*
+*.mp3
 *.m4a
 *.fms
 *.rxrc

@@ -1,10 +1,11 @@
-mod prelude;
+pub mod prelude;
 
 pub mod controls;
 pub mod enemy;
 pub mod health;
 pub mod movements;
 pub mod player;
+pub mod projectile;
 pub mod setup;
 
 use bevy::prelude::*;
@@ -22,6 +23,7 @@ impl Plugin for CanumPlayPlugin {
             health::HealthPlugin,
             setup::SetupPlugin,
             enemy::EnemyPlugin,
+            projectile::ProjectilePlugin,
         ));
     }
 }

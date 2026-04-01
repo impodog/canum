@@ -1,0 +1,9 @@
+{
+  "sounds": {
+    "Apple_Damage": {
+      "path": "apple_damage.wav",
+      "loop_point": 0.0,
+      "volume": 0.8
+    }
+  }
+}

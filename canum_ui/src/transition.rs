@@ -1,5 +1,3 @@
-mod background;
-
 use std::time::Duration;
 
 use crate::prelude::*;
@@ -8,7 +6,6 @@ pub(super) struct TransitionPlugin;
 
 impl Plugin for TransitionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((background::BackgroundPlugin,));
         app.add_systems(FixedPostUpdate, (init_pure_color, work_pure_color).chain());
     }
 }

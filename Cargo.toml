@@ -8,7 +8,7 @@ resolver = "3"
 members = ["canum_*"]
 
 [dependencies]
-avian2d = { version = "0.6.0", default-features = false, features = [
+avian2d = { version = "0.6.1", default-features = false, features = [
   "default-collider",
   "2d",
   "debug-plugin",

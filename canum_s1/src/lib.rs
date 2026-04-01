@@ -1,9 +1,11 @@
-mod prelude;
+pub mod apple;
 
-use prelude::*;
+use canum_play::prelude::*;
 
 pub struct CanumS1Plugin;
 
 impl Plugin for CanumS1Plugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, app: &mut App) {
+        app.add_plugins((apple::ApplePlugin,));
+    }
 }

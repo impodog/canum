@@ -69,7 +69,7 @@ fn init_weapons(mut q_weapons: Query<&mut Weapons>, save: Res<Save>) {
 /// Marks a player-spawn projectile.
 #[derive(Component)]
 #[require(
-    crate::movements::Projectile,
+    crate::projectile::Projectile,
     crate::health::Friendly(true),
     crate::health::ContactDamage,
     Animation
@@ -166,6 +166,7 @@ fn filed_shoot(
             transform,
             Animation::new("Filed", filed.size),
             Collider::capsule(filed.size.x + 0.5, filed.size.y),
+            Mass(0.1),
             LinearVelocity(direction * filed.speed),
         ));
     }

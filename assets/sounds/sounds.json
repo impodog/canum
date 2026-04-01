@@ -1,1 +1,1 @@
-{ "include": ["player/player.json"] }
+{ "include": ["player/player.json", "gate/gate.json"] }
