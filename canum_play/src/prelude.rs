@@ -3,7 +3,7 @@ pub use avian2d::prelude::*;
 pub use bevy::{ecs::lifecycle::HookContext, prelude::*};
 pub use std::time::Duration;
 
-pub use canum_res::{Animation, config::CONFIG};
+pub use canum_res::{Animation, AnimationComplete, AnimationInform, config::CONFIG};
 pub use canum_save::Save;
 
 #[macro_export]

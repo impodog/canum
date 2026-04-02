@@ -13,16 +13,26 @@ pub(crate) struct LoadedSounds(HashMap<String, Handle<AudioSource>>);
 pub struct Sound {
     pub name: String,
     pub paused: bool,
+    pub base_volume: f32,
 }
 impl Sound {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             paused: false,
+            base_volume: 1.0,
         }
     }
     pub fn paused(mut self) -> Self {
         self.paused = true;
+        self
+    }
+    pub fn with_base_volume(mut self, base_volume: f32) -> Self {
+        self.base_volume = base_volume;
+        self
+    }
+    pub fn with_volume_multiply(mut self, factor: f32) -> Self {
+        self.base_volume *= factor;
         self
     }
 }
@@ -36,10 +46,12 @@ pub(super) fn start_playing_sound(
     let loaded = Mutex::new(loaded);
     q_sound.par_iter().for_each(|(entity, sound)| {
         let Some(details) = CONFIG.assets.sounds.get(&sound.name) else {
-            log::warn!(
-                "Unable to find sound named {}. No sound will play.",
-                sound.name
-            );
+            if sound.name != "Empty" {
+                log::warn!(
+                    "Unable to find sound named {}. No sound will play.",
+                    sound.name
+                );
+            }
             commands.command_scope(|mut commands| {
                 commands.entity(entity).despawn();
             });
@@ -100,12 +112,12 @@ pub struct FadeOut;
 
 pub(super) fn fade_in(
     mut commands: Commands,
-    mut q_sound: Query<(Entity, &mut FadeTimer, &mut AudioSink)>,
+    mut q_sound: Query<(Entity, &mut FadeTimer, &mut AudioSink, &Sound), With<FadeIn>>,
     time: Res<Time>,
 ) {
-    for (entity, mut timer, mut audio) in q_sound.iter_mut() {
+    for (entity, mut timer, mut audio, sound) in q_sound.iter_mut() {
         audio.set_volume(Volume::SILENT.fade_towards(
-            Volume::Linear(1.0),
+            Volume::Linear(sound.base_volume),
             timer.elapsed_secs() / timer.duration().as_secs_f32(),
         ));
         timer.tick(time.delta());
@@ -120,20 +132,17 @@ pub(super) fn fade_in(
 
 pub(super) fn fade_out(
     mut commands: Commands,
-    mut q_sound: Query<(Entity, &mut FadeTimer, &mut AudioSink)>,
+    mut q_sound: Query<(Entity, &mut FadeTimer, &mut AudioSink, &Sound), With<FadeOut>>,
     time: Res<Time>,
 ) {
-    for (entity, mut timer, mut audio) in q_sound.iter_mut() {
-        audio.set_volume(Volume::Linear(1.0).fade_towards(
-            Volume::Linear(1.0),
+    for (entity, mut timer, mut audio, sound) in q_sound.iter_mut() {
+        audio.set_volume(Volume::Linear(sound.base_volume).fade_towards(
+            Volume::SILENT,
             timer.elapsed_secs() / timer.duration().as_secs_f32(),
         ));
         timer.tick(time.delta());
         if timer.is_finished() {
-            commands
-                .entity(entity)
-                .remove::<FadeTimer>()
-                .remove::<FadeIn>();
+            commands.entity(entity).despawn();
         }
     }
 }

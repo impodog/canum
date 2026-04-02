@@ -3,6 +3,7 @@
     "Filed": { "path": "filed.wav", "loop_point": 0.0, "volume": 0.6 },
     "Dash": { "path": "dash.wav", "volume": 1.5 },
     "BasicHp_Damage": { "path": "basichp_damage.wav", "volume": 2.0 },
-    "Death": { "path": "death.wav", "volume": 1.5 }
+    "Death": { "path": "death.wav", "volume": 1.5 },
+    "Victory": { "path": "victory.wav", "volume": 1.0 }
   }
 }

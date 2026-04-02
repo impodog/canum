@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::time::Duration;
+use std::{sync::Mutex, time::Duration};
 
 pub(super) struct SpritePlugin;
 
@@ -57,8 +57,12 @@ fn convert_to_image_node(
     atlas: &canum_res::config::SpriteAtlas,
     layouts: &mut Assets<TextureAtlasLayout>,
     atlas_handles: &mut canum_res::AnimationAtlasHandles,
+    image_handles: &mut canum_res::AnimationImageHandles,
 ) -> ImageNode {
-    let image: Handle<Image> = asset_server.load(atlas.path.clone());
+    let image = image_handles
+        .entry(name.clone())
+        .or_insert_with(|| asset_server.load(atlas.path.clone()))
+        .clone();
     let layout = atlas_handles
         .entry(name)
         .or_insert_with(|| {
@@ -97,6 +101,7 @@ fn modify_animation(
     asset_server: Res<AssetServer>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut atlas_handles: ResMut<canum_res::AnimationAtlasHandles>,
+    mut image_handles: ResMut<canum_res::AnimationImageHandles>,
 ) {
     let default_image = CONFIG
         .assets
@@ -110,11 +115,13 @@ fn modify_animation(
                 sprite,
                 &mut layouts,
                 &mut atlas_handles,
+                &mut image_handles,
             )
         })
         .unwrap_or_default();
+    let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     query
-        .iter_mut()
+        .par_iter_mut()
         .for_each(|(animation, mut image_node, mut clock, mut visibility)| {
             if animation.name.is_empty() {
                 *visibility = Visibility::Hidden;
@@ -130,13 +137,18 @@ fn modify_animation(
                 return;
             }
             let atlas = &config[rand::random_range(0..config.len())];
-            *image_node = convert_to_image_node(
-                animation.name.clone(),
-                &asset_server,
-                atlas,
-                &mut layouts,
-                &mut atlas_handles,
-            );
+            {
+                let mut guard = mutex.lock().unwrap();
+                let (layouts, atlas_handles, image_handles) = &mut *guard;
+                *image_node = convert_to_image_node(
+                    animation.name.clone(),
+                    &asset_server,
+                    atlas,
+                    layouts,
+                    atlas_handles,
+                    image_handles,
+                );
+            }
             if let Some(pause) = animation.pause {
                 clock.timer = Timer::default();
                 clock.timer.finish();

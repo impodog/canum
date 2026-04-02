@@ -1,6 +1,7 @@
 pub mod attack;
 pub mod failure;
 pub mod health;
+pub mod victory;
 
 use rand::seq::IndexedRandom;
 
@@ -17,6 +18,7 @@ impl Plugin for PlayerPlugin {
             attack::PlayerAttackPlugin,
             health::PlayerHealthPlugin,
             failure::FailurePlugin,
+            victory::VictoryPlugin,
         ));
     }
 }

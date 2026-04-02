@@ -4,6 +4,16 @@
       "path": "apple_damage.wav",
       "loop_point": 0.0,
       "volume": 0.8
+    },
+    "Apple_Defeat": {
+      "path": "apple_defeat.wav",
+      "loop_point": 0.0,
+      "volume": 1.0
+    },
+    "Apple_Bgm": {
+      "path": "apple_bgm.mp3",
+      "loop_point": 0.0,
+      "volume": 0.5
     }
   }
 }

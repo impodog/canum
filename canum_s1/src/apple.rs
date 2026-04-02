@@ -4,6 +4,7 @@ use canum_play::prelude::*;
 
 mod background;
 mod behaviors;
+mod defeat;
 
 pub(super) struct ApplePlugin;
 
@@ -11,7 +12,11 @@ static APPLE_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Appl
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((background::BackgroundPlugin, behaviors::BehaviorsPlugin));
+        app.add_plugins((
+            background::BackgroundPlugin,
+            behaviors::BehaviorsPlugin,
+            defeat::DefeatPlugin,
+        ));
         app.add_observer(spawn_apple);
         app.world_mut()
             .register_component_hooks::<AppleBoss>()
@@ -26,7 +31,7 @@ impl Plugin for ApplePlugin {
 /// Main marker for the apple boss.
 #[derive(Component, Default)]
 #[require(
-    Animation::new("AppleStatic", Vec2::new(64.0, 64.0)),
+    Animation::new("Apple_Static", Vec2::new(64.0, 64.0)),
     Transform::from_translation(Vec3::new(-10.0, 150.0, 14.37)),
     RigidBody::Dynamic,
     Collider::circle(20.0),
@@ -36,11 +41,17 @@ impl Plugin for ApplePlugin {
     health::Friendly(false),
     health::ContactDamage { value: 100, projectile: false, order: 100 },
     movements::SpeedDecay(0.5),
-    enemy::health::EnemyHealth::new(7000),
+    enemy::health::EnemyHealth::new(1000),
     enemy::health::DamageSound::new("Apple_Damage"),
+    player::victory::DefeatToWin::default(),
+    defeat::AppleDefeat,
 )]
 pub struct AppleBoss;
 
 fn spawn_apple(_event: On<background::AppleTreeBackgroundChanged>, mut commands: Commands) {
     commands.spawn((AppleBoss,));
+    commands.spawn((
+        canum_res::sound::Music,
+        canum_res::sound::Sound::new("Apple_Bgm"),
+    ));
 }

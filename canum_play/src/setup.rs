@@ -8,6 +8,7 @@ impl Plugin for SetupPlugin {
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
         app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
+        app.register_required_components::<canum_res::sound::Music, crate::SessionOnly>();
         app.add_observer(setup_session);
         app.init_state::<PlayState>().init_state::<Fight>();
         app.add_systems(PreUpdate, tick_fight_time);
@@ -15,6 +16,8 @@ impl Plugin for SetupPlugin {
             FixedLast,
             wait_for_cutscene.run_if(in_state(crate::setup::PlayState::Cutscene)),
         );
+        app.add_observer(change_music_when_win)
+            .add_observer(change_music_when_lose);
     }
 }
 
@@ -195,5 +198,28 @@ fn wait_for_cutscene(
         && q_wait.iter().next().is_none()
     {
         commands.trigger(cutscene_next.event.clone());
+    }
+}
+
+fn change_music_when_win(
+    _event: On<crate::player::victory::PlayerWin>,
+    q_music: Query<Entity, With<canum_res::sound::Music>>,
+    commands: Commands,
+) {
+    change_music_when_win_or_lose(q_music, commands);
+}
+fn change_music_when_lose(
+    _event: On<crate::player::failure::PlayerFail>,
+    q_music: Query<Entity, With<canum_res::sound::Music>>,
+    commands: Commands,
+) {
+    change_music_when_win_or_lose(q_music, commands);
+}
+fn change_music_when_win_or_lose(
+    q_music: Query<Entity, With<canum_res::sound::Music>>,
+    mut commands: Commands,
+) {
+    for entity in q_music.iter() {
+        commands.entity(entity).insert(canum_res::sound::FadeOut);
     }
 }

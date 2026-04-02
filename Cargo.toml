@@ -19,8 +19,9 @@ avian2d = { version = "0.6.1", default-features = false, features = [
 bevy = { version = "0.18.1", default-features = false, features = [
   "2d",
   "debug",
+  "mp3",
   "multi_threaded",
-  "wav",
+  "wav"
 ] }
 canum_fx = { path = "canum_fx" }
 canum_play = { path = "canum_play" }

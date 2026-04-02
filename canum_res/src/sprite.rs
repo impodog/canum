@@ -1,6 +1,6 @@
 use crate::config;
 use bevy::prelude::*;
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, sync::Mutex, time::Duration};
 
 #[derive(Debug, Clone, Component)]
 #[require(AnimationClock, Sprite)]
@@ -11,11 +11,20 @@ pub struct Animation {
     pub once: bool,
     pub color: Color,
     pub visibility: Visibility,
+    pub inform: Option<AnimationInform>,
 }
 #[derive(Default, Debug, Component)]
 pub(crate) struct AnimationClock {
     timer: Timer,
     total: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct AnimationInform {
+    /// The entity to send `AnimationComplete` to.
+    pub entity: Entity,
+    /// The frame indices to send the event. If the index is 0 or out of bounds, the event will be sent after the last frame.
+    pub index: Vec<usize>,
 }
 
 impl Animation {
@@ -28,9 +37,10 @@ impl Animation {
             once: false,
             color: Color::default(),
             visibility: Visibility::default(),
+            inform: None,
         }
     }
-    /// Creates a once-animation. This sends itself `AnimationComplete` after complete playing.
+    /// Creates a once-animation. This sends `self.inform` `AnimationComplete` after complete playing, if any.
     pub fn once(mut self) -> Self {
         self.once = true;
         self
@@ -43,6 +53,23 @@ impl Animation {
         self.visibility = visibility;
         self
     }
+    /// Informs this entity with `AnimationComplete` after the animation is played at a specific index.
+    pub fn with_inform(mut self, inform: AnimationInform) -> Self {
+        self.inform = Some(inform);
+        self
+    }
+
+    /// Replace the animation with another one, with only common changeable fields.
+    pub fn replace(
+        &mut self,
+        name: impl Into<String>,
+        once: bool,
+        inform: Option<AnimationInform>,
+    ) {
+        self.name = name.into();
+        self.once = once;
+        self.inform = inform;
+    }
 }
 impl Default for Animation {
     fn default() -> Self {
@@ -53,14 +80,23 @@ impl Default for Animation {
 #[derive(Resource, Default, Debug, Deref, DerefMut)]
 pub struct AnimationAtlasHandles(HashMap<String, Handle<TextureAtlasLayout>>);
 
+#[derive(Resource, Default, Debug, Deref, DerefMut)]
+pub struct AnimationImageHandles(HashMap<String, Handle<Image>>);
+
 fn convert_to_sprite(
+    sprite: &mut Sprite,
     name: String,
     asset_server: &AssetServer,
     atlas: &crate::config::SpriteAtlas,
     layouts: &mut Assets<TextureAtlasLayout>,
     atlas_handles: &mut AnimationAtlasHandles,
-) -> Sprite {
-    let image: Handle<Image> = asset_server.load(atlas.path.clone());
+    image_handles: &mut AnimationImageHandles,
+) {
+    let image = image_handles
+        .entry(name.clone())
+        .or_insert_with(|| asset_server.load(atlas.path.clone()))
+        .clone();
+    sprite.image = image;
     let layout = atlas_handles
         .0
         .entry(name)
@@ -80,11 +116,7 @@ fn convert_to_sprite(
             ))
         })
         .clone();
-    Sprite {
-        image,
-        texture_atlas: Some(TextureAtlas { layout, index: 0 }),
-        ..Default::default()
-    }
+    sprite.texture_atlas = Some(TextureAtlas { layout, index: 0 });
 }
 
 pub(crate) fn modify_animation(
@@ -100,28 +132,32 @@ pub(crate) fn modify_animation(
     asset_server: Res<AssetServer>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut atlas_handles: ResMut<AnimationAtlasHandles>,
+    mut image_handles: ResMut<AnimationImageHandles>,
 ) {
-    let default_sprite = config::CONFIG
+    let mut default_sprite = Sprite::default();
+    config::CONFIG
         .assets
         .sprites
         .get("Empty")
         .and_then(|sprites| sprites.first())
-        .map(|sprite| {
+        .inspect(|sprite_atlas| {
             convert_to_sprite(
+                &mut default_sprite,
                 "Empty".to_owned(),
                 &asset_server,
-                sprite,
+                sprite_atlas,
                 &mut layouts,
                 &mut atlas_handles,
+                &mut image_handles,
             )
-        })
-        .unwrap_or_default();
+        });
+    let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     query
-        .iter_mut()
+        .par_iter_mut()
         .for_each(|(animation, mut sprite, mut clock, mut visibility)| {
             if animation.name.is_empty() {
                 *visibility = Visibility::Hidden;
-            } else {
+            } else if *visibility != animation.visibility {
                 *visibility = animation.visibility;
             }
             let Some(config) = config::CONFIG.assets.sprites.get(&animation.name) else {
@@ -133,13 +169,19 @@ pub(crate) fn modify_animation(
                 return;
             }
             let atlas = &config[rand::random_range(0..config.len())];
-            *sprite = convert_to_sprite(
-                animation.name.clone(),
-                &asset_server,
-                atlas,
-                &mut layouts,
-                &mut atlas_handles,
-            );
+            {
+                let mut guard = mutex.lock().unwrap();
+                let (layouts, atlas_handles, image_handles) = &mut *guard;
+                convert_to_sprite(
+                    sprite.as_mut(),
+                    animation.name.clone(),
+                    &asset_server,
+                    atlas,
+                    layouts,
+                    atlas_handles,
+                    image_handles,
+                );
+            }
             sprite.color = animation.color;
             sprite.custom_size = Some(animation.size * animation.scale);
             clock.timer = Timer::new(
@@ -150,8 +192,12 @@ pub(crate) fn modify_animation(
         });
 }
 
-#[derive(EntityEvent, Deref, DerefMut)]
-pub struct AnimationComplete(pub Entity);
+#[derive(EntityEvent, Debug, Clone)]
+pub struct AnimationComplete {
+    pub entity: Entity,
+    pub source: Entity,
+    pub index: usize,
+}
 
 pub(crate) fn tick_animation(
     commands: ParallelCommands,
@@ -169,12 +215,23 @@ pub(crate) fn tick_animation(
                 if next_index != 0 || !animation.once {
                     texture_atlas.index = next_index;
                 } else {
-                    commands.command_scope(|mut commands| {
-                        commands.trigger(AnimationComplete(entity));
-                    });
                     // Prevents clock from triggering again.
                     clock.timer = Timer::default();
                     clock.timer.finish();
+                }
+                if let Some(ref inform) = animation.inform {
+                    for index in inform.index.iter().copied() {
+                        let after_last = index == 0 || index >= clock.total;
+                        if (after_last && next_index == 0) || index == next_index {
+                            commands.command_scope(|mut commands| {
+                                commands.trigger(AnimationComplete {
+                                    entity: inform.entity,
+                                    source: entity,
+                                    index,
+                                });
+                            });
+                        }
+                    }
                 }
             }
         });
