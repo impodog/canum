@@ -154,6 +154,7 @@ fn setup_session(
         }
     };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
+    commands.insert_resource(crate::player::RandomPlayer(player));
 
     commands.trigger(PostStartSession {
         fight: event.fight.clone(),

@@ -1,6 +1,8 @@
 pub mod attack;
 pub mod health;
 
+use rand::seq::IndexedRandom;
+
 use crate::prelude::*;
 
 pub(super) struct PlayerPlugin;
@@ -9,6 +11,7 @@ impl Plugin for PlayerPlugin {
         app.add_observer(respond_player_move);
         app.add_systems(FixedPreUpdate, init_player_acc);
         app.add_systems(FixedPostUpdate, decay_player_acc);
+        app.add_systems(FixedFirst, randomize_player);
         app.add_plugins((attack::PlayerAttackPlugin, health::PlayerHealthPlugin));
     }
 }
@@ -34,6 +37,10 @@ pub struct Player;
 /// Stores which player can be directly controled.
 #[derive(Resource, Debug, Deref, DerefMut)]
 pub struct PrimaryPlayer(pub Entity);
+
+/// Randomizes every once in a while. Used for bosses to determine the attack target.
+#[derive(Resource, Debug, Deref, DerefMut)]
+pub struct RandomPlayer(pub Entity);
 
 /// Stores the shooting direction the player is facing.
 #[derive(Component, Default, Debug)]
@@ -151,4 +158,30 @@ fn respond_player_move(
         }
     }
     Ok(())
+}
+
+#[derive(Deref, DerefMut)]
+struct RandomizeTimer(Timer);
+impl Default for RandomizeTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(1.0, TimerMode::Repeating))
+    }
+}
+
+fn randomize_player(
+    random_player: Option<ResMut<RandomPlayer>>,
+    q_player: Query<Entity, With<Player>>,
+    mut timer: Local<RandomizeTimer>,
+    time: Res<Time>,
+) {
+    let Some(mut random_player) = random_player else {
+        return;
+    };
+    timer.tick(time.delta());
+    if timer.just_finished() {
+        let players = q_player.iter().collect::<Vec<_>>();
+        if let Some(player) = players.choose(&mut rand::rng()) {
+            random_player.0 = *player;
+        }
+    }
 }

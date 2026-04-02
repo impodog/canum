@@ -1,5 +1,3 @@
-use bevy::ecs::lifecycle::HookContext;
-
 use crate::health::*;
 use crate::prelude::*;
 
@@ -35,9 +33,9 @@ impl Default for IntegerHealth {
 fn integer_take_damage(
     event: On<Damage>,
     mut commands: Commands,
-    mut q_health: Query<(&mut IntegerHealth, &mut Shields, &GlobalTransform)>,
+    mut q_health: Query<(&mut IntegerHealth, &mut Shields)>,
 ) -> Result<()> {
-    let (mut health, mut shields, global_transform) = q_health.get_mut(event.entity)?;
+    let (mut health, mut shields) = q_health.get_mut(event.entity)?;
     let damage = shields.take_damage(event.value, event.order);
     if damage <= 0 {
         return Ok(());

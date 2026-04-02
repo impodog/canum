@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 use canum_play::prelude::*;
 
 mod background;
+mod behaviors;
 
 pub(super) struct ApplePlugin;
 
@@ -10,8 +11,15 @@ static APPLE_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Appl
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((background::BackgroundPlugin,));
+        app.add_plugins((background::BackgroundPlugin, behaviors::BehaviorsPlugin));
         app.add_observer(spawn_apple);
+        app.world_mut()
+            .register_component_hooks::<AppleBoss>()
+            .on_add(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .spawn((ChildOf(entity), behaviors::AppleBehaviors));
+            });
     }
 }
 
@@ -27,6 +35,7 @@ impl Plugin for ApplePlugin {
     Restitution::new(0.5),
     health::Friendly(false),
     health::ContactDamage { value: 100, projectile: false, order: 100 },
+    enemy::movements::SpeedDecay(0.5),
     enemy::health::EnemyHealth::new(7000),
     enemy::health::DamageSound::new("Apple_Damage"),
 )]
