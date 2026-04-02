@@ -58,7 +58,7 @@ fn change_background_apple_tree(
             Animation::new("Apple_TreeBoss", CONFIG.display.screen_size)
                 .with_color(Color::default().with_alpha(0.6))
                 .with_visibility(Visibility::Hidden),
-            canum_ui::transition::PureColor {
+            canum_fx::transition::PureColor {
                 destroy: previous,
                 color: Color::linear_rgb(0.5, 0.5, 0.5),
                 duration: Duration::from_secs_f32(1.0),
@@ -73,7 +73,7 @@ fn trigger_background_changed(
     mut commands: Commands,
     changed: Option<Res<AppleTreeChanged>>,
     event_sent: Option<ResMut<BackgroundChangeEventSent>>,
-    q_transition: Query<(), With<canum_ui::transition::PureColor>>,
+    q_transition: Query<(), With<canum_fx::transition::PureColor>>,
 ) {
     let Some(mut event_sent) = event_sent else {
         return;

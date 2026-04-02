@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 avian2d = "0.6.1"
 bevy = { version = "0.18.1", default-features = false }
+canum_fx = { path = "../canum_fx" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }

@@ -18,6 +18,7 @@ fn main() {
             canum_save::CanumSavePlugin,
             canum_play::CanumPlayPlugin,
             canum_ui::CanumUiPlugin,
+            canum_fx::CanumFxPlugin,
         ))
         .add_plugins((canum_s1::CanumS1Plugin,))
         .insert_resource(Time::<Fixed>::from_hz(

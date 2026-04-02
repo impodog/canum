@@ -35,9 +35,9 @@ impl Default for IntegerHealth {
 fn integer_take_damage(
     event: On<Damage>,
     mut commands: Commands,
-    mut q_health: Query<(&mut IntegerHealth, &mut Shields)>,
+    mut q_health: Query<(&mut IntegerHealth, &mut Shields, &GlobalTransform)>,
 ) -> Result<()> {
-    let (mut health, mut shields) = q_health.get_mut(event.entity)?;
+    let (mut health, mut shields, global_transform) = q_health.get_mut(event.entity)?;
     let damage = shields.take_damage(event.value, event.order);
     if damage <= 0 {
         return Ok(());
@@ -48,5 +48,14 @@ fn integer_take_damage(
         InvincibilityTimer::new(health.invinc_time, health.invinc_order),
     ));
     commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
+    commands.spawn((
+        ChildOf(event.entity),
+        canum_fx::splash::Splash {
+            color: Color::linear_rgba(0.0, 1.0, 1.0, 0.3),
+            duration: std::time::Duration::from_secs_f32(0.2),
+            number: 10,
+        },
+    ));
+
     Ok(())
 }

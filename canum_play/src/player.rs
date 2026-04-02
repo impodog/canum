@@ -20,7 +20,7 @@ impl Plugin for PlayerPlugin {
     RigidBody::Dynamic,
     Collider::circle(10.0),
     Mass(1.0),
-    Restitution::new(0.2),
+    Restitution::new(1.0),
     CollisionEventsEnabled,
     PlayerShoot,
     PlayerAcc,

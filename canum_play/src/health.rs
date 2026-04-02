@@ -8,7 +8,7 @@ pub(super) struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedPostUpdate, (work_invincibility_timer,));
-        app.add_systems(FixedUpdate, deal_contact_damage);
+        app.add_systems(FixedPreUpdate, deal_contact_damage);
         app.add_systems(FixedPostUpdate, init_contact_damage);
     }
 }

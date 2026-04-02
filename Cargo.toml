@@ -22,6 +22,7 @@ bevy = { version = "0.18.1", default-features = false, features = [
   "multi_threaded",
   "wav",
 ] }
+canum_fx = { path = "canum_fx" }
 canum_play = { path = "canum_play" }
 canum_res = { path = "canum_res" }
 canum_s1 = { path = "canum_s1" }
