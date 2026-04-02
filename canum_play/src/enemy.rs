@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+pub mod attack;
 pub mod behavior;
 pub mod health;
 pub mod movements;
@@ -12,6 +13,7 @@ impl Plugin for EnemyPlugin {
             movements::MovementsPlugin,
             health::HealthPlugin,
             behavior::BehaviorPlugin,
+            attack::AttackPlugin,
         ));
     }
 }

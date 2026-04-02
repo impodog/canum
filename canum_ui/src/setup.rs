@@ -14,11 +14,14 @@ fn setup_ui(
     mut commands: Commands,
 ) {
     let root = commands
-        .spawn(Node {
-            width: percent(100),
-            height: percent(100),
-            ..default()
-        })
+        .spawn((
+            Node {
+                width: percent(100),
+                height: percent(100),
+                ..default()
+            },
+            canum_play::SessionOnly,
+        ))
         .id();
     let left_top = commands
         .spawn((

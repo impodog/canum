@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "AppleStatic": [{ "path": "apple.png", "count": 2, "interval": 500 }]
+    "AppleStatic": [{ "path": "apple.png", "count": 2, "interval": 500 }],
+    "Apple_Slice": [{ "path": "slice.png", "count": 4, "interval": 100 }]
   }
 }

@@ -7,9 +7,14 @@ impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
+        app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
         app.add_observer(setup_session);
         app.init_state::<PlayState>().init_state::<Fight>();
         app.add_systems(PreUpdate, tick_fight_time);
+        app.add_systems(
+            FixedLast,
+            wait_for_cutscene.run_if(in_state(crate::setup::PlayState::Cutscene)),
+        );
     }
 }
 
@@ -17,6 +22,7 @@ impl Plugin for SetupPlugin {
 pub enum PlayState {
     #[default]
     Play,
+    Cutscene,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deref, DerefMut)]
@@ -25,12 +31,12 @@ pub struct Fight(pub String);
 #[derive(Resource, Debug, Default, Deref, DerefMut)]
 pub struct FightTime(pub Stopwatch);
 
-#[derive(Event, Debug)]
+#[derive(Event, Debug, Clone)]
 pub struct StartSession {
     pub fight: String,
 }
 /// Sent after responding to `StartSession` with extra information, used for spawning UIs.
-#[derive(Event, Debug)]
+#[derive(Event, Debug, Clone)]
 pub struct PostStartSession {
     pub fight: String,
     pub health_entity: Entity,
@@ -169,4 +175,25 @@ fn setup_session(
 
 fn tick_fight_time(time: Res<Time>, mut fight_time: ResMut<FightTime>) {
     fight_time.tick(time.delta());
+}
+
+#[derive(Resource, Debug, Clone)]
+pub struct CutsceneNext {
+    pub event: StartSession,
+}
+
+/// Instructs the cutscene state to wait for all these entities to despawn, then the next session may load.
+#[derive(Component, Default)]
+pub struct CutsceneWait;
+
+fn wait_for_cutscene(
+    mut commands: Commands,
+    cutscene_next: Option<Res<CutsceneNext>>,
+    q_wait: Query<(), With<CutsceneWait>>,
+) {
+    if let Some(cutscene_next) = cutscene_next
+        && q_wait.iter().next().is_none()
+    {
+        commands.trigger(cutscene_next.event.clone());
+    }
 }

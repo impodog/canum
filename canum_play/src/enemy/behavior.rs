@@ -37,21 +37,13 @@ pub struct BehaveEnd {
 #[derive(Component, Debug, Clone, Default)]
 #[require(BehaviorManagerInfo, Transform)]
 pub struct BehaviorManager {
-    /// The probability to start another behavior.
-    pub activity: f64,
     /// The target that all behaviors affect. Defaults to the parent of the manager.
     pub target: Option<Entity>,
 }
 impl BehaviorManager {
     /// Manages the parent entity, with activity settings.
-    pub fn new(activity: f64) -> Self {
-        if !activity.is_finite() || activity <= 0.0 || activity > 1.0 {
-            panic!("Behavior activity must be in (0.0, 1.0]. {activity} given.")
-        }
-        Self {
-            activity,
-            target: None,
-        }
+    pub fn new() -> Self {
+        Self { target: None }
     }
 }
 
@@ -82,9 +74,6 @@ fn start_behavior(
                 return;
             }
             info.cooldown = Default::default();
-            if !rand::random_bool(manager.activity) {
-                return;
-            }
             let mut behaviors = Vec::new();
             for child in children.iter() {
                 let Ok((behavior, weight)) = q_behavior.get(child) else {
@@ -182,6 +171,18 @@ impl Behavior {
         }
     }
 
+    pub fn new_with_cooldown<T>(
+        name: impl Into<String>,
+        default_weight: f32,
+        occupies: impl IntoIterator<Item = T>,
+        cooldown: Duration,
+    ) -> Self
+    where
+        T: Into<String>,
+    {
+        Self::new(name, default_weight, occupies).with_cooldown(cooldown)
+    }
+
     pub fn with_cooldown(mut self, cooldown: Duration) -> Self {
         self.cooldown = Some(cooldown);
         self
@@ -215,12 +216,12 @@ fn init_behavior_weights(mut q_behavior: Query<(&Behavior, &mut Weight)>) {
 pub struct PlayerAveragePosition(pub Vec2);
 fn update_player_average_position(
     mut position: ResMut<PlayerAveragePosition>,
-    q_player: Query<&Transform, With<crate::player::Player>>,
+    q_player: Query<&GlobalTransform, With<crate::player::Player>>,
 ) {
     let mut center = Vec2::ZERO;
     let mut count = 0;
     for transform in q_player.iter() {
-        center += transform.translation.xy();
+        center += transform.translation().xy();
         count += 1;
     }
     if count > 0 {
@@ -232,6 +233,7 @@ fn update_player_average_position(
 /// Decides weight base by distance to the player.
 /// This uses gaussian probability.
 #[derive(Component, Debug, Default)]
+#[require(Transform)]
 pub struct BaseByDistance {
     pub mean: f32,
     pub deviation: f32,
@@ -242,13 +244,16 @@ impl BaseByDistance {
     }
 }
 fn base_by_distance(
-    mut q_behavior: Query<(&mut Weight, &BaseByDistance, &Transform)>,
+    mut q_behavior: Query<(&mut Weight, &BaseByDistance, &GlobalTransform)>,
     average_position: Res<PlayerAveragePosition>,
 ) {
     q_behavior
         .par_iter_mut()
-        .for_each(|(mut weight, modifier, transform)| {
-            let distance = transform.translation.xy().distance(**average_position);
+        .for_each(|(mut weight, modifier, global_transform)| {
+            let distance = global_transform
+                .translation()
+                .xy()
+                .distance(**average_position);
             weight.base = std::f32::consts::E
                 .powf(-(distance - modifier.mean).squared() * 0.5 / modifier.deviation.squared());
         });
@@ -257,6 +262,7 @@ fn base_by_distance(
 /// The farther the player is, the more likely this will player.
 /// This uses inverse function.
 #[derive(Component, Debug, Default)]
+#[require(Transform)]
 pub struct BaseFartherBetter {
     /// The probability increases from 0.0, after distance > `start`.
     pub start: f32,
@@ -268,13 +274,16 @@ impl BaseFartherBetter {
     }
 }
 fn base_farther_better(
-    mut q_behavior: Query<(&mut Weight, &BaseFartherBetter, &Transform)>,
+    mut q_behavior: Query<(&mut Weight, &BaseFartherBetter, &GlobalTransform)>,
     average_position: Res<PlayerAveragePosition>,
 ) {
     q_behavior
         .par_iter_mut()
-        .for_each(|(mut weight, modifier, transform)| {
-            let distance = transform.translation.xy().distance(**average_position);
+        .for_each(|(mut weight, modifier, global_transform)| {
+            let distance = global_transform
+                .translation()
+                .xy()
+                .distance(**average_position);
             if distance >= modifier.start {
                 weight.base =
                     1.0 - 1.0 / ((distance - modifier.start) / modifier.unit_length + 1.0);

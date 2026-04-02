@@ -41,19 +41,23 @@ fn integer_take_damage(
         return Ok(());
     }
     health.count = health.count.saturating_sub(1);
-    commands.spawn((
-        ChildOf(event.entity),
-        InvincibilityTimer::new(health.invinc_time, health.invinc_order),
-    ));
     commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
-    commands.spawn((
-        ChildOf(event.entity),
-        canum_fx::splash::Splash {
-            color: Color::linear_rgba(0.0, 1.0, 1.0, 0.3),
-            duration: std::time::Duration::from_secs_f32(0.2),
-            number: 10,
-        },
-    ));
+    if health.count > 0 {
+        commands.spawn((
+            ChildOf(event.entity),
+            InvincibilityTimer::new(health.invinc_time, health.invinc_order),
+        ));
+        commands.spawn((
+            ChildOf(event.entity),
+            canum_fx::splash::Splash {
+                color: Color::linear_rgba(0.0, 1.0, 1.0, 0.3),
+                duration: std::time::Duration::from_secs_f32(0.2),
+                number: 10,
+            },
+        ));
+    } else {
+        commands.trigger(super::failure::PlayerFail);
+    }
 
     Ok(())
 }

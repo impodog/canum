@@ -1,3 +1,4 @@
+use crate::movements::*;
 use crate::prelude::*;
 
 use bevy::ecs::lifecycle::HookContext;
@@ -17,50 +18,7 @@ impl Plugin for MovementsPlugin {
                 });
             });
         app.add_systems(FixedUpdate, (work_displacement,));
-        app.add_systems(FixedLast, (update_forced_velocity, speed_decay).chain());
     }
-}
-
-/// Marks this entity to decrease speed gradually, for the part minus forced velocity.
-#[derive(Component, Debug, Clone)]
-#[require(ForcedVelocity)]
-pub struct SpeedDecay(pub f32);
-impl Default for SpeedDecay {
-    fn default() -> Self {
-        Self(0.5)
-    }
-}
-
-#[derive(Component, Debug, Clone, Default, Deref, DerefMut)]
-#[require(LinearVelocity, PrevForcedVelocity)]
-pub struct ForcedVelocity(pub Vec2);
-
-#[derive(Component, Debug, Clone, Default)]
-struct PrevForcedVelocity(Vec2);
-
-fn update_forced_velocity(
-    mut q_forced: Query<(
-        Ref<ForcedVelocity>,
-        &mut LinearVelocity,
-        &mut PrevForcedVelocity,
-    )>,
-) {
-    q_forced
-        .par_iter_mut()
-        .for_each(|(forced, mut linear_velocity, mut prev)| {
-            if forced.is_changed() {
-                linear_velocity.0 += forced.0 - prev.0;
-                prev.0 = forced.0;
-            }
-        });
-}
-fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedVelocity)>) {
-    q_velocity
-        .par_iter_mut()
-        .for_each(|(decay, mut linear_velocity, forced)| {
-            let amount = (linear_velocity.0 - forced.0) * decay.0;
-            linear_velocity.0 -= amount;
-        });
 }
 
 #[derive(Component, Debug, Clone, Default)]
@@ -92,8 +50,7 @@ fn work_displacement(
     time: Res<Time>,
 ) {
     fn derivative(value: f32) -> f32 {
-        (QuadraticInOutCurve.sample(value + 1e-6).unwrap()
-            - QuadraticInOutCurve.sample(value).unwrap())
+        (QuadraticOutCurve.sample(value + 1e-6).unwrap() - QuadraticOutCurve.sample(value).unwrap())
             / 1e-6
     }
     q_displacement.par_iter_mut().for_each(

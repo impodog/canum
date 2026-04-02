@@ -30,3 +30,10 @@ macro_rules! add_observer_hook {
             );
     };
 }
+
+pub fn rand_normal(mean: f32, std_dev: f32) -> f32 {
+    use rand_distr::Distribution;
+    rand_distr::Normal::new(mean, std_dev)
+        .unwrap()
+        .sample(&mut rand::rng())
+}

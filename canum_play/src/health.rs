@@ -86,7 +86,11 @@ fn work_invincibility_timer(
 
 /// Marks if an entity is friendly to player.
 #[derive(Component, Default, Deref, DerefMut)]
-#[require(ActiveCollisionHooks::FILTER_PAIRS, CollisionEventsEnabled)]
+#[require(
+    ActiveCollisionHooks::FILTER_PAIRS,
+    CollisionEventsEnabled,
+    crate::SessionOnly
+)]
 pub struct Friendly(pub bool);
 
 impl Friendly {
@@ -100,9 +104,14 @@ pub struct PhysicsHooks<'w, 's> {
     q_friendly: Query<'w, 's, &'static Friendly>,
     q_no: Query<'w, 's, &'static crate::projectile::NoCollideBoundary>,
     q_boundary: Query<'w, 's, &'static crate::setup::Boundaries>,
+    q_projectile: Query<'w, 's, &'static crate::projectile::Projectile>,
 }
 impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
     fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
+        if self.q_projectile.get_many([collider1, collider2]).is_ok() {
+            return false;
+        }
+        #[allow(clippy::collapsible_if)]
         if let Ok([friendly1, friendly2]) = self.q_friendly.get_many([collider1, collider2]) {
             if friendly1.0 == friendly2.0 {
                 return false;

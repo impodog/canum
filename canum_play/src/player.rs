@@ -1,4 +1,5 @@
 pub mod attack;
+pub mod failure;
 pub mod health;
 
 use rand::seq::IndexedRandom;
@@ -12,7 +13,11 @@ impl Plugin for PlayerPlugin {
         app.add_systems(FixedPreUpdate, init_player_acc);
         app.add_systems(FixedPostUpdate, decay_player_acc);
         app.add_systems(FixedFirst, randomize_player);
-        app.add_plugins((attack::PlayerAttackPlugin, health::PlayerHealthPlugin));
+        app.add_plugins((
+            attack::PlayerAttackPlugin,
+            health::PlayerHealthPlugin,
+            failure::FailurePlugin,
+        ));
     }
 }
 
@@ -114,8 +119,8 @@ fn decay_player_acc(
             let diff = wrap_angle(target_rotation - current_rotation);
             if diff.abs() > 1e-2 {
                 let base = linear_velocity.length() / 100.0
-                    * (15.0f32)
-                    * (diff.abs() / std::f32::consts::PI + 0.05);
+                    * (40.0f32)
+                    * (diff.abs() / std::f32::consts::PI + 0.01);
                 if (0.0..std::f32::consts::PI).contains(&diff) {
                     angular_velocity.0 = base;
                 } else {

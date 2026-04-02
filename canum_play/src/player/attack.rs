@@ -162,10 +162,15 @@ fn filed_shoot(
             ));
         commands.spawn((
             PlayerProjectile,
+            crate::health::ContactDamage {
+                value: filed.damage,
+                projectile: true,
+                order: filed.order,
+            },
             transform,
             Animation::new("Filed", filed.size),
             Collider::capsule(filed.size.x + 0.5, filed.size.y),
-            Mass(0.1),
+            Mass(0.25),
             LinearVelocity(direction * filed.speed),
         ));
     }

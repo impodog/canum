@@ -10,3 +10,4 @@ canum_fx = { path = "../canum_fx" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
 rand = "0.10.0"
+rand_distr = "0.6.0"
