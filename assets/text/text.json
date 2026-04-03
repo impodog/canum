@@ -1,0 +1,11 @@
+{
+  "include": ["gate/gate.json"],
+  "text": {
+    "en": {
+      "Marker": "Englished loaded."
+    },
+    "la": {
+      "Marker": "Lingua latina lecta est."
+    }
+  }
+}

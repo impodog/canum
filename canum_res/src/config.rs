@@ -1,4 +1,4 @@
-use bevy::color::Color;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, sync::LazyLock, time::Duration};
 
@@ -82,6 +82,9 @@ const fn return_1_0() -> f32 {
     1.0
 }
 
+#[derive(Deserialize, Debug, Clone, Default, Deref, DerefMut)]
+pub struct LanguageConfig(pub HashMap<String, String>);
+
 /// Configuration for assets in the game.
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct AssetsConfig {
@@ -97,6 +100,9 @@ pub struct AssetsConfig {
     /// Map from aliases to sound details.
     #[serde(default)]
     pub sounds: HashMap<String, SoundDetails>,
+    /// Map from language to text.
+    #[serde(default)]
+    pub text: HashMap<String, LanguageConfig>,
 }
 
 impl AssetsConfig {
@@ -147,10 +153,14 @@ impl AssetsConfig {
                 sprites,
                 tinting,
                 sounds,
+                text,
             } = AssetsConfig::load(sub_path);
             config.sprites.extend(sprites);
             config.tinting.extend(tinting);
-            config.sounds.extend(sounds)
+            config.sounds.extend(sounds);
+            for (language, content) in text.into_iter() {
+                config.text.entry(language).or_default().extend(content.0);
+            }
         }
         config
     }

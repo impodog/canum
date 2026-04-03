@@ -22,6 +22,11 @@ impl Default for Progress {
         }
     }
 }
+impl Progress {
+    pub fn boss_progress(&mut self, name: impl Into<String>) -> &mut BossProgress {
+        self.boss_progress.entry(name.into()).or_default()
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct BossProgress {

@@ -1931,6 +1931,7 @@ name = "canum_save"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "canum_res",
  "ron",
  "serde",
 ]

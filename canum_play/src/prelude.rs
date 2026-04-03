@@ -6,7 +6,7 @@ pub use std::time::Duration;
 pub use canum_res::{
     Animation, AnimationComplete, AnimationInform, config::CONFIG, sound::Music, sound::Sound,
 };
-pub use canum_save::Save;
+pub use canum_save::{Lang, Save};
 
 #[macro_export]
 macro_rules! static_system_id {

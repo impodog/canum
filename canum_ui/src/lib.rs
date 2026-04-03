@@ -1,6 +1,8 @@
 mod health;
+mod menu;
 mod prelude;
 mod setup;
+mod text;
 
 pub mod image;
 pub use image::{Animation, AnimationComplete};
@@ -15,6 +17,8 @@ impl Plugin for CanumUiPlugin {
             setup::SetupPlugin,
             image::SpritePlugin,
             health::HealthPlugin,
+            menu::MenuPlugin,
+            text::TextPlugin,
         ));
     }
 }
