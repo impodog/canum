@@ -5,6 +5,12 @@
     "Apple_Throw": [{ "path": "apple_throw.png", "count": 5, "interval": 200 }],
     "Apple_Defeat": [
       { "path": "apple_defeat.png", "count": 7, "interval": 500 }
-    ]
+    ],
+    "Apple_Skin": [
+      { "path": "apple_skin.png", "offset": [0, 0], "size": [32, 16] },
+      { "path": "apple_skin.png", "offset": [32, 0], "size": [32, 16] },
+      { "path": "apple_skin.png", "offset": [64, 0], "size": [32, 16] }
+    ],
+    "Apple_Peel": [{ "path": "apple_peel.png", "count": 8, "interval": 300 }]
   }
 }

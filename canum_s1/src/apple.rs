@@ -21,9 +21,9 @@ impl Plugin for ApplePlugin {
         app.world_mut()
             .register_component_hooks::<AppleBoss>()
             .on_add(|mut world, HookContext { entity, .. }| {
-                world
-                    .commands()
-                    .spawn((ChildOf(entity), behaviors::AppleBehaviors));
+                let mut commands = world.commands();
+                commands.spawn((ChildOf(entity), behaviors::AppleBehaviors));
+                commands.entity(entity).observe(behaviors::change_stage);
             });
     }
 }
@@ -41,7 +41,7 @@ impl Plugin for ApplePlugin {
     health::Friendly(false),
     health::ContactDamage { value: 100, projectile: false, order: 100 },
     movements::SpeedDecay(0.5),
-    enemy::health::EnemyHealth::new(1000),
+    enemy::health::EnemyHealth::new(3000),
     enemy::health::DamageSound::new("Apple_Damage"),
     player::victory::DefeatToWin::default(),
     defeat::AppleDefeat,

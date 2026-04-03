@@ -40,7 +40,7 @@ fn keyboard_controls(
             rot: direction.to_angle(),
             mult: 1.0,
         });
-        if key.pressed(save.keyboard.dash) {
+        if save.progress.unlocked_dash && key.pressed(save.keyboard.dash) {
             commands.trigger(crate::movements::StartDash {
                 entity: primary_player,
                 base_velocity: direction.normalize(),

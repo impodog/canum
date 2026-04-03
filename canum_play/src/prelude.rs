@@ -3,7 +3,9 @@ pub use avian2d::prelude::*;
 pub use bevy::{ecs::lifecycle::HookContext, prelude::*};
 pub use std::time::Duration;
 
-pub use canum_res::{Animation, AnimationComplete, AnimationInform, config::CONFIG};
+pub use canum_res::{
+    Animation, AnimationComplete, AnimationInform, config::CONFIG, sound::Music, sound::Sound,
+};
 pub use canum_save::Save;
 
 #[macro_export]
@@ -31,9 +33,11 @@ macro_rules! add_observer_hook {
     };
 }
 
+/// This will ensure the result falls between mean +/- 3 * std_dev
 pub fn rand_normal(mean: f32, std_dev: f32) -> f32 {
     use rand_distr::Distribution;
-    rand_distr::Normal::new(mean, std_dev)
+    let result = rand_distr::Normal::new(mean, std_dev)
         .unwrap()
-        .sample(&mut rand::rng())
+        .sample(&mut rand::rng());
+    result.clamp(mean - 3.0 * std_dev, mean + 3.0 * std_dev)
 }
