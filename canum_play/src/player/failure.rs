@@ -16,10 +16,10 @@ fn update_player_status(
     _event: On<PlayerFail>,
     mut commands: Commands,
     q_player: Query<Entity, With<crate::player::Player>>,
-    mut next_state: ResMut<NextState<crate::setup::PlayState>>,
-    state: Res<State<crate::setup::PlayState>>,
+    mut next_state: ResMut<NextState<crate::setup::GameState>>,
+    state: Res<State<crate::setup::GameState>>,
 ) {
-    if *state.get() == crate::setup::PlayState::Cutscene {
+    if *state.get() == crate::setup::GameState::Cutscene {
         return;
     }
     // Prevents player control.
@@ -46,9 +46,9 @@ fn update_player_status(
         ));
         commands.insert_resource(crate::setup::CutsceneNext {
             event: crate::setup::StartSession {
-                fight: "Menu".to_owned(),
+                fight: "LobbySelect".to_owned(),
             },
         });
     }
-    next_state.set(crate::setup::PlayState::Cutscene);
+    next_state.set(crate::setup::GameState::Cutscene);
 }

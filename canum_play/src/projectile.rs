@@ -6,10 +6,18 @@ pub(super) struct ProjectilePlugin;
 
 impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DisposeQueue>();
+        app.init_resource::<DisposeQueue>()
+            .init_resource::<ProjectileBounds>();
         app.add_systems(FixedPostUpdate, remove_out_of_bound_projectiles);
         app.add_systems(FixedLast, dispose_after_collision);
     }
+}
+
+/// Defines the boundary for projectiles not to be erased.
+#[derive(Resource, Default)]
+pub struct ProjectileBounds {
+    pub min: Vec2,
+    pub max: Vec2,
 }
 
 /// Deisables collision with boundaries for certain objects.
@@ -30,15 +38,15 @@ pub struct Projectile;
 
 fn remove_out_of_bound_projectiles(
     commands: ParallelCommands,
-    q_projectile: Query<(Entity, &Transform), With<Projectile>>,
+    q_projectile: Query<(Entity, &GlobalTransform), With<Projectile>>,
+    bounds: Res<ProjectileBounds>,
 ) {
-    let virtual_size = (
-        CONFIG.display.virtual_size.0 as f32,
-        CONFIG.display.virtual_size.1 as f32,
-    );
     q_projectile.par_iter().for_each(|(entity, transform)| {
-        if transform.translation.x.abs() > virtual_size.0
-            || transform.translation.y.abs() > virtual_size.1
+        let position = transform.translation().xy();
+        if position.x > bounds.max.x
+            || position.x < bounds.min.x
+            || position.y > bounds.max.y
+            || position.y < bounds.min.y
         {
             commands.command_scope(|mut commands| {
                 commands.entity(entity).despawn();

@@ -1,6 +1,8 @@
 use crate::config;
 use bevy::{
-    camera::{CameraOutputMode, ImageRenderTarget, RenderTarget, visibility::RenderLayers},
+    camera::{
+        CameraOutputMode, ImageRenderTarget, RenderTarget, Viewport, visibility::RenderLayers,
+    },
     prelude::*,
     render::render_resource::{
         Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -73,12 +75,13 @@ pub(crate) fn setup_camera(
     // The camera to output to a texture, which creates a pixel effect.
     commands.spawn((
         PixelCamera(texture.clone()),
+        IsDefaultUiCamera,
         Camera {
             output_mode: CameraOutputMode::Write {
                 blend_state: None,
                 clear_color: ClearColorConfig::Custom(Color::NONE),
             },
-            order: -1,
+            order: -2,
             ..Default::default()
         },
         RenderTarget::Image(ImageRenderTarget {

@@ -31,7 +31,7 @@ fn main() {
                 if !*flag {
                     *flag = true;
                     commands.trigger(canum_play::setup::StartSession {
-                        fight: "Apple".to_owned(),
+                        fight: "LobbySelect".to_owned(),
                     });
                 }
             },

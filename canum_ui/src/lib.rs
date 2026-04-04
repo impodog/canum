@@ -1,15 +1,16 @@
 mod health;
-mod menu;
 mod prelude;
 mod setup;
 
-pub use setup::{BottomLeft, TopLeft};
+pub use setup::{BottomLeft, Center, TopLeft};
 
 pub mod text;
 pub use text::Fonts;
 
 pub mod image;
 pub use image::{Animation, AnimationComplete};
+
+pub mod boss;
 
 use prelude::*;
 
@@ -21,8 +22,8 @@ impl Plugin for CanumUiPlugin {
             setup::SetupPlugin,
             image::SpritePlugin,
             health::HealthPlugin,
-            menu::MenuPlugin,
             text::TextPlugin,
+            boss::BossPlugin,
         ));
     }
 }

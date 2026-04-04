@@ -9,6 +9,8 @@ pub struct Progress {
     pub selected_weapons: Vec<String>,
     pub selected_health: String,
     pub boss_progress: HashMap<String, BossProgress>,
+    pub current_lobby: String,
+    pub lobby_position: Vec2,
 }
 
 impl Default for Progress {
@@ -19,6 +21,8 @@ impl Default for Progress {
             selected_weapons: vec!["Filed".to_owned()],
             selected_health: "BasicHp".to_string(),
             boss_progress: Default::default(),
+            current_lobby: "Gate".to_owned(),
+            lobby_position: Vec2::new(400.0, 225.0),
         }
     }
 }

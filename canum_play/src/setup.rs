@@ -2,19 +2,24 @@ use bevy::time::Stopwatch;
 
 use crate::prelude::*;
 
+pub mod lobby;
+
 pub(super) struct SetupPlugin;
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((lobby::LobbyPlugin,));
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
         app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
         app.register_required_components::<canum_res::sound::Music, crate::SessionOnly>();
         app.add_observer(setup_session);
-        app.init_state::<PlayState>().init_state::<Fight>();
+        app.init_state::<GameState>()
+            .init_state::<PlayState>()
+            .init_state::<Fight>();
         app.add_systems(PreUpdate, tick_fight_time);
         app.add_systems(
             FixedLast,
-            wait_for_cutscene.run_if(in_state(crate::setup::PlayState::Cutscene)),
+            wait_for_cutscene.run_if(in_state(crate::setup::GameState::Cutscene)),
         );
         app.add_observer(change_music_when_win)
             .add_observer(change_music_when_lose);
@@ -22,10 +27,18 @@ impl Plugin for SetupPlugin {
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum PlayState {
+pub enum GameState {
     #[default]
     Play,
     Cutscene,
+}
+
+/// Substates of `GameState::Play`.
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum PlayState {
+    #[default]
+    Fighting,
+    Lobby,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deref, DerefMut)]
@@ -58,17 +71,24 @@ pub struct SessionOnly;
 #[derive(Component, Default)]
 #[require(Collider, RigidBody::Static, Transform, SessionOnly)]
 pub struct Boundaries;
+impl Boundaries {
+    pub const BOUNDARY_THICKNESS: f32 = 32.0;
+    pub const BOUNDARY_THICKNESS_HALF: f32 = Self::BOUNDARY_THICKNESS * 0.5;
+}
 
 fn setup_session(
     event: On<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
     save: Res<Save>,
     mut commands: Commands,
-    mut play_state: ResMut<NextState<PlayState>>,
+    mut play_state: ResMut<NextState<GameState>>,
     mut fight: ResMut<NextState<Fight>>,
+    mut q_camera: Query<&mut Transform, With<canum_res::camera::PixelCamera>>,
 ) {
-    const BOUNDARY_THICKNESS: f32 = 32.0;
-    const BOUNDARY_THICKNESS_HALF: f32 = BOUNDARY_THICKNESS * 0.5;
+    let Ok(mut camera_transform) = q_camera.single_mut() else {
+        return;
+    };
+    *camera_transform = Transform::default();
 
     // Despawn previous entities
     for entity in q_session_only.iter() {
@@ -80,7 +100,7 @@ fn setup_session(
         Boundaries,
         Collider::rectangle(32.0, CONFIG.display.virtual_size.1 as f32),
         Transform::from_translation(Vec3::new(
-            CONFIG.display.half_virtual_size.0 + BOUNDARY_THICKNESS_HALF,
+            CONFIG.display.half_virtual_size.0 + Boundaries::BOUNDARY_THICKNESS_HALF,
             0.0,
             0.0,
         )),
@@ -89,7 +109,7 @@ fn setup_session(
         Boundaries,
         Collider::rectangle(32.0, CONFIG.display.virtual_size.1 as f32),
         Transform::from_translation(Vec3::new(
-            -CONFIG.display.half_virtual_size.0 - BOUNDARY_THICKNESS_HALF,
+            -CONFIG.display.half_virtual_size.0 - Boundaries::BOUNDARY_THICKNESS_HALF,
             0.0,
             0.0,
         )),
@@ -99,7 +119,7 @@ fn setup_session(
         Collider::rectangle(CONFIG.display.virtual_size.0 as f32, 32.0),
         Transform::from_translation(Vec3::new(
             0.0,
-            CONFIG.display.half_virtual_size.1 + BOUNDARY_THICKNESS_HALF,
+            CONFIG.display.half_virtual_size.1 + Boundaries::BOUNDARY_THICKNESS_HALF,
             0.0,
         )),
     ));
@@ -108,7 +128,7 @@ fn setup_session(
         Collider::rectangle(CONFIG.display.virtual_size.0 as f32, 32.0),
         Transform::from_translation(Vec3::new(
             0.0,
-            -CONFIG.display.half_virtual_size.1 - BOUNDARY_THICKNESS_HALF,
+            -CONFIG.display.half_virtual_size.1 - Boundaries::BOUNDARY_THICKNESS_HALF,
             0.0,
         )),
     ));
@@ -164,6 +184,17 @@ fn setup_session(
     };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
     commands.insert_resource(crate::player::RandomPlayer(player));
+    commands.insert_resource(crate::projectile::ProjectileBounds {
+        min: Vec2::new(
+            // Double the actual amount of boundaries, for projectiles to temporarily leave screen.
+            -(CONFIG.display.virtual_size.0 as f32),
+            -(CONFIG.display.virtual_size.1 as f32),
+        ),
+        max: Vec2::new(
+            CONFIG.display.virtual_size.0 as f32,
+            CONFIG.display.virtual_size.1 as f32,
+        ),
+    });
 
     commands.trigger(PostStartSession {
         fight: event.fight.clone(),
@@ -172,7 +203,7 @@ fn setup_session(
 
     commands.insert_resource(FightTime::default());
 
-    play_state.set(PlayState::Play);
+    play_state.set(GameState::Play);
     fight.set(Fight(event.fight.clone()));
 }
 

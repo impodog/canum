@@ -1,3 +1,7 @@
 {
-  "include": ["apple_tree/apple_tree.json", "apple/apple.json"]
+  "include": [
+    "apple_tree/apple_tree.json",
+    "apple/apple.json",
+    "lobby/lobby.json"
+  ]
 }

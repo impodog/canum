@@ -23,8 +23,8 @@ pub(crate) fn integer_health(watch: Entity, number: usize) -> impl Bundle {
         sub_nodes.push((
             Node {
                 align_self: AlignSelf::Center,
-                width: px(75.0),
-                height: px(75.0),
+                width: px(32.0),
+                height: px(32.0),
                 ..default()
             },
             Animation::new("BasicHp", Vec2::new(32.0, 32.0)).with_pause(0),
@@ -38,7 +38,7 @@ pub(crate) fn integer_health(watch: Entity, number: usize) -> impl Bundle {
         Node {
             align_content: AlignContent::Start,
             justify_content: JustifyContent::Start,
-            column_gap: px(10.0),
+            column_gap: px(4.0),
             ..default()
         },
         Children::spawn(sub_nodes),

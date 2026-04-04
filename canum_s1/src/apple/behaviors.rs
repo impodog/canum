@@ -137,7 +137,7 @@ fn apple_slice_revolve(mut q_slice: Query<(&AppleSlice, &mut movements::ForcedVe
 
 #[derive(Component)]
 #[require(
-    Behavior::new("Apple_PeelSkin", 0.8, ["Animation", "Projectile"]),
+    Behavior::new("Apple_PeelSkin", 0.8, ["Animation", "Projectile", "Displacement"]),
     BaseByDistance::new(150.0, 80.0)
 )]
 pub struct PeelSkin {

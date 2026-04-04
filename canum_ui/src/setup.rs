@@ -8,13 +8,14 @@ impl Plugin for SetupPlugin {
     }
 }
 
-/// Marker for UI node.
 #[derive(Component, Default)]
 pub struct TopLeft;
 
-/// Marker for UI node.
 #[derive(Component, Default)]
 pub struct BottomLeft;
+
+#[derive(Component, Default)]
+pub struct Center;
 
 fn setup_ui(
     event: On<canum_play::setup::PostStartSession>,
@@ -24,8 +25,10 @@ fn setup_ui(
     let root = commands
         .spawn((
             Node {
-                width: percent(100),
-                height: percent(100),
+                position_type: PositionType::Absolute,
+                width: px(CONFIG.display.virtual_size.0),
+                height: px(CONFIG.display.virtual_size.1),
+                margin: UiRect::all(Val::Auto),
                 ..default()
             },
             canum_play::SessionOnly,
@@ -37,8 +40,8 @@ fn setup_ui(
             TopLeft,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(10.0),
-                top: px(10.0),
+                left: px(3.0),
+                top: px(3.0),
                 ..default()
             },
         ))
@@ -48,8 +51,21 @@ fn setup_ui(
         BottomLeft,
         Node {
             position_type: PositionType::Absolute,
-            left: px(30.0),
-            bottom: px(30.0),
+            left: px(10.0),
+            bottom: px(15.0),
+            ..default()
+        },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        Center,
+        Node {
+            position_type: PositionType::Absolute,
+            justify_content: JustifyContent::Center,
+            align_content: AlignContent::Center,
+            margin: UiRect::all(Val::Auto),
+            width: percent(80),
+            height: percent(80),
             ..default()
         },
     ));

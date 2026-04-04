@@ -10,6 +10,7 @@ pub struct Keyboard {
     pub dash: KeyCode,
     pub primary_attack: KeyCode,
     pub secondary_attack: KeyCode,
+    pub confirm: KeyCode,
 }
 impl Default for Keyboard {
     fn default() -> Self {
@@ -21,6 +22,7 @@ impl Default for Keyboard {
             dash: KeyCode::KeyX,
             primary_attack: KeyCode::KeyC,
             secondary_attack: KeyCode::KeyZ,
+            confirm: KeyCode::Enter,
         }
     }
 }

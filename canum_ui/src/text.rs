@@ -47,12 +47,15 @@ pub fn popup_title(font: Handle<Font>, content: &str, fade: Duration) -> impl Bu
         if is_delayed {
             delay_time += Duration::from_millis(300);
         }
-        let font_size = if is_large { 90 } else { 60 };
+        let font_size = if is_large { 50 } else { 30 };
         child.push((
             Node {
                 height: px(font_size),
                 align_content: AlignContent::Center,
                 justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                justify_items: JustifyItems::Center,
+                margin: UiRect::all(Val::Auto),
                 ..Default::default()
             },
             PopupTitleClock {

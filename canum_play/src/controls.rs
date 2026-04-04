@@ -13,14 +13,16 @@ fn keyboard_controls(
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     save: Res<Save>,
     key: Res<ButtonInput<KeyCode>>,
-    mut q_player: Query<&crate::player::attack::Weapons>,
+    q_player: Query<(&GlobalTransform, &crate::player::attack::Weapons)>,
 ) {
     let Some(primary_player) = primary_player.map(|player| **player) else {
         return;
     };
-    let Ok(weapons) = q_player.get_mut(primary_player) else {
+    let Ok((transform, weapons)) = q_player.get(primary_player) else {
         return;
     };
+    let position = transform.translation().xy();
+
     let mut direction = Vec2::default();
     if key.pressed(save.keyboard.move_right) {
         direction.x += 1.0;
@@ -70,5 +72,11 @@ fn keyboard_controls(
                 entity: secondary_weapon,
             });
         }
+    }
+    if key.just_pressed(save.keyboard.confirm) {
+        commands.trigger(crate::setup::lobby::LobbySelect { position });
+    }
+    if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
+        commands.trigger(crate::setup::lobby::LobbyQuit);
     }
 }
