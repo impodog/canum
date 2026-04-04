@@ -10,7 +10,7 @@ impl Plugin for AttackPlugin {
 #[require(
     crate::projectile::Projectile,
     crate::health::Friendly(false),
-    crate::health::ContactDamage {value: 100, projectile: true, order: 50},
+    crate::health::ContactDamage {value: 100, projectile: true, order: crate::consts::order::ENEMY_PROJ},
     Animation
 )]
 pub struct EnemyProjectile;

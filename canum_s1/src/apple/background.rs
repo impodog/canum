@@ -12,6 +12,7 @@ impl Plugin for BackgroundPlugin {
                 .chain()
                 .run_if(in_state(super::APPLE_STATE.clone())),
         );
+        app.add_observer(spawn_apple_title);
     }
 }
 
@@ -83,4 +84,24 @@ fn trigger_background_changed(
         event_sent.0 = true;
         commands.trigger(AppleTreeBackgroundChanged);
     }
+}
+
+fn spawn_apple_title(
+    _event: On<AppleTreeBackgroundChanged>,
+    mut commands: Commands,
+    q_bottom_left: Query<Entity, With<canum_ui::BottomLeft>>,
+    fonts: Res<canum_ui::Fonts>,
+    lang: Res<Lang>,
+) {
+    let Ok(bottom_left) = q_bottom_left.single() else {
+        return;
+    };
+    commands.spawn((
+        ChildOf(bottom_left),
+        canum_ui::text::popup_title(
+            fonts.title.clone(),
+            lang.get("Apple_BossTitle"),
+            Duration::from_secs(1),
+        ),
+    ));
 }

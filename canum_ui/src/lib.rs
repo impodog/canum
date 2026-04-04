@@ -2,7 +2,11 @@ mod health;
 mod menu;
 mod prelude;
 mod setup;
-mod text;
+
+pub use setup::{BottomLeft, TopLeft};
+
+pub mod text;
+pub use text::Fonts;
 
 pub mod image;
 pub use image::{Animation, AnimationComplete};

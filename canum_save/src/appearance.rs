@@ -26,7 +26,7 @@ impl Lang {
     pub fn get<T>(&self, key: &T) -> &str
     where
         String: Borrow<T>,
-        T: Ord + Hash,
+        T: Ord + Hash + ?Sized,
     {
         self.0
             .get(key)

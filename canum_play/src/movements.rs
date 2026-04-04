@@ -48,9 +48,6 @@ pub struct DashTimers {
     pub target_velocity: Vec2,
 }
 
-impl Dash {
-    pub const SHIELD_ORDER: u8 = 230;
-}
 impl Default for Dash {
     fn default() -> Self {
         Self {
@@ -98,7 +95,7 @@ fn start_dash(
     commands.spawn(canum_res::sound::Sound::new(&dash.sound));
     refresh_dash_timers_with(dash, timers.as_mut());
     if dash.invincible_duration > 0.0 {
-        shields.insert(Dash::SHIELD_ORDER, i32::MAX);
+        shields.insert(crate::consts::order::DASH_INVINC, i32::MAX);
     }
     timers.target_velocity = event.base_velocity * dash.max_speed;
 }
@@ -121,9 +118,10 @@ fn perform_dash(
                 timers.cooldown.tick(time.delta());
             }
             if timers.invincible.is_finished()
-                || timers.total.is_finished() && shields.contains_key(&Dash::SHIELD_ORDER)
+                || timers.total.is_finished()
+                    && shields.contains_key(&crate::consts::order::DASH_INVINC)
             {
-                shields.remove(&Dash::SHIELD_ORDER);
+                shields.remove(&crate::consts::order::DASH_INVINC);
             }
         });
 }

@@ -1,5 +1,6 @@
 pub mod prelude;
 
+pub mod consts;
 pub mod controls;
 pub mod enemy;
 pub mod health;

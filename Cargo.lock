@@ -1922,6 +1922,7 @@ dependencies = [
  "canum_play",
  "canum_res",
  "canum_save",
+ "canum_ui",
  "rand 0.10.0",
  "rand_distr 0.6.0",
 ]

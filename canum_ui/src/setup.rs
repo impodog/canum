@@ -8,6 +8,14 @@ impl Plugin for SetupPlugin {
     }
 }
 
+/// Marker for UI node.
+#[derive(Component, Default)]
+pub struct TopLeft;
+
+/// Marker for UI node.
+#[derive(Component, Default)]
+pub struct BottomLeft;
+
 fn setup_ui(
     event: On<canum_play::setup::PostStartSession>,
     save: Res<Save>,
@@ -23,21 +31,32 @@ fn setup_ui(
             canum_play::SessionOnly,
         ))
         .id();
-    let left_top = commands
+    let top_left = commands
         .spawn((
+            ChildOf(root),
+            TopLeft,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(10.0),
                 top: px(10.0),
                 ..default()
             },
-            ChildOf(root),
         ))
         .id();
+    commands.spawn((
+        ChildOf(root),
+        BottomLeft,
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(30.0),
+            bottom: px(30.0),
+            ..default()
+        },
+    ));
     match save.progress.selected_health.as_str() {
         "BasicHp" => {
             commands.spawn((
-                ChildOf(left_top),
+                ChildOf(top_left),
                 crate::health::integer_health(event.health_entity, 6),
             ));
         }

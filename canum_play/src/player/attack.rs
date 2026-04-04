@@ -116,7 +116,7 @@ impl Default for Filed {
         Self {
             interval: 0.1,
             damage: 10,
-            order: 50,
+            order: crate::consts::order::PLAYER_PROJ,
             size: Vec2::new(5.0, 10.0),
             speed: 450.0,
         }
