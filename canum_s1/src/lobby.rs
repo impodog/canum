@@ -14,6 +14,7 @@ fn update_observer(mut commands: Commands) {
 }
 
 #[allow(clippy::single_match)]
+#[allow(clippy::too_many_arguments)]
 fn handle_lobby_select(
     event: On<setup::lobby::LobbySelect>,
     mut commands: Commands,
@@ -22,6 +23,7 @@ fn handle_lobby_select(
     fonts: Res<canum_ui::Fonts>,
     lang: Res<Lang>,
     save: Res<Save>,
+    time: Res<Time>,
 ) {
     if q_panel.single().is_ok() {
         return;
@@ -54,6 +56,7 @@ fn handle_lobby_select(
                         fight_name: "Apple".to_owned(),
                         marks,
                     },
+                    time,
                 ),
             ));
         }

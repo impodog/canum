@@ -64,6 +64,7 @@ fn update_save(
     _event: On<PlayerWin>,
     mut save: ResMut<Save>,
     fight: Res<State<crate::setup::Fight>>,
+    any_hits: Res<super::tracking::AnyHits>,
 ) {
     let progress = save
         .progress
@@ -73,6 +74,9 @@ fn update_save(
     if !progress.defeated {
         progress.defeated = true;
         progress.tasks.insert("Completed".to_owned());
+    }
+    if !**any_hits {
+        progress.tasks.insert("NoHits".to_owned());
     }
 }
 

@@ -1,5 +1,7 @@
 //! Creates and manages pre-fight boss information panel.
 
+use std::time::Duration;
+
 use crate::prelude::*;
 use crate::text::Fonts;
 use canum_play::setup;
@@ -15,31 +17,40 @@ impl Plugin for BossPlugin {
 /// Marks and stores constants of a boss panel.
 /// Other variables are in separate components.
 #[derive(Component, Debug)]
+#[require(BossPanelAdded)]
 pub struct BossPanel {
     pub name: String,
     pub fight_name: String,
     pub marks: Vec<String>,
 }
+#[derive(Component, Default)]
+struct BossPanelAdded(Duration);
 
 fn boss_panel_marks(marks: &[String]) -> impl Bundle + use<> {
     let mut images = Vec::new();
     for mark in marks.iter() {
         images.push((
-            Node { ..default() },
-            Animation::new(mark, Vec2::new(32.0, 32.0)).with_repeating(),
+            Node {
+                width: px(40.0),
+                height: px(40.0),
+                margin: UiRect::all(Val::Auto),
+                ..default()
+            },
+            Animation::new(mark, Vec2::new(40.0, 40.0)).with_repeating(),
         ));
     }
     (
         Node {
-            padding: UiRect::all(px(5.0)),
             flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::Center,
+            margin: UiRect::all(Val::Auto),
             ..default()
         },
         Children::spawn(images),
     )
 }
 
-pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel) -> impl Bundle {
+pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -> impl Bundle {
     let fonts = fonts.as_ref();
     let title = (
         Node {
@@ -51,6 +62,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel) -> impl Bundle {
         TextFont {
             font: fonts.title.clone(),
             font_size: 50.0,
+            font_smoothing: FontSmoothing::None,
             ..default()
         },
     );
@@ -67,6 +79,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel) -> impl Bundle {
             ..default()
         },
         panel,
+        BossPanelAdded(time.elapsed()),
         BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.8)),
         BoxShadow::default(),
         children![title, marks],
@@ -76,10 +89,11 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel) -> impl Bundle {
 fn handle_panel_select(
     _event: On<setup::lobby::LobbySelect>,
     mut commands: Commands,
-    q_panel: Query<(Entity, Ref<BossPanel>)>,
+    q_panel: Query<(Entity, &BossPanel, &BossPanelAdded)>,
     mut next_state: ResMut<NextState<setup::GameState>>,
     state: Res<State<setup::GameState>>,
     q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
+    time: Res<Time>,
 ) {
     if *state.get() == setup::GameState::Cutscene {
         return;
@@ -87,13 +101,14 @@ fn handle_panel_select(
     let Ok(camera_entity) = q_camera.single() else {
         return;
     };
-    let Ok((panel_entity, panel)) = q_panel.single() else {
+    let Ok((panel_entity, panel, panel_add_time)) = q_panel.single() else {
         return;
     };
     // Disallow spawning and entering the panel on the same frame.
-    if panel.is_added() {
+    if time.elapsed() - panel_add_time.0 <= Duration::from_millis(30) {
         return;
     }
+
     let sound_entity = commands
         .spawn((setup::CutsceneWait, canum_res::sound::Sound::new("Confirm")))
         .id();

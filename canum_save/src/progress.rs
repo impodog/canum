@@ -35,5 +35,6 @@ impl Progress {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct BossProgress {
     pub defeated: bool,
+    pub fail_times: usize,
     pub tasks: BTreeSet<String>,
 }

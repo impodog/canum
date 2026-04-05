@@ -13,6 +13,12 @@ impl Plugin for PlayerHealthPlugin {
     }
 }
 
+/// Sent to player itself by health, if the player is actually hit without shield protection.
+#[derive(EntityEvent, Debug)]
+pub struct ActuallyHit {
+    pub entity: Entity,
+}
+
 /// Basic player health bar, allowing to take only integer number of damage.
 #[derive(Component, Debug)]
 #[require(Shields)]
@@ -42,6 +48,9 @@ fn integer_take_damage(
     }
     health.count = health.count.saturating_sub(1);
     commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
+    commands.trigger(ActuallyHit {
+        entity: event.entity,
+    });
     if health.count > 0 {
         commands.spawn((
             ChildOf(event.entity),

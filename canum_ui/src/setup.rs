@@ -31,6 +31,7 @@ fn setup_ui(
                 margin: UiRect::all(Val::Auto),
                 ..default()
             },
+            UiAntiAlias::Off,
             canum_play::SessionOnly,
         ))
         .id();

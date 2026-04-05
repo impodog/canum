@@ -4,7 +4,8 @@ pub(super) struct FailurePlugin;
 
 impl Plugin for FailurePlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(update_player_status);
+        app.add_observer(update_player_status)
+            .add_observer(update_save);
     }
 }
 
@@ -51,4 +52,17 @@ fn update_player_status(
         });
     }
     next_state.set(crate::setup::GameState::Cutscene);
+}
+
+fn update_save(
+    _event: On<PlayerFail>,
+    mut save: ResMut<Save>,
+    fight: Res<State<crate::setup::Fight>>,
+) {
+    let progress = save
+        .progress
+        .boss_progress
+        .entry(fight.get().0.clone())
+        .or_default();
+    progress.fail_times += 1;
 }

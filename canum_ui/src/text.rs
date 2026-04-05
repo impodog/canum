@@ -68,6 +68,7 @@ pub fn popup_title(font: Handle<Font>, content: &str, fade: Duration) -> impl Bu
             TextFont {
                 font: font.clone(),
                 font_size: font_size as f32,
+                font_smoothing: FontSmoothing::None,
                 ..Default::default()
             },
         ));

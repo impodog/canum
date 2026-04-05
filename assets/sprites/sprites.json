@@ -1,3 +1,8 @@
 {
-  "include": ["testing/testing.json", "player/player.json", "gate/gate.json"]
+  "include": [
+    "testing/testing.json",
+    "player/player.json",
+    "gate/gate.json",
+    "ui/ui.json"
+  ]
 }

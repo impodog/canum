@@ -1,5 +1,8 @@
 {
   "sprites": {
-    "Mark_Completed": { "path": "completed.png", "count": 2, "interval": 500 }
+    "Mark_Completed": [
+      { "path": "completed.png", "count": 2, "interval": 500 }
+    ],
+    "Mark_NoHits": [{ "path": "no_hits.png", "count": 5, "interval": 300 }]
   }
 }
