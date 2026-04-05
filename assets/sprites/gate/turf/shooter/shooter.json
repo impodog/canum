@@ -1,0 +1,15 @@
+{
+  "sprites": {
+    "Turf_Shooter_Static": [
+      { "path": "shooter.png", "count": 2, "interval": 350 }
+    ],
+    "Turf_Shooter_Shoot": [
+      { "path": "shooter_shoot.png", "count": 4, "interval": 200 }
+    ],
+    "Turf_Seed": [
+      { "path": "seed.png", "size": [32, 16], "offset": [0, 0] },
+      { "path": "seed.png", "size": [32, 16], "offset": [32, 0] },
+      { "path": "seed.png", "size": [32, 16], "offset": [64, 0] }
+    ]
+  }
+}

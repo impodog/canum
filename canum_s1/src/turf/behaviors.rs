@@ -21,7 +21,11 @@ impl Plugin for BehaviorsPlugin {
         );
         app.add_systems(
             FixedUpdate,
-            (turf_spiker_move,).run_if(in_state(super::TURF_STATE.clone())),
+            (turf_spiker_move, turf_shooter_move).run_if(in_state(super::TURF_STATE.clone())),
+        );
+        app.add_systems(
+            FixedPostUpdate,
+            (remove_turf_shooter,).run_if(in_state(super::TURF_STATE.clone())),
         );
     }
 }
@@ -37,7 +41,12 @@ fn init_turf_stage(_event: On<super::background::TurfSetupTimerComplete>, mut co
     commands.insert_resource(TurfStage::default());
 }
 
-fn update_turf_stage(mut stage: ResMut<TurfStage>, q_turf: Query<&super::TurfBoss>) {
+fn update_turf_stage(
+    mut commands: Commands,
+    mut stage: ResMut<TurfStage>,
+    q_turf: Query<&super::TurfBoss>,
+    q_behaviors: Query<Entity, With<TurfBehaviors>>,
+) {
     let Ok(turf) = q_turf.single() else {
         return;
     };
@@ -51,8 +60,16 @@ fn update_turf_stage(mut stage: ResMut<TurfStage>, q_turf: Query<&super::TurfBos
     } else {
         3
     };
+    let Ok(behaviors) = q_behaviors.single() else {
+        return;
+    };
     if stage.0 != stage_should_be {
         stage.0 = stage_should_be;
+        if stage.0 == 1 {
+            commands
+                .spawn((ChildOf(behaviors), TurfSpawnShooter))
+                .observe(spawn_shooter_start);
+        }
     }
 }
 
@@ -73,7 +90,7 @@ fn spawn_spiker_start(event: On<BehaveStart>, mut commands: Commands) {
     }
     let spawn_position = Vec3::new(
         -CONFIG.display.half_virtual_size.0,
-        -CONFIG.display.half_virtual_size.1 + 32.0,
+        -CONFIG.display.half_virtual_size.1 + 45.0,
         -0.1,
     );
     if rand::random_bool(0.5) {
@@ -84,7 +101,7 @@ fn spawn_spiker_start(event: On<BehaveStart>, mut commands: Commands) {
                 tolerance: rand_normal(0.0, 10.0),
             },
             Transform::from_translation(spawn_position),
-            Animation::new("Turf_Spiker1_Run", vec2(50.0, 50.0)),
+            Animation::new("Turf_Spiker1_Run", vec2(64.0, 64.0)),
         ));
     } else {
         commands.spawn((
@@ -94,19 +111,18 @@ fn spawn_spiker_start(event: On<BehaveStart>, mut commands: Commands) {
                 tolerance: rand_normal(0.0, 20.0),
             },
             Transform::from_translation(spawn_position),
-            Animation::new("Turf_Spiker2_Run", vec2(50.0, 50.0)),
+            Animation::new("Turf_Spiker2_Run", vec2(64.0, 64.0)),
         ));
     }
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: default(),
-        occupies: occupies![("SpawnSpiker", rand_normal(0.35, 0.05))],
+        occupies: occupies![("SpawnSpiker", rand_normal(0.45, 0.05))],
     });
 }
 
 #[derive(Component, Default)]
 #[require(
-    SessionOnly,
     Animation,
     enemy::attack::EnemyProjectile,
     movements::ForcedVelocity(Vec2::new(250.0, 0.0)),
@@ -149,9 +165,11 @@ fn turf_spiker_move(
                 };
                 if release {
                     spiker.free = true;
-                    let speed = rand_normal(325.0, 25.0);
+                    let speed = rand_normal(300.0, 25.0);
                     // Shoot towards player
-                    if stage.0 >= 2 && rand::random_bool(0.2) {
+                    if (stage.0 >= 2 && rand::random_bool(0.1))
+                        || (stage.0 >= 3 && rand::random_bool(0.1))
+                    {
                         **forced_velocity =
                             (player_position - position).normalize_or_zero() * speed;
                         transform
@@ -165,4 +183,113 @@ fn turf_spiker_move(
             }
         },
     );
+}
+
+#[derive(Component, Debug, Clone)]
+#[require(Behavior::new("Turf_SpawnShooter", 1.0, ["SpawnShooter"]))]
+pub struct TurfSpawnShooter;
+
+fn spawn_shooter_start(event: On<BehaveStart>, mut commands: Commands) {
+    let x = rand::random_range(
+        -CONFIG.display.half_virtual_size.0 + 50.0..CONFIG.display.half_virtual_size.0 - 50.0,
+    );
+    commands
+        .spawn((
+            TurfShooter,
+            Transform::from_translation(Vec3::new(x, -CONFIG.display.half_virtual_size.1, 1.0)),
+        ))
+        .observe(turf_shooter_shoot);
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: default(),
+        occupies: occupies![("SpawnShooter", rand_normal(3.0, 0.7))],
+    });
+}
+
+#[derive(Component, Default)]
+#[require(
+    enemy::attack::Minion,
+    Animation::new("Turf_Shooter_Static", Vec2::new(64.0, 64.0)),
+    movements::ForcedVelocity(Vec2::new(0.0, rand_normal(300.0, 30.0))),
+    Collider::triangle(vec2(-5.0, -10.0), vec2(5.0, -10.0), vec2(0.0, 10.0)),
+    Mass(10.0)
+)]
+pub struct TurfShooter;
+
+#[derive(Component, Default)]
+#[require(
+    Animation::new("Turf_Seed", Vec2::new(20.0, 10.0)),
+    enemy::attack::EnemyProjectile,
+    Collider::rectangle(15.0, 7.5),
+    Mass(3.0)
+)]
+pub struct TurfShooterSeed;
+
+fn turf_shooter_move(
+    mut q_shooter: Query<
+        (Entity, &mut movements::ForcedVelocity, &mut Animation),
+        With<TurfShooter>,
+    >,
+) {
+    const SPEED_DECREASE: f32 = 3.0;
+    q_shooter
+        .par_iter_mut()
+        .for_each(|(entity, mut forced_velocity, mut animation)| {
+            forced_velocity.y -= SPEED_DECREASE;
+            if forced_velocity.y.abs() <= SPEED_DECREASE {
+                animation.replace(
+                    "Turf_Shooter_Shoot",
+                    true,
+                    Some(AnimationInform {
+                        entity,
+                        index: vec![0, 3],
+                    }),
+                );
+            }
+        });
+}
+
+fn turf_shooter_shoot(
+    event: On<AnimationComplete>,
+    mut commands: Commands,
+    q_transform: Query<&GlobalTransform>,
+    player: Res<player::RandomPlayer>,
+    mut q_animation: Query<&mut Animation>,
+) {
+    if event.index == 0 {
+        let Ok(mut animation) = q_animation.get_mut(event.entity) else {
+            return;
+        };
+        animation.replace("Turf_Shooter_Static", false, None);
+    } else {
+        let Ok(player_transform) = q_transform.get(player.0) else {
+            return;
+        };
+        let player_position = player_transform.translation().xy();
+        let Ok(shooter_transform) = q_transform.get(event.entity) else {
+            return;
+        };
+        let shooter_position = shooter_transform.translation().xy();
+        let direction = (player_position - shooter_position).to_angle() + rand_normal(0.0, 0.1);
+        let offset_angle = rand_normal(0.5, 0.1);
+        let transform = Transform::from_translation(shooter_transform.translation());
+        for offset in [-offset_angle, offset_angle, 0.0] {
+            let velocity = Vec2::from_angle(offset + direction) * 325.0;
+            let mut transform = transform;
+            transform.rotate_z(offset + direction);
+            commands.spawn((TurfShooterSeed, transform, LinearVelocity(velocity)));
+        }
+    }
+}
+
+fn remove_turf_shooter(
+    mut commands: Commands,
+    q_shooter: Query<(Entity, &GlobalTransform), With<TurfShooter>>,
+) {
+    for (entity, global_transform) in q_shooter.iter() {
+        let translation = global_transform.translation();
+        if translation.y < -CONFIG.display.half_virtual_size.1 {
+            commands.entity(entity).despawn();
+        }
+    }
 }

@@ -14,3 +14,17 @@ impl Plugin for AttackPlugin {
     Animation
 )]
 pub struct EnemyProjectile;
+
+/// Marks a enemy minion. This doesn't behave like a projectile, which will be disposed when out of bound or contacted.
+#[derive(Component, Default)]
+#[require(
+    crate::SessionOnly,
+    Transform,
+    RigidBody::Dynamic,
+    Collider,
+    LockedAxes::ROTATION_LOCKED,
+    projectile::NoCollideBoundary,
+    crate::health::Friendly(false),
+    crate::health::ContactDamage {value: 200, projectile: true, order: crate::consts::order::ENEMY_MINION},
+)]
+pub struct Minion;

@@ -81,6 +81,7 @@ fn setup_ui(
             justify_content: JustifyContent::Center,
             margin: UiRect::horizontal(Val::Auto),
             bottom: px(10.0),
+            padding: UiRect::bottom(px(0)),
             ..default()
         },
     ));

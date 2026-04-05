@@ -39,7 +39,7 @@ impl Plugin for ApplePlugin {
     LockedAxes::ROTATION_LOCKED,
     Restitution::new(0.5),
     health::Friendly(false),
-    health::ContactDamage { value: 100, projectile: false, order: 100 },
+    health::ContactDamage { value: 100, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.5),
     enemy::health::EnemyHealth::new(3000),
     enemy::health::DamageSound::new("Apple_Damage"),
