@@ -1,0 +1,8 @@
+{
+  "sprites": {
+    "Turf_Grassland": [{ "path": "grassland.png", "size": [200, 123] }],
+    "Turf_GrasslandDefeat": [
+      { "path": "grassland.png", "size": [200, 123], "offset": [200, 123] }
+    ]
+  }
+}

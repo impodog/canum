@@ -1,11 +1,11 @@
-use canum_play::prelude::*;
+use crate::prelude::*;
 use canum_res::background::Background;
 
 pub(super) struct BackgroundPlugin;
 
 impl Plugin for BackgroundPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(super::APPLE_STATE.clone()), choose_background);
+        app.add_systems(OnEnter(super::APPLE_STATE.clone()), setup_apple);
         app.add_systems(
             FixedPreUpdate,
             (change_background_apple_tree).run_if(in_state(super::APPLE_STATE.clone())),
@@ -14,10 +14,11 @@ impl Plugin for BackgroundPlugin {
     }
 }
 
-fn choose_background(mut commands: Commands, q_background: Query<Entity, With<Background>>) {
-    for entity in q_background.iter() {
-        commands.entity(entity).despawn();
-    }
+fn setup_apple(
+    mut commands: Commands,
+    mut window_title: ResMut<canum_res::window::WindowTitle>,
+    lang: Res<Lang>,
+) {
     commands.spawn((
         SessionOnly,
         Background::new(CONFIG.display.screen_size),
@@ -26,6 +27,7 @@ fn choose_background(mut commands: Commands, q_background: Query<Entity, With<Ba
     ));
     commands.insert_resource(AppleTreeChanged::default());
     commands.spawn((SessionOnly, Observer::new(trigger_background_changed)));
+    window_title.0 = lang.get("Apple_WindowTitle").to_owned();
 }
 
 /// Notifies that the background is changed and the fight begins.

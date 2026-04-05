@@ -11,7 +11,10 @@ impl Plugin for LobbyPlugin {
             FixedLast,
             camera_follow_player.run_if(in_state(PlayState::Lobby)),
         );
-        app.add_systems(FixedLast, dump_save_when_lobby_changed);
+        app.add_systems(
+            FixedLast,
+            (dump_save_when_lobby_changed, change_window_title),
+        );
     }
 }
 
@@ -55,10 +58,11 @@ fn enter_lobby(
 
     let lobby_size = match event.fight.as_str() {
         "Gate" => {
-            const GATE_LOBBY_SIZE: Vec2 = Vec2::new(4000.0, 450.0);
+            const GATE_LOBBY_SIZE: Vec2 = Vec2::new(4800.0, 450.0);
             commands.spawn((
                 SessionOnly,
-                Animation::new("Gate_Lobby", GATE_LOBBY_SIZE),
+                Animation::new("Gate_Lobby", GATE_LOBBY_SIZE)
+                    .with_color(Color::WHITE.with_alpha(0.8)),
                 lobby_displacement(GATE_LOBBY_SIZE),
             ));
             GATE_LOBBY_SIZE
@@ -173,7 +177,6 @@ fn dump_save_when_lobby_changed(
     play_state: Res<State<PlayState>>,
     game_state: Res<State<GameState>>,
     lobby_name: Res<LobbyName>,
-    mut exit: MessageReader<AppExit>,
 ) {
     if *play_state.get() != PlayState::Lobby {
         return;
@@ -183,13 +186,24 @@ fn dump_save_when_lobby_changed(
     };
     let exit_lobby = game_state.is_changed() && *game_state.get() == GameState::Cutscene;
     let enter_lobby = lobby_name.is_changed();
-    let exit_game = exit.read().next().is_some();
-    if enter_lobby || exit_lobby || exit_game {
+    if enter_lobby || exit_lobby {
         let Ok(player) = q_player.get(primary_player.0) else {
             return;
         };
         save.progress.current_lobby = name.0.clone();
         save.progress.lobby_position = player.translation().xy();
         commands.run_system(*canum_save::WRITE_SAVE.get().unwrap());
+    }
+}
+
+fn change_window_title(
+    mut title: ResMut<canum_res::window::WindowTitle>,
+    lang: Res<Lang>,
+    lobby_name: Res<LobbyName>,
+) {
+    if lobby_name.is_changed() {
+        title.0 = lang
+            .get(&format!("{}_WindowTitle", lobby_name.0))
+            .to_owned();
     }
 }

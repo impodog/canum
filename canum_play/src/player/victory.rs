@@ -63,8 +63,10 @@ fn update_player_status(
 fn update_save(
     _event: On<PlayerWin>,
     mut save: ResMut<Save>,
+    mut window_title: ResMut<canum_res::window::WindowTitle>,
     fight: Res<State<crate::setup::Fight>>,
     any_hits: Res<super::tracking::AnyHits>,
+    lang: Res<Lang>,
 ) {
     let progress = save
         .progress
@@ -78,6 +80,9 @@ fn update_save(
     if !**any_hits {
         progress.tasks.insert("NoHits".to_owned());
     }
+    window_title.0 = lang
+        .get(&format!("{}_Victory_WindowTitle", fight.get().0))
+        .to_owned();
 }
 
 /// Leaves the dummy victory fight once schedule reachs FixedLast.

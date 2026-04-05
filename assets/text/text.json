@@ -1,5 +1,5 @@
 {
-  "include": ["gate/gate.json"],
+  "include": ["en/en.json"],
   "text": {
     "en": {
       "Marker": "Englished loaded."

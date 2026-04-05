@@ -11,13 +11,13 @@
       "volume": 1.0
     },
     "Apple_Bgm": {
-      "path": "apple_bgm.mp3",
+      "path": "apple_bgm.ogg",
       "loop_point": 0.0,
       "volume": 0.3
     },
     "Apple_Cut": {
       "path": "apple_cut.wav",
-      "volume": 3.0
+      "volume": 5.0
     },
     "Apple_Swoosh": {
       "path": "apple_swoosh.wav",

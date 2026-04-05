@@ -1,4 +1,4 @@
-use canum_play::prelude::*;
+use crate::prelude::*;
 
 pub(super) struct DefeatPlugin;
 

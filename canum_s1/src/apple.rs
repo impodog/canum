@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use canum_play::prelude::*;
+use crate::prelude::*;
 
 mod background;
 mod behaviors;

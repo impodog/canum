@@ -1,5 +1,5 @@
+use crate::prelude::*;
 use canum_play::enemy::behavior::*;
-use canum_play::prelude::*;
 
 pub(super) struct BehaviorsPlugin;
 

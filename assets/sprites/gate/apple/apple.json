@@ -1,8 +1,9 @@
 {
+  "include": ["apple_tree/apple_tree.json"],
   "sprites": {
     "Apple_Static": [{ "path": "apple.png", "count": 2, "interval": 500 }],
     "Apple_Slice": [{ "path": "slice.png", "count": 4, "interval": 100 }],
-    "Apple_Throw": [{ "path": "apple_throw.png", "count": 5, "interval": 200 }],
+    "Apple_Throw": [{ "path": "apple_throw.png", "count": 5, "interval": 225 }],
     "Apple_Defeat": [
       { "path": "apple_defeat.png", "count": 7, "interval": 500 }
     ],
@@ -11,6 +12,6 @@
       { "path": "apple_skin.png", "offset": [32, 0], "size": [32, 16] },
       { "path": "apple_skin.png", "offset": [64, 0], "size": [32, 16] }
     ],
-    "Apple_Peel": [{ "path": "apple_peel.png", "count": 8, "interval": 300 }]
+    "Apple_Peel": [{ "path": "apple_peel.png", "count": 8, "interval": 325 }]
   }
 }

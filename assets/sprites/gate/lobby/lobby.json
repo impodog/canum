@@ -1,5 +1,5 @@
 {
   "sprites": {
-    "Gate_Lobby": [{ "path": "lobby.png", "size": [400, 225] }]
+    "Gate_Lobby": [{ "path": "lobby.png", "size": [2400, 225] }]
   }
 }

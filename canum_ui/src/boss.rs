@@ -22,6 +22,7 @@ pub struct BossPanel {
     pub name: String,
     pub fight_name: String,
     pub marks: Vec<String>,
+    pub enter_color: Color,
 }
 #[derive(Component, Default)]
 struct BossPanelAdded(Duration);
@@ -118,7 +119,7 @@ fn handle_panel_select(
             canum_fx::transition::PureColor {
                 destroy: sound_entity,
                 duration: std::time::Duration::from_secs_f32(2.0),
-                color: Color::linear_rgb(0.6, 0.2, 0.2),
+                color: panel.enter_color,
                 remove_self: true,
             },
             children![setup::CutsceneWait],
