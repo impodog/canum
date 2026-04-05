@@ -1,0 +1,5 @@
+{
+  "sounds": {
+    "Turf_Bgm": { "path": "turf_bgm.ogg", "volume": 0.6 }
+  }
+}

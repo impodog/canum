@@ -34,7 +34,7 @@ fn boss_panel_marks(marks: &[String]) -> impl Bundle + use<> {
             Node {
                 width: px(40.0),
                 height: px(40.0),
-                margin: UiRect::all(Val::Auto),
+                margin: UiRect::horizontal(Val::Auto),
                 ..default()
             },
             Animation::new(mark, Vec2::new(40.0, 40.0)).with_repeating(),
@@ -44,7 +44,7 @@ fn boss_panel_marks(marks: &[String]) -> impl Bundle + use<> {
         Node {
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::Center,
-            margin: UiRect::all(Val::Auto),
+            margin: UiRect::horizontal(Val::Auto),
             ..default()
         },
         Children::spawn(images),
@@ -56,7 +56,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
     let title = (
         Node {
             justify_content: JustifyContent::Center,
-            margin: UiRect::all(Val::Auto),
+            margin: UiRect::horizontal(Val::Auto),
             ..default()
         },
         Text::new(&panel.name),
@@ -73,8 +73,8 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
         Node {
             position_type: PositionType::Absolute,
             flex_direction: FlexDirection::Column,
-            margin: UiRect::all(Val::Auto),
-            padding: UiRect::all(px(10.0)),
+            margin: UiRect::horizontal(Val::Auto),
+            padding: UiRect::vertical(px(10.0)),
             width: percent(100),
             height: percent(100),
             ..default()

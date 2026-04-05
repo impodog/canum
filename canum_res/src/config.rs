@@ -113,7 +113,7 @@ impl AssetsConfig {
         let mut config: AssetsConfig = match std::fs::read_to_string(&path) {
             Ok(content) => match serde_json::from_str(&content) {
                 Ok(config) => {
-                    log::info!("Assets config loaded at {path:?}");
+                    log::debug!("Assets config loaded at {path:?}");
                     config
                 }
                 Err(err) => {
