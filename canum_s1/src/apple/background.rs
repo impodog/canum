@@ -8,9 +8,7 @@ impl Plugin for BackgroundPlugin {
         app.add_systems(OnEnter(super::APPLE_STATE.clone()), choose_background);
         app.add_systems(
             FixedPreUpdate,
-            (trigger_background_changed, change_background_apple_tree)
-                .chain()
-                .run_if(in_state(super::APPLE_STATE.clone())),
+            (change_background_apple_tree).run_if(in_state(super::APPLE_STATE.clone())),
         );
         app.add_observer(spawn_apple_title);
     }
@@ -21,12 +19,13 @@ fn choose_background(mut commands: Commands, q_background: Query<Entity, With<Ba
         commands.entity(entity).despawn();
     }
     commands.spawn((
+        SessionOnly,
         Background::new(CONFIG.display.screen_size),
         Animation::new("Apple_TreeEmpty", CONFIG.display.screen_size)
             .with_color(Color::default().with_alpha(0.7)),
     ));
     commands.insert_resource(AppleTreeChanged::default());
-    commands.insert_resource(BackgroundChangeEventSent::default());
+    commands.spawn((SessionOnly, Observer::new(trigger_background_changed)));
 }
 
 /// Notifies that the background is changed and the fight begins.
@@ -61,29 +60,17 @@ fn change_background_apple_tree(
                 destroy: previous,
                 color: Color::linear_rgb(0.5, 0.5, 0.5),
                 duration: Duration::from_secs_f32(1.0),
+                remove_self: false,
             },
         ));
     }
 }
 
-#[derive(Resource, Deref, DerefMut, Default)]
-struct BackgroundChangeEventSent(bool);
 fn trigger_background_changed(
+    _event: On<canum_fx::transition::PureColorHalfPoint>,
     mut commands: Commands,
-    changed: Option<Res<AppleTreeChanged>>,
-    event_sent: Option<ResMut<BackgroundChangeEventSent>>,
-    q_transition: Query<(), With<canum_fx::transition::PureColor>>,
 ) {
-    let Some(mut event_sent) = event_sent else {
-        return;
-    };
-    if event_sent.0 {
-        return;
-    }
-    if changed.is_some_and(|changed| changed.0) && q_transition.iter().next().is_none() {
-        event_sent.0 = true;
-        commands.trigger(AppleTreeBackgroundChanged);
-    }
+    commands.trigger(AppleTreeBackgroundChanged);
 }
 
 fn spawn_apple_title(
@@ -101,7 +88,7 @@ fn spawn_apple_title(
         canum_ui::text::popup_title(
             fonts.title.clone(),
             lang.get("Apple_BossTitle"),
-            Duration::from_secs(1),
+            Duration::from_secs(2),
         ),
     ));
 }

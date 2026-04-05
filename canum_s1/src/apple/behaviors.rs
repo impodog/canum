@@ -57,6 +57,7 @@ fn move_closer_end(event: On<enemy::movements::DisplacementComplete>, mut comman
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(1.0),
+        occupies: occupies![],
     });
 }
 
@@ -91,6 +92,7 @@ fn throw_slice_respond(
         commands.trigger(BehaveEnd {
             entity: event.entity,
             cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.15)),
+            occupies: occupies![],
         });
     } else {
         let target_transform = q_transform.get(event.source)?;
@@ -137,7 +139,7 @@ fn apple_slice_revolve(mut q_slice: Query<(&AppleSlice, &mut movements::ForcedVe
 
 #[derive(Component)]
 #[require(
-    Behavior::new("Apple_PeelSkin", 0.8, ["Animation", "Projectile", "Displacement"]),
+    Behavior::new("Apple_PeelSkin", 0.8, ["Animation", "Projectile", "Displacement", "PeelSkin"]),
     BaseByDistance::new(150.0, 80.0)
 )]
 pub struct PeelSkin {
@@ -181,6 +183,7 @@ fn peel_skin_respond(
             entity: event.entity,
             // There is a long animation after this attack, so no need for long cooldown.
             cooldown: Duration::from_secs_f32(rand_normal(1.2, 0.1)),
+            occupies: occupies![("PeelSkin", 2.0)],
         });
     } else {
         let Ok((transform, peel_skin)) = q_peel_skin.get(event.entity) else {

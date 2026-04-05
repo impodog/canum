@@ -17,6 +17,13 @@ pub struct PureColor {
     pub destroy: Entity,
     pub duration: Duration,
     pub color: Color,
+    pub remove_self: bool,
+}
+
+/// Notifies itself that the pure color has played through half point.
+#[derive(EntityEvent, Debug)]
+pub struct PureColorHalfPoint {
+    pub entity: Entity,
 }
 
 #[derive(Component, Debug, Clone, Default, Deref, DerefMut)]
@@ -34,7 +41,7 @@ fn init_pure_color(
     for (entity, pure_color) in q_pure_color.iter() {
         let child = commands
             .spawn((
-                Transform::from_translation(Vec3::new(0.0, 0.0, 34.37)),
+                Transform::from_translation(Vec3::new(0.0, 0.0, 134.37)),
                 Sprite {
                     custom_size: Some(Vec2::new(
                         CONFIG.display.virtual_size.0 as f32,
@@ -84,15 +91,22 @@ fn work_pure_color(
             );
         }
         if clock.half_timer.just_finished() {
-            commands.entity(child).despawn();
             if let Ok(mut commands) = commands.get_entity(pure_color.destroy) {
                 commands.despawn();
             }
-            commands
-                .entity(entity)
-                .remove::<PureColor>()
-                .remove::<PureColorClock>();
             *visibility = Visibility::Inherited;
+            commands.trigger(PureColorHalfPoint { entity });
+        }
+        if clock.timer.just_finished() {
+            if pure_color.remove_self {
+                commands.entity(entity).despawn();
+            } else {
+                commands.entity(child).despawn();
+                commands
+                    .entity(entity)
+                    .remove::<PureColor>()
+                    .remove::<PureColorClock>();
+            }
         }
     }
 }

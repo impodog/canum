@@ -1,6 +1,8 @@
 //! Loads and handles user save profiles.
 
-use bevy::prelude::*;
+use std::sync::OnceLock;
+
+use bevy::{ecs::system::SystemId, prelude::*};
 pub(crate) use serde::{Deserialize, Serialize};
 
 mod appearance;
@@ -15,8 +17,12 @@ impl Plugin for CanumSavePlugin {
         app.add_systems(PreStartup, read_save);
         app.add_systems(Startup, init_lang);
         app.add_systems(Last, write_save_on_exit);
+        WRITE_SAVE.set(app.register_system(write_save)).unwrap();
     }
 }
+
+/// SystemId to call to dump save file.
+pub static WRITE_SAVE: OnceLock<SystemId> = OnceLock::new();
 
 #[derive(Resource, Debug, Default, Serialize, Deserialize)]
 pub struct Save {
@@ -42,6 +48,12 @@ fn write_save_on_exit(mut reader: MessageReader<AppExit>, save: Res<Save>) -> Re
         let content = ron::to_string(save.as_ref())?;
         std::fs::write("user.ron", content)?;
     }
+    Ok(())
+}
+
+fn write_save(save: Res<Save>) -> Result<()> {
+    let content = ron::to_string(save.as_ref())?;
+    std::fs::write("user.ron", content)?;
     Ok(())
 }
 

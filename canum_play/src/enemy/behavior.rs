@@ -1,5 +1,9 @@
 use bevy::math::FloatPow;
-use std::{collections::BTreeSet, time::Duration};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    f32,
+    time::Duration,
+};
 
 use crate::prelude::*;
 
@@ -29,8 +33,31 @@ pub struct BehaveStart {
 #[derive(EntityEvent, Debug, Clone)]
 pub struct BehaveEnd {
     pub entity: Entity,
-    /// The enemy no longer triggers behavior in a cooldown duration.
+    /// Locks all behaviors in this duration.
     pub cooldown: Duration,
+    /// The enemy no longer triggers behavior that takes this resource in a cooldown duration.
+    pub occupies: Vec<(String, Duration)>,
+}
+
+/// Utility for creating `BehaveEnd::occupies`. This may handle empty vector correctly.
+#[macro_export]
+macro_rules! occupies {
+    [] => {
+        vec![]
+    };
+    [$($item: expr),+] => {
+        $crate::enemy::behavior::occupies_helper([$($item),+])
+    }
+}
+
+/// Utility function for filling the `BehaveEnd::occupies` field.
+pub fn occupies_helper<S>(iter: impl IntoIterator<Item = (S, f32)>) -> Vec<(String, Duration)>
+where
+    S: Into<String>,
+{
+    iter.into_iter()
+        .map(|(resource, seconds)| (resource.into(), Duration::from_secs_f32(seconds)))
+        .collect()
 }
 
 /// The parent entity of all behaviors.
@@ -49,7 +76,7 @@ impl BehaviorManager {
 
 #[derive(Component, Default, Debug)]
 struct BehaviorManagerInfo {
-    occupied: BTreeSet<String>,
+    occupied: BTreeMap<String, Timer>,
     cooldown: Timer,
 }
 
@@ -74,6 +101,20 @@ fn start_behavior(
                 return;
             }
             info.cooldown = Default::default();
+
+            {
+                let mut cooldown_ended = Vec::new();
+                for (resource, cooldown) in info.occupied.iter_mut() {
+                    cooldown.tick(time.delta());
+                    if cooldown.is_finished() {
+                        cooldown_ended.push(resource.clone());
+                    }
+                }
+                for resource in cooldown_ended {
+                    info.occupied.remove(&resource);
+                }
+            }
+
             let mut behaviors = Vec::new();
             for child in children.iter() {
                 let Ok((behavior, weight)) = q_behavior.get(child) else {
@@ -82,9 +123,8 @@ fn start_behavior(
                 // Filter behaviors whose required resources are occupied.
                 if behavior
                     .occupies
-                    .intersection(&info.occupied)
-                    .next()
-                    .is_some()
+                    .iter()
+                    .any(|resource| info.occupied.contains_key(resource))
                 {
                     continue;
                 }
@@ -102,7 +142,12 @@ fn start_behavior(
             let Ok((behavior, _)) = q_behavior.get(*entity) else {
                 return;
             };
-            info.occupied.extend(behavior.occupies.iter().cloned());
+            for resource in behavior.occupies.iter() {
+                info.occupied.insert(
+                    resource.to_owned(),
+                    Timer::from_seconds(99999.0, TimerMode::Once),
+                );
+            }
             if let Some(cooldown) = behavior.cooldown {
                 info.cooldown = Timer::new(cooldown, TimerMode::Once);
             }
@@ -135,11 +180,15 @@ fn end_behavior(
         );
         return;
     };
-    let new_duration = info.cooldown.duration() + event.cooldown;
-    info.cooldown.set_duration(new_duration);
     for resource in behavior.occupies.iter() {
         info.occupied.remove(resource);
     }
+    for (resource, duration) in event.occupies.iter() {
+        info.occupied
+            .insert(resource.clone(), Timer::new(*duration, TimerMode::Once));
+    }
+    let new_duration = info.cooldown.duration() + event.cooldown;
+    info.cooldown.set_duration(new_duration);
 }
 
 /// A single boss behavior, describing effects while it is between start and end.

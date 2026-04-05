@@ -4,6 +4,7 @@
     "Dash": { "path": "dash.wav", "volume": 1.5 },
     "BasicHp_Damage": { "path": "basichp_damage.wav", "volume": 2.0 },
     "Death": { "path": "death.wav", "volume": 1.5 },
-    "Victory": { "path": "victory.wav", "volume": 1.0 }
+    "Victory": { "path": "victory.wav", "volume": 1.0 },
+    "Confirm": { "path": "confirm.wav", "volume": 1.0 }
   }
 }

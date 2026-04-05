@@ -10,9 +10,13 @@ impl Plugin for SetupPlugin {
         app.add_plugins((lobby::LobbyPlugin,));
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
+        app.add_message::<StartSession>();
         app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
         app.register_required_components::<canum_res::sound::Music, crate::SessionOnly>();
-        app.add_observer(setup_session);
+
+        app.add_observer(setup_session_send_message);
+        app.add_systems(FixedLast, setup_session);
+
         app.init_state::<GameState>()
             .init_state::<PlayState>()
             .init_state::<Fight>();
@@ -21,6 +25,7 @@ impl Plugin for SetupPlugin {
             FixedLast,
             wait_for_cutscene.run_if(in_state(crate::setup::GameState::Cutscene)),
         );
+        app.add_systems(OnEnter(GameState::Cutscene), cutscene_delete);
         app.add_observer(change_music_when_win)
             .add_observer(change_music_when_lose);
     }
@@ -47,7 +52,8 @@ pub struct Fight(pub String);
 #[derive(Resource, Debug, Default, Deref, DerefMut)]
 pub struct FightTime(pub Stopwatch);
 
-#[derive(Event, Debug, Clone)]
+/// External callers should trigger this. The message is only used within setup.
+#[derive(Event, Message, Debug, Clone)]
 pub struct StartSession {
     pub fight: String,
 }
@@ -76,8 +82,13 @@ impl Boundaries {
     pub const BOUNDARY_THICKNESS_HALF: f32 = Self::BOUNDARY_THICKNESS * 0.5;
 }
 
+/// This makes sure that all commands are run before setup_session, ensuring correct `SessionOnly` despawn.
+fn setup_session_send_message(event: On<StartSession>, mut writer: MessageWriter<StartSession>) {
+    writer.write(event.clone());
+}
+
 fn setup_session(
-    event: On<StartSession>,
+    mut reader: MessageReader<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
     save: Res<Save>,
     mut commands: Commands,
@@ -85,6 +96,10 @@ fn setup_session(
     mut fight: ResMut<NextState<Fight>>,
     mut q_camera: Query<&mut Transform, With<canum_res::camera::PixelCamera>>,
 ) {
+    let Some(event) = reader.read().last() else {
+        return;
+    };
+
     let Ok(mut camera_transform) = q_camera.single_mut() else {
         return;
     };
@@ -229,6 +244,20 @@ fn wait_for_cutscene(
         && q_wait.iter().next().is_none()
     {
         commands.trigger(cutscene_next.event.clone());
+    }
+}
+
+/// When the entering cutscene, all entitied marked with this are deleted.
+/// This also adds `SessionOnly` as a weaker constraint.
+#[derive(Component, Default)]
+#[require(SessionOnly)]
+pub struct CutsceneDelete;
+
+fn cutscene_delete(mut commands: Commands, q_cutscene_delete: Query<Entity, With<CutsceneDelete>>) {
+    for entity in q_cutscene_delete.iter() {
+        if let Ok(mut commands) = commands.get_entity(entity) {
+            commands.despawn();
+        }
     }
 }
 

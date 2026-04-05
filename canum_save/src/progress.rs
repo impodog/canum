@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use crate::*;
 
@@ -35,4 +35,5 @@ impl Progress {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct BossProgress {
     pub defeated: bool,
+    pub tasks: BTreeSet<String>,
 }

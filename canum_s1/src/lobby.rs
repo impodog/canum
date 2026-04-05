@@ -9,8 +9,8 @@ impl Plugin for LobbyPlugin {
 }
 
 fn update_observer(mut commands: Commands) {
-    commands.spawn((SessionOnly, Observer::new(handle_lobby_select)));
-    commands.spawn((SessionOnly, Observer::new(quit_lobby_panel)));
+    commands.spawn((setup::CutsceneDelete, Observer::new(handle_lobby_select)));
+    commands.spawn((setup::CutsceneDelete, Observer::new(quit_lobby_panel)));
 }
 
 #[allow(clippy::single_match)]
@@ -21,6 +21,7 @@ fn handle_lobby_select(
     q_center: Query<Entity, With<canum_ui::Center>>,
     fonts: Res<canum_ui::Fonts>,
     lang: Res<Lang>,
+    save: Res<Save>,
 ) {
     if q_panel.single().is_ok() {
         return;
@@ -31,12 +32,27 @@ fn handle_lobby_select(
     let index = (event.position.x / 800.0).floor() as i32;
     match index {
         0 => {
+            let marks = save
+                .progress
+                .boss_progress
+                .get("Apple")
+                .map(|boss_progress| {
+                    boss_progress
+                        .tasks
+                        .iter()
+                        .map(|task| format!("Mark_{task}"))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
             commands.spawn((
                 ChildOf(center),
+                SessionOnly,
                 canum_ui::boss::boss_panel(
                     fonts,
                     canum_ui::boss::BossPanel {
                         name: lang.get("Apple_UiName").to_owned(),
+                        fight_name: "Apple".to_owned(),
+                        marks,
                     },
                 ),
             ));

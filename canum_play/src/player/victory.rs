@@ -4,7 +4,8 @@ pub(super) struct VictoryPlugin;
 
 impl Plugin for VictoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(update_player_status);
+        app.add_observer(update_player_status)
+            .add_observer(update_save);
         app.world_mut()
             .register_component_hooks::<DefeatToWin>()
             .on_remove(|mut world, HookContext { entity, .. }| {
@@ -13,6 +14,10 @@ impl Plugin for VictoryPlugin {
                     world.commands().trigger(PlayerWin);
                 }
             });
+        app.add_systems(
+            FixedLast,
+            leave_victory.run_if(in_state(crate::setup::Fight("Victory".to_owned()))),
+        );
     }
 }
 
@@ -53,4 +58,27 @@ fn update_player_status(
         });
     }
     next_state.set(crate::setup::GameState::Cutscene);
+}
+
+fn update_save(
+    _event: On<PlayerWin>,
+    mut save: ResMut<Save>,
+    fight: Res<State<crate::setup::Fight>>,
+) {
+    let progress = save
+        .progress
+        .boss_progress
+        .entry(fight.get().0.clone())
+        .or_default();
+    if !progress.defeated {
+        progress.defeated = true;
+        progress.tasks.insert("Completed".to_owned());
+    }
+}
+
+/// Leaves the dummy victory fight once schedule reachs FixedLast.
+fn leave_victory(mut commands: Commands) {
+    commands.trigger(crate::setup::StartSession {
+        fight: "LobbySelect".to_owned(),
+    });
 }

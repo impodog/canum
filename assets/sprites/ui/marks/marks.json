@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "Mark_Completed": { "path": "completed.png", "count": 2, "interval": 500 }
+  }
+}
