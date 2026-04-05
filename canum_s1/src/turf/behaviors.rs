@@ -167,14 +167,19 @@ fn turf_spiker_move(
                     spiker.free = true;
                     let speed = rand_normal(300.0, 25.0);
                     // Shoot towards player
-                    if (stage.0 >= 2 && rand::random_bool(0.1))
-                        || (stage.0 >= 3 && rand::random_bool(0.1))
+                    if (stage.0 >= 2 && rand::random_bool(0.15))
+                        || (stage.0 >= 3 && rand::random_bool(0.15))
                     {
                         **forced_velocity =
                             (player_position - position).normalize_or_zero() * speed;
                         transform
                             .rotate_z(forced_velocity.to_angle() - std::f32::consts::FRAC_PI_2);
                     } else {
+                        let speed = if player_position.y <= position.y {
+                            -speed
+                        } else {
+                            speed
+                        };
                         **forced_velocity = Vec2::new(0.0, speed);
                     }
                     let new_name = animation.name.replace("Run", "Spin");
@@ -202,7 +207,7 @@ fn spawn_shooter_start(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: default(),
-        occupies: occupies![("SpawnShooter", rand_normal(3.0, 0.7))],
+        occupies: occupies![("SpawnShooter", rand_normal(8.0, 1.0))],
     });
 }
 
@@ -210,7 +215,7 @@ fn spawn_shooter_start(event: On<BehaveStart>, mut commands: Commands) {
 #[require(
     enemy::attack::Minion,
     Animation::new("Turf_Shooter_Static", Vec2::new(64.0, 64.0)),
-    movements::ForcedVelocity(Vec2::new(0.0, rand_normal(300.0, 30.0))),
+    movements::ForcedVelocity(Vec2::new(0.0, rand_normal(300.0, 10.0))),
     Collider::triangle(vec2(-5.0, -10.0), vec2(5.0, -10.0), vec2(0.0, 10.0)),
     Mass(10.0)
 )]
@@ -231,7 +236,7 @@ fn turf_shooter_move(
         With<TurfShooter>,
     >,
 ) {
-    const SPEED_DECREASE: f32 = 3.0;
+    const SPEED_DECREASE: f32 = 2.5;
     q_shooter
         .par_iter_mut()
         .for_each(|(entity, mut forced_velocity, mut animation)| {
@@ -279,6 +284,7 @@ fn turf_shooter_shoot(
             transform.rotate_z(offset + direction);
             commands.spawn((TurfShooterSeed, transform, LinearVelocity(velocity)));
         }
+        commands.spawn((Sound::new("Turf_Shooter_Shoot"), ChildOf(event.entity)));
     }
 }
 

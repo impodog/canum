@@ -151,7 +151,7 @@ fn start_behavior(
             if let Some(cooldown) = behavior.cooldown {
                 info.cooldown = Timer::new(cooldown, TimerMode::Once);
             }
-            info!("Triggering behavior {}", behavior.name);
+            // info!("Triggering behavior {}", behavior.name);
             commands.command_scope(|mut commands| {
                 commands.trigger(BehaveStart {
                     entity: *entity,

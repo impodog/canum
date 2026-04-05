@@ -37,8 +37,19 @@ fn setup_turf(
         Animation::new("Turf_Grassland", CONFIG.display.screen_size),
     ));
     commands.spawn((Music, Sound::new("Turf_Bgm")));
+    commands.spawn((SessionOnly, Observer::new(change_turf_background_on_defeat)));
     window_title.0 = lang.get("Turf_WindowTitle").to_owned();
     commands.insert_resource(SetupTimer::default());
+}
+
+fn change_turf_background_on_defeat(
+    _event: On<player::victory::PlayerWin>,
+    mut q_background: Query<&mut Animation, With<canum_res::background::Background>>,
+) {
+    let Ok(mut animation) = q_background.single_mut() else {
+        return;
+    };
+    animation.replace("Turf_GrasslandDefeat", false, None);
 }
 
 fn setup_timer(mut timer: ResMut<SetupTimer>, time: Res<Time>, mut commands: Commands) {
