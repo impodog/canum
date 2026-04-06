@@ -57,7 +57,7 @@ fn move_closer_end(event: On<enemy::movements::DisplacementComplete>, mut comman
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(1.0),
-        occupies: occupies![],
+        occupies: occupies![("Displacement", 1.0)],
     });
 }
 
@@ -91,7 +91,7 @@ fn throw_slice_respond(
         animation.replace("Apple_Static", false, None);
         commands.trigger(BehaveEnd {
             entity: event.entity,
-            cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.15)),
+            cooldown: Duration::from_secs_f32(rand_normal(1.5, 0.15)),
             occupies: occupies![],
         });
     } else {

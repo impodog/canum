@@ -117,7 +117,7 @@ fn spawn_spiker_start(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: default(),
-        occupies: occupies![("SpawnSpiker", rand_normal(0.45, 0.05))],
+        occupies: occupies![("SpawnSpiker", rand_normal(0.6, 0.05))],
     });
 }
 
