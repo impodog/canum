@@ -12,7 +12,7 @@ impl Plugin for MovementsPlugin {
     }
 }
 
-/// The entity shrinks their animation and hitbox and hitbox by a base number when their speed increases.
+/// The entity shrinks their animation and hitbox by a base number when their speed increases.
 ///
 /// For each time the velocity of given number, the size is reduced by half.
 #[derive(Component, Debug, Clone)]

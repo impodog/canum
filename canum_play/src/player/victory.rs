@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use crate::prelude::*;
 
 pub(super) struct VictoryPlugin;
@@ -10,7 +12,8 @@ impl Plugin for VictoryPlugin {
             .register_component_hooks::<DefeatToWin>()
             .on_remove(|mut world, HookContext { entity, .. }| {
                 let defeat_to_win = world.get::<DefeatToWin>(entity).unwrap();
-                if defeat_to_win.defeated {
+                let state = world.resource::<State<crate::setup::GameState>>();
+                if defeat_to_win.defeated && *state.get() == crate::setup::GameState::Play {
                     world.commands().trigger(PlayerWin);
                 }
             });
@@ -60,8 +63,12 @@ fn update_player_status(
     next_state.set(crate::setup::GameState::Cutscene);
 }
 
+#[derive(Event, Default, Debug, Clone, Deref, DerefMut)]
+pub struct CompletedTasks(pub BTreeSet<String>);
+
 fn update_save(
     _event: On<PlayerWin>,
+    mut commands: Commands,
     mut save: ResMut<Save>,
     mut window_title: ResMut<canum_res::window::WindowTitle>,
     fight: Res<State<crate::setup::Fight>>,
@@ -73,6 +80,7 @@ fn update_save(
         .boss_progress
         .entry(fight.get().0.clone())
         .or_default();
+    let previous_tasks = progress.tasks.clone();
     if !progress.defeated {
         progress.defeated = true;
         progress.tasks.insert("Completed".to_owned());
@@ -80,6 +88,12 @@ fn update_save(
     if !**any_hits {
         progress.tasks.insert("NoHits".to_owned());
     }
+    let completed_tasks = progress
+        .tasks
+        .difference(&previous_tasks)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    commands.trigger(CompletedTasks(completed_tasks));
     window_title.0 = lang
         .get(&format!("{}_Victory_WindowTitle", fight.get().0))
         .to_owned();

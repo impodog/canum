@@ -1,8 +1,9 @@
 mod health;
+mod lobby;
 mod prelude;
 mod setup;
 
-pub use setup::{BottomCenter, BottomLeft, Center, TopLeft};
+pub use setup::{BottomCenter, BottomLeft, Center, TopLeft, TopRight};
 
 pub mod text;
 pub use text::Fonts;
@@ -27,6 +28,7 @@ impl Plugin for CanumUiPlugin {
             text::TextPlugin,
             boss::BossPlugin,
             bar::BarPlugin,
+            lobby::LobbyPlugin,
         ));
     }
 }

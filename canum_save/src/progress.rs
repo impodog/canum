@@ -12,6 +12,7 @@ pub struct Progress {
     pub boss_progress: HashMap<String, BossProgress>,
     pub current_lobby: String,
     pub lobby_position: Vec2,
+    pub coins: i32,
 }
 
 impl Default for Progress {
@@ -25,6 +26,7 @@ impl Default for Progress {
             boss_progress: Default::default(),
             current_lobby: "Gate".to_owned(),
             lobby_position: Vec2::new(400.0, 225.0),
+            coins: 0,
         }
     }
 }

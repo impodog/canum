@@ -12,6 +12,9 @@ impl Plugin for SetupPlugin {
 pub struct TopLeft;
 
 #[derive(Component, Default)]
+pub struct TopRight;
+
+#[derive(Component, Default)]
 pub struct BottomLeft;
 
 #[derive(Component, Default)]
@@ -50,6 +53,17 @@ fn setup_ui(
             },
         ))
         .id();
+    commands.spawn((
+        ChildOf(root),
+        TopRight,
+        Node {
+            position_type: PositionType::Absolute,
+            right: px(10.0),
+            top: px(3.0),
+            flex_direction: FlexDirection::Column,
+            ..default()
+        },
+    ));
     commands.spawn((
         ChildOf(root),
         BottomLeft,

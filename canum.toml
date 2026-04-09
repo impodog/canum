@@ -1,1 +1,2 @@
 assets_path = "assets/assets.json"
+values_path = "assets/values/values.ron"
