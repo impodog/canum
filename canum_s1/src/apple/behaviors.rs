@@ -50,6 +50,7 @@ fn move_closer_start(
             displace: displace * 0.9,
             duration: Duration::from_secs_f32(duration),
             notify: Some(event.entity),
+            ..default()
         });
     Ok(())
 }
@@ -57,7 +58,7 @@ fn move_closer_end(event: On<enemy::movements::DisplacementComplete>, mut comman
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(1.0),
-        occupies: occupies![("Displacement", 1.0)],
+        occupies: occupies![("Displacement", 1.5)],
     });
 }
 

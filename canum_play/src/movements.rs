@@ -255,18 +255,18 @@ impl AutoFlip {
     }
 }
 
-fn auto_flip(mut q_flip: Query<(&AutoFlip, &LinearVelocity, &mut Sprite)>) {
+fn auto_flip(mut q_flip: Query<(&AutoFlip, &ForcedVelocity, &mut Sprite)>) {
     q_flip
         .par_iter_mut()
-        .for_each(|(auto_flip, linear_velocity, mut sprite)| {
-            if auto_flip.x != 0 && linear_velocity.x.abs() >= 10.0 {
-                let should_flip = (linear_velocity.x > 0.0) ^ (auto_flip.x > 0);
+        .for_each(|(auto_flip, forced_velocity, mut sprite)| {
+            if auto_flip.x != 0 && forced_velocity.x.abs() >= 10.0 {
+                let should_flip = (forced_velocity.x > 0.0) ^ (auto_flip.x > 0);
                 if sprite.flip_x != should_flip {
                     sprite.flip_x = should_flip;
                 }
             }
-            if auto_flip.y != 0 && linear_velocity.y.abs() >= 10.0 {
-                let should_flip = (linear_velocity.y > 0.0) ^ (auto_flip.y > 0);
+            if auto_flip.y != 0 && forced_velocity.y.abs() >= 10.0 {
+                let should_flip = (forced_velocity.y > 0.0) ^ (auto_flip.y > 0);
                 if sprite.flip_y != should_flip {
                     sprite.flip_y = should_flip;
                 }

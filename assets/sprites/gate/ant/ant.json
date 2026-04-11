@@ -4,7 +4,7 @@
       { "path": "ant.png", "offset": [32, 0], "count": 2, "interval": 500 }
     ],
     "Ant_Run": [
-      { "path": "ant.png", "offset": [96, 0], "count": 2, "interval": 200 }
+      { "path": "ant.png", "offset": [96, 0], "count": 2, "interval": 100 }
     ]
   }
 }

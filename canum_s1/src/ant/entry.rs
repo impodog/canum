@@ -15,6 +15,7 @@ impl Plugin for EntryPlugin {
                         displace: vec2(-400.0, 0.0),
                         duration: Duration::from_secs_f32(0.8),
                         notify: Some(entity),
+                        ..default()
                     });
                 world
                     .commands()

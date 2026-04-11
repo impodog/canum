@@ -27,13 +27,26 @@ impl Plugin for MovementsPlugin {
 
 /// Calls for the entity to move in quadratic speed changed with a fixed displacement.
 /// This is directly added to the entity, to enhance efficiency.
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone)]
 #[require(ForcedVelocity)]
 pub struct Displacement {
+    /// The curve must be derivable for [0.0, 1.0], while 0.0 maps to 0.0, 1.0 maps to 1.0.
+    pub curve: fn(f32) -> f32,
     pub displace: Vec2,
     pub duration: Duration,
     pub notify: Option<Entity>,
 }
+impl Default for Displacement {
+    fn default() -> Self {
+        Self {
+            curve: |x| QuadraticOutCurve.sample(x).unwrap(),
+            displace: Vec2::ZERO,
+            duration: Duration::from_secs(1),
+            notify: None,
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone)]
 struct DisplacementInfo {
     start_time: Duration,
@@ -51,9 +64,8 @@ fn work_displacement(
     q_partial_velocity: Query<Mut<PartialVelocity>>,
     time: Res<Time>,
 ) {
-    fn derivative(value: f32) -> f32 {
-        (QuadraticOutCurve.sample(value + 1e-6).unwrap() - QuadraticOutCurve.sample(value).unwrap())
-            / 1e-6
+    fn derivative(curve: fn(f32) -> f32, value: f32) -> f32 {
+        (curve(value + 1e-6) - curve(value)) / 1e-6
     }
     let q_partial_velocity = std::sync::Mutex::new(q_partial_velocity);
     q_displacement
@@ -75,8 +87,9 @@ fn work_displacement(
                 });
                 return;
             }
-            let new_velocity =
-                derivative(ratio) / displacement.duration.as_secs_f32() * displacement.displace;
+            let new_velocity = derivative(displacement.curve, ratio)
+                / displacement.duration.as_secs_f32()
+                * displacement.displace;
             {
                 let mut q_partial_velocity = q_partial_velocity.lock().unwrap();
                 let Ok(mut partial_velocity) = q_partial_velocity.get_mut(info.partial_velocity)
