@@ -25,6 +25,9 @@ fn main() {
             canum_res::config::CONFIG.client.update_freq as f64,
         ))
         .insert_resource(avian2d::prelude::Gravity::ZERO)
+        .add_systems(Startup, |mut commands: Commands| {
+            commands.spawn(BackgroundColor(Color::linear_rgb(0.05, 0.05, 0.05)));
+        })
         .add_systems(
             PreUpdate,
             |mut commands: Commands, mut flag: Local<bool>| {

@@ -20,7 +20,7 @@ pub struct ProjectileBounds {
     pub max: Vec2,
 }
 
-/// Deisables collision with boundaries for certain objects.
+/// Disables collision with boundaries for certain objects.
 #[derive(Component, Default)]
 pub struct NoCollideBoundary;
 

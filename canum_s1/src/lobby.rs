@@ -49,7 +49,6 @@ fn handle_lobby_select(
         0 => {
             commands.spawn((
                 ChildOf(center),
-                SessionOnly,
                 canum_ui::boss::boss_panel(
                     fonts,
                     canum_ui::boss::BossPanel {
@@ -65,7 +64,6 @@ fn handle_lobby_select(
         1 => {
             commands.spawn((
                 ChildOf(center),
-                SessionOnly,
                 canum_ui::boss::boss_panel(
                     fonts,
                     canum_ui::boss::BossPanel {
@@ -73,6 +71,21 @@ fn handle_lobby_select(
                         fight_name: "Turf".to_owned(),
                         marks: marks(&save, "Turf"),
                         enter_color: Color::linear_rgb(0.5, 1.0, 0.5),
+                    },
+                    time,
+                ),
+            ));
+        }
+        2 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::boss::boss_panel(
+                    fonts,
+                    canum_ui::boss::BossPanel {
+                        name: lang.get("Ant_UiName").to_owned(),
+                        fight_name: "Ant".to_owned(),
+                        marks: marks(&save, "Ant"),
+                        enter_color: Color::linear_rgb(0.2, 0.2, 0.2),
                     },
                     time,
                 ),

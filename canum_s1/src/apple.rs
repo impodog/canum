@@ -1,5 +1,3 @@
-use std::sync::LazyLock;
-
 use crate::prelude::*;
 
 mod background;

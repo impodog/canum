@@ -2,8 +2,6 @@ mod background;
 mod behaviors;
 mod defeat;
 
-use std::sync::LazyLock;
-
 use crate::prelude::*;
 
 static TURF_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Turf".to_owned()));

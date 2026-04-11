@@ -109,7 +109,7 @@ fn throw_slice_respond(
         commands.spawn((
             AppleSlice { direction },
             transform,
-            LinearVelocity(direction * 200.0),
+            LinearVelocity(direction * 250.0),
         ));
         commands.spawn((ChildOf(event.entity), Sound::new("Apple_Swoosh")));
     }

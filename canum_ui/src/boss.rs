@@ -106,7 +106,7 @@ fn handle_panel_select(
         return;
     };
     // Disallow spawning and entering the panel on the same frame.
-    if time.elapsed() - panel_add_time.0 <= Duration::from_millis(30) {
+    if time.elapsed() - panel_add_time.0 <= Duration::from_millis(100) {
         return;
     }
 
@@ -137,6 +137,15 @@ fn handle_panel_select(
 fn unleash_cutscene_when_pure_color_half_point(
     event: On<canum_fx::transition::PureColorHalfPoint>,
     mut commands: Commands,
+    q_children: Query<&Children>,
+    q_wait: Query<(), With<setup::CutsceneWait>>,
 ) {
-    commands.entity(event.entity).despawn();
+    let Ok(children) = q_children.get(event.entity) else {
+        return;
+    };
+    for child in children.iter() {
+        if q_wait.get(child).is_ok() {
+            commands.entity(child).despawn();
+        }
+    }
 }

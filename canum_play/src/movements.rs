@@ -9,6 +9,7 @@ impl Plugin for MovementsPlugin {
         app.add_systems(FixedUpdate, perform_dash);
         app.add_observer(start_dash);
         app.add_systems(FixedLast, (update_forced_velocity, speed_decay).chain());
+        app.add_systems(FixedLast, auto_flip);
     }
 }
 
@@ -166,5 +167,46 @@ fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedV
         .for_each(|(decay, mut linear_velocity, forced)| {
             let amount = (linear_velocity.0 - forced.0) * decay.0;
             linear_velocity.0 -= amount;
+        });
+}
+
+/// Automatically flips the sprite's selected axis based on velocity.
+/// You must give the sprite's default direction by sign (1 or -1).
+#[derive(Component, Debug, Clone, Default)]
+#[require(Animation)]
+pub struct AutoFlip {
+    x: i8,
+    y: i8,
+}
+impl AutoFlip {
+    pub const FLIP_RIGHT: Self = Self::flip_x(1);
+    pub const FLIP_LEFT: Self = Self::flip_x(-1);
+    pub const FLIP_UP: Self = Self::flip_y(1);
+    pub const FLIP_DOWN: Self = Self::flip_y(-1);
+
+    pub const fn flip_x(x: i8) -> Self {
+        Self { x, y: 0 }
+    }
+    pub const fn flip_y(y: i8) -> Self {
+        Self { x: 0, y }
+    }
+}
+
+fn auto_flip(mut q_flip: Query<(&AutoFlip, &LinearVelocity, &mut Sprite)>) {
+    q_flip
+        .par_iter_mut()
+        .for_each(|(auto_flip, linear_velocity, mut sprite)| {
+            if auto_flip.x != 0 && linear_velocity.x.abs() > 1e-2 {
+                let should_flip = (linear_velocity.x > 0.0) ^ (auto_flip.x > 0);
+                if sprite.flip_x != should_flip {
+                    sprite.flip_x = should_flip;
+                }
+            }
+            if auto_flip.y != 0 && linear_velocity.y.abs() > 1e-2 {
+                let should_flip = (linear_velocity.y > 0.0) ^ (auto_flip.y > 0);
+                if sprite.flip_y != should_flip {
+                    sprite.flip_y = should_flip;
+                }
+            }
         });
 }

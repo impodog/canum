@@ -23,7 +23,7 @@ impl Plugin for CanumResPlugin {
             .init_resource::<camera::VirtualResolution>()
             .init_resource::<window::WindowTitle>()
             .init_resource::<sound::LoadedSounds>();
-        app.add_systems(FixedFirst, (tick_animation, modify_animation).chain());
+        app.add_systems(First, (tick_animation, modify_animation).chain());
         app.add_systems(Last, framerate::control_framerate);
         app.add_systems(Startup, (camera::setup_camera, window::setup_window));
         app.add_systems(Update, (window::update_window, camera::update_camera));

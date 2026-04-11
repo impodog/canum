@@ -1,8 +1,8 @@
 {
-  "include": ["apple.json", "turf.json"],
+  "include": ["apple.json", "turf.json", "ant.json"],
   "text": {
     "en": {
-      "Gate_WindowTitle": "Main Gate"
+      "Gate_WindowTitle": "Garden"
     }
   }
 }
