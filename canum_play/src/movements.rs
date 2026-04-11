@@ -8,7 +8,10 @@ impl Plugin for MovementsPlugin {
         app.add_systems(FixedPreUpdate, refresh_dash_timers);
         app.add_systems(FixedUpdate, perform_dash);
         app.add_observer(start_dash);
-        app.add_systems(FixedLast, (update_forced_velocity, speed_decay).chain());
+        app.add_systems(
+            FixedLast,
+            (update_forced_velocity, update_velocity, speed_decay).chain(),
+        );
         app.add_systems(FixedLast, auto_flip);
     }
 }
@@ -142,10 +145,70 @@ impl Default for SpeedDecay {
 #[require(LinearVelocity, PrevForcedVelocity)]
 pub struct ForcedVelocity(pub Vec2);
 
+/// A child of `ForcedVelocity`. Individual components can modify their part of velocity.
+///
+/// If there are no partial velocities, `ForcedVelocity` is directly modified.
+#[derive(Component, Debug, Clone, Deref, DerefMut)]
+pub struct PartialVelocity {
+    #[deref]
+    pub velocity: Vec2,
+    pub linked: Option<Entity>,
+}
+impl PartialVelocity {
+    /// Creates a `PartialVelocity` with a linked entity. When the linked entity despawns, the velocity will despawn itself.
+    pub fn linked(entity: Entity) -> Self {
+        Self {
+            velocity: Vec2::ZERO,
+            linked: Some(entity),
+        }
+    }
+
+    /// Creates a `PartialVelocity` without a linked entity. It will not despawn itself.
+    pub fn unlinked() -> Self {
+        Self {
+            velocity: Vec2::ZERO,
+            linked: None,
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone, Default)]
 struct PrevForcedVelocity(Vec2);
 
 fn update_forced_velocity(
+    commands: ParallelCommands,
+    mut q_forced: Query<(&mut ForcedVelocity, &Children)>,
+    q_partial: Query<Ref<PartialVelocity>>,
+    q_ok: Query<()>,
+) {
+    q_forced.par_iter_mut().for_each(|(mut forced, children)| {
+        let mut total = Vec2::ZERO;
+        let mut any_changed = false;
+        for child in children.iter() {
+            let Ok(partial) = q_partial.get(child) else {
+                continue;
+            };
+            if let Some(linked) = partial.linked
+                && q_ok.get(linked).is_err()
+            {
+                commands.command_scope(|mut commands| {
+                    commands.entity(child).despawn();
+                });
+                any_changed = true;
+                continue;
+            }
+            total += partial.velocity;
+            if partial.is_changed() {
+                any_changed = true;
+            }
+        }
+        if any_changed {
+            forced.0 = total;
+        }
+    });
+}
+
+fn update_velocity(
     mut q_forced: Query<(
         Ref<ForcedVelocity>,
         &mut LinearVelocity,
@@ -196,13 +259,13 @@ fn auto_flip(mut q_flip: Query<(&AutoFlip, &LinearVelocity, &mut Sprite)>) {
     q_flip
         .par_iter_mut()
         .for_each(|(auto_flip, linear_velocity, mut sprite)| {
-            if auto_flip.x != 0 && linear_velocity.x.abs() > 1e-2 {
+            if auto_flip.x != 0 && linear_velocity.x.abs() >= 10.0 {
                 let should_flip = (linear_velocity.x > 0.0) ^ (auto_flip.x > 0);
                 if sprite.flip_x != should_flip {
                     sprite.flip_x = should_flip;
                 }
             }
-            if auto_flip.y != 0 && linear_velocity.y.abs() > 1e-2 {
+            if auto_flip.y != 0 && linear_velocity.y.abs() >= 10.0 {
                 let should_flip = (linear_velocity.y > 0.0) ^ (auto_flip.y > 0);
                 if sprite.flip_y != should_flip {
                     sprite.flip_y = should_flip;

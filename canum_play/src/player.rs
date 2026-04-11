@@ -22,6 +22,22 @@ impl Plugin for PlayerPlugin {
             victory::VictoryPlugin,
             tracking::TrackingPlugin,
         ));
+        app.world_mut().register_component_hooks::<Player>().on_add(
+            |mut world, HookContext { entity, .. }| {
+                let mut commands = world.commands();
+                let player_control = commands
+                    .spawn((
+                        ChildOf(entity),
+                        crate::movements::PartialVelocity::unlinked(),
+                    ))
+                    .id();
+                commands.entity(entity).insert(PlayerAcc {
+                    linear: 0.0,
+                    changed: false,
+                    partial_velocity: player_control,
+                });
+            },
+        );
     }
 }
 
@@ -35,10 +51,11 @@ impl Plugin for PlayerPlugin {
     Restitution::new(1.0),
     CollisionEventsEnabled,
     PlayerShoot,
-    PlayerAcc,
     attack::Weapons,
     crate::movements::SpeedShrink(800.0),
     crate::movements::Dash,
+    crate::movements::ForcedVelocity,
+    crate::movements::SpeedDecay(0.1),
     crate::health::Friendly(true)
 )]
 pub struct Player;
@@ -56,10 +73,11 @@ pub struct RandomPlayer(pub Entity);
 pub struct PlayerShoot(pub f32);
 
 /// Tweaks the player control experience with acceleration.
-#[derive(Component, Default, Debug)]
+#[derive(Component, Debug)]
 pub struct PlayerAcc {
     pub linear: f32,
     pub changed: bool,
+    pub partial_velocity: Entity,
 }
 
 /// Instructs the player to move in a direction, with a multiplier.
@@ -82,11 +100,11 @@ fn decay_player_acc(
     mut q_player: Query<(
         &mut PlayerAcc,
         &mut PlayerShoot,
-        &mut LinearVelocity,
         &mut AngularVelocity,
         &mut crate::movements::DashTimers,
         &Rotation,
     )>,
+    mut q_velocity: Query<&mut movements::PartialVelocity>,
 ) {
     fn wrap_angle(angle: f32) -> f32 {
         if angle > std::f32::consts::PI {
@@ -98,15 +116,12 @@ fn decay_player_acc(
         }
     }
 
-    for (
-        mut acc,
-        mut player_shoot,
-        mut linear_velocity,
-        mut angular_velocity,
-        mut dash_timers,
-        rotation,
-    ) in q_player.iter_mut()
+    for (mut acc, mut player_shoot, mut angular_velocity, mut dash_timers, rotation) in
+        q_player.iter_mut()
     {
+        let Ok(mut linear_velocity) = q_velocity.get_mut(acc.partial_velocity) else {
+            return;
+        };
         if !acc.changed {
             dash_timers.total.finish();
             acc.linear = (acc.linear - 0.05).max(0.0);
@@ -114,7 +129,7 @@ fn decay_player_acc(
                 angular_velocity.0 = -rotation.as_radians().signum() * (1.01 - rotation.cos) * 10.0;
             }
             if linear_velocity.length_squared() > 0.01 {
-                linear_velocity.0 *= 0.8;
+                **linear_velocity *= 0.8;
             }
         }
         {
@@ -140,15 +155,13 @@ fn decay_player_acc(
 
 fn respond_player_move(
     event: On<PlayerMove>,
-    mut q_player: Query<(
-        &mut PlayerAcc,
-        &mut LinearVelocity,
-        &crate::movements::DashTimers,
-    )>,
+    mut q_player: Query<(&mut PlayerAcc, &crate::movements::DashTimers)>,
+    mut q_velocity: Query<&mut movements::PartialVelocity>,
 ) -> Result<()> {
     const PLAYER_SPEED: f32 = 200.0;
 
-    let (mut acc, mut linear_velocity, dash_timers) = q_player.get_mut(event.entity)?;
+    let (mut acc, dash_timers) = q_player.get_mut(event.entity)?;
+    let mut linear_velocity = q_velocity.get_mut(acc.partial_velocity)?;
     acc.changed = true;
     acc.linear += (1.0 - acc.linear) * 0.333;
     {
@@ -160,10 +173,10 @@ fn respond_player_move(
         };
         let target_velocity =
             Vec2::new(event.rot.cos(), event.rot.sin()) * event.mult * target_speed;
-        let diff = target_velocity - linear_velocity.0;
+        let diff = target_velocity - linear_velocity.velocity;
         let diff_len = diff.length();
         if let Some(diff) = diff.try_normalize() {
-            linear_velocity.0 += diff * acc.linear * (10.0f32).min(diff_len);
+            linear_velocity.velocity += diff * acc.linear * (15.0f32).min(diff_len);
         }
     }
     Ok(())

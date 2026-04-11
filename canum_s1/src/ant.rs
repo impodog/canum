@@ -52,5 +52,6 @@ impl Plugin for AntPlugin {
 pub struct AntBoss;
 
 fn spawn_ant(_event: On<background::AntSetupTimerComplete>, mut commands: Commands) {
-    commands.spawn((AntBoss,));
+    let ant = commands.spawn((AntBoss,)).id();
+    commands.spawn((ChildOf(ant), behaviors::AntBehaviors));
 }

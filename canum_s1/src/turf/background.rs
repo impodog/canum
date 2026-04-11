@@ -52,10 +52,13 @@ fn change_turf_background_on_defeat(
     animation.replace("Turf_GrasslandDefeat", false, None);
 }
 
-fn setup_timer(mut timer: ResMut<SetupTimer>, time: Res<Time>, mut commands: Commands) {
-    timer.tick(time.delta());
-    if timer.just_finished() {
-        commands.trigger(TurfSetupTimerComplete);
+fn setup_timer(timer: Option<ResMut<SetupTimer>>, time: Res<Time>, mut commands: Commands) {
+    if let Some(mut timer) = timer {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            commands.trigger(TurfSetupTimerComplete);
+            commands.remove_resource::<SetupTimer>();
+        }
     }
 }
 

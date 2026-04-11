@@ -31,9 +31,13 @@ fn setup_ant(
     commands.insert_resource(SetupTimer::default());
     window_title.0 = lang.get("Ant_WindowTitle").to_owned();
 }
-fn setup_timer(mut commands: Commands, mut timer: ResMut<SetupTimer>, time: Res<Time>) {
-    timer.tick(time.delta());
-    if timer.just_finished() {
-        commands.trigger(AntSetupTimerComplete);
+
+fn setup_timer(mut commands: Commands, timer: Option<ResMut<SetupTimer>>, time: Res<Time>) {
+    if let Some(mut timer) = timer {
+        timer.tick(time.delta());
+        if timer.just_finished() {
+            commands.trigger(AntSetupTimerComplete);
+            commands.remove_resource::<SetupTimer>();
+        }
     }
 }

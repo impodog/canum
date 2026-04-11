@@ -39,7 +39,7 @@ pub struct BehaveEnd {
     pub occupies: Vec<(String, Duration)>,
 }
 
-/// Utility for creating `BehaveEnd::occupies`. This may handle empty vector correctly.
+/// Utility for creating `BehaveEnd::occupies`. This handles empty vectors correctly.
 #[macro_export]
 macro_rules! occupies {
     [] => {
