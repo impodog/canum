@@ -156,6 +156,8 @@ pub struct PartialVelocity {
 }
 impl PartialVelocity {
     /// Creates a `PartialVelocity` with a linked entity. When the linked entity despawns, the velocity will despawn itself.
+    ///
+    /// This is useful for external entities that forces others to move.
     pub fn linked(entity: Entity) -> Self {
         Self {
             velocity: Vec2::ZERO,
@@ -164,6 +166,8 @@ impl PartialVelocity {
     }
 
     /// Creates a `PartialVelocity` without a linked entity. It will not despawn itself.
+    ///
+    /// This is useful for child entities that describe movement itself.
     pub fn unlinked() -> Self {
         Self {
             velocity: Vec2::ZERO,
@@ -236,7 +240,7 @@ fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedV
 /// Automatically flips the sprite's selected axis based on velocity.
 /// You must give the sprite's default direction by sign (1 or -1).
 #[derive(Component, Debug, Clone, Default)]
-#[require(Animation)]
+#[require(Animation, AutoFlipStatus)]
 pub struct AutoFlip {
     x: i8,
     y: i8,
@@ -255,20 +259,36 @@ impl AutoFlip {
     }
 }
 
-fn auto_flip(mut q_flip: Query<(&AutoFlip, &ForcedVelocity, &mut Sprite)>) {
+/// Stores the absolute axis direction (1.0 or -1.0) that auto flip has affected.
+/// This is used for coordination with animation.
+#[derive(Component, Debug, Default)]
+pub struct AutoFlipStatus {
+    pub x: f32,
+    pub y: f32,
+}
+
+fn auto_flip(mut q_flip: Query<(&AutoFlip, &ForcedVelocity, &mut Sprite, &mut AutoFlipStatus)>) {
     q_flip
         .par_iter_mut()
-        .for_each(|(auto_flip, forced_velocity, mut sprite)| {
+        .for_each(|(auto_flip, forced_velocity, mut sprite, mut status)| {
             if auto_flip.x != 0 && forced_velocity.x.abs() >= 10.0 {
+                if status.x == 0.0 {
+                    status.x = 1.0;
+                }
                 let should_flip = (forced_velocity.x > 0.0) ^ (auto_flip.x > 0);
                 if sprite.flip_x != should_flip {
                     sprite.flip_x = should_flip;
+                    status.x = if forced_velocity.x > 0.0 { 1.0 } else { -1.0 };
                 }
             }
             if auto_flip.y != 0 && forced_velocity.y.abs() >= 10.0 {
+                if status.y == 0.0 {
+                    status.y = 1.0;
+                }
                 let should_flip = (forced_velocity.y > 0.0) ^ (auto_flip.y > 0);
                 if sprite.flip_y != should_flip {
                     sprite.flip_y = should_flip;
+                    status.x = if forced_velocity.y > 0.0 { 1.0 } else { -1.0 };
                 }
             }
         });

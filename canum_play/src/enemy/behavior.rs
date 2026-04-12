@@ -16,7 +16,10 @@ impl Plugin for BehaviorPlugin {
             FixedPreUpdate,
             (init_behavior_weights, update_player_average_position),
         );
-        app.add_systems(FixedUpdate, (base_by_distance, base_farther_better));
+        app.add_systems(
+            FixedUpdate,
+            (base_by_distance, base_farther_better, multiplier_by_speed),
+        );
         app.add_systems(FixedPostUpdate, start_behavior);
         app.add_observer(end_behavior);
     }
@@ -74,10 +77,18 @@ impl BehaviorManager {
     }
 }
 
-#[derive(Component, Default, Debug)]
+#[derive(Component, Debug)]
 struct BehaviorManagerInfo {
     occupied: BTreeMap<String, Timer>,
     cooldown: Timer,
+}
+impl Default for BehaviorManagerInfo {
+    fn default() -> Self {
+        Self {
+            occupied: Default::default(),
+            cooldown: Timer::from_seconds(1.0, TimerMode::Once),
+        }
+    }
 }
 
 fn start_behavior(
@@ -308,7 +319,7 @@ fn base_by_distance(
         });
 }
 
-/// The farther the player is, the more likely this will player.
+/// The farther the player is, the more likely this will perform.
 /// This uses inverse function.
 #[derive(Component, Debug, Default)]
 #[require(Transform)]
@@ -339,5 +350,44 @@ fn base_farther_better(
             } else {
                 weight.base = 0.0;
             }
+        });
+}
+
+/// The faster(or slower) the player is, the more likely this will perform.
+///
+/// This changes by logarithm.
+#[derive(Component, Debug, Default)]
+pub struct MultiplierBySpeed {
+    pub speed_unit: f32,
+    pub speed_unit_log: f32,
+    pub log_base: f32,
+}
+impl MultiplierBySpeed {
+    pub fn new(speed_unit: f32, log_base: f32) -> Self {
+        Self {
+            speed_unit,
+            speed_unit_log: speed_unit.log(log_base),
+            log_base,
+        }
+    }
+}
+fn multiplier_by_speed(
+    mut q_behavior: Query<(&mut Weight, &MultiplierBySpeed)>,
+    player: Option<Res<crate::player::RandomPlayer>>,
+    q_velocity: Query<&LinearVelocity>,
+) {
+    let Some(player) = player else {
+        return;
+    };
+    let Ok(velocity) = q_velocity.get(player.0) else {
+        return;
+    };
+    let speed = velocity.length();
+    q_behavior
+        .par_iter_mut()
+        .for_each(|(mut weight, modifier)| {
+            let result =
+                (speed + modifier.speed_unit).log(modifier.log_base) - modifier.speed_unit_log;
+            weight.multiplier *= result;
         });
 }

@@ -1,6 +1,6 @@
 {
   "sounds": {
-    "Turf_Bgm": { "path": "turf_bgm.ogg", "volume": 0.6 },
-    "Turf_Shooter_Shoot": { "path": "shooter_shoot.wav", "volume": 1.5 }
+    "Turf_Bgm": { "path": "turf_bgm.ogg", "volume": -2.0 },
+    "Turf_Shooter_Shoot": { "path": "shooter_shoot.wav", "volume": 5.0 }
   }
 }

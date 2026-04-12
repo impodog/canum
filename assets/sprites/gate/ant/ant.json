@@ -5,6 +5,15 @@
     ],
     "Ant_Run": [
       { "path": "ant.png", "offset": [96, 0], "count": 2, "interval": 100 }
-    ]
+    ],
+    "Ant_Throw": [
+      {
+        "path": "ant_throw.png",
+        "offset": [32, 0],
+        "count": 5,
+        "interval": 200
+      }
+    ],
+    "Ant_Blade": [{ "path": "blade.png", "count": 4, "interval": 100 }]
   }
 }

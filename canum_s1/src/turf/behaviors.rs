@@ -276,7 +276,7 @@ fn turf_shooter_shoot(
         };
         let shooter_position = shooter_transform.translation().xy();
         let direction = (player_position - shooter_position).to_angle() + rand_normal(0.0, 0.1);
-        let offset_angle = rand_normal(0.5, 0.1);
+        let offset_angle = rand_normal(0.6, 0.1);
         let transform = Transform::from_translation(shooter_transform.translation());
         for offset in [-offset_angle, offset_angle, 0.0] {
             let velocity = Vec2::from_angle(offset + direction) * 325.0;

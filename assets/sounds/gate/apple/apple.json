@@ -3,25 +3,25 @@
     "Apple_Damage": {
       "path": "apple_damage.wav",
       "loop_point": 0.0,
-      "volume": 0.8
+      "volume": -3.0
     },
     "Apple_Defeat": {
       "path": "apple_defeat.wav",
       "loop_point": 0.0,
-      "volume": 1.0
+      "volume": 4.0
     },
     "Apple_Bgm": {
       "path": "apple_bgm.ogg",
       "loop_point": 0.0,
-      "volume": 0.3
+      "volume": -10.0
     },
     "Apple_Cut": {
       "path": "apple_cut.wav",
-      "volume": 5.0
+      "volume": 10.0
     },
     "Apple_Swoosh": {
       "path": "apple_swoosh.wav",
-      "volume": 0.8
+      "volume": -2.0
     }
   }
 }

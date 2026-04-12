@@ -9,4 +9,4 @@ bevy = { version = "0.18.1", default-features = false, features = [
   "bevy_sprite"
 ] }
 canum_res = { path = "../canum_res" }
-rand = "0.10.0"
+rand = "0.10.1"

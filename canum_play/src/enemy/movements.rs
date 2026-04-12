@@ -12,23 +12,18 @@ impl Plugin for MovementsPlugin {
             .register_component_hooks::<Displacement>()
             .on_add(|mut world, HookContext { entity, .. }| {
                 let start_time = world.get_resource::<Time>().unwrap().elapsed();
-                let partial_velocity = world
+                world
                     .commands()
-                    .spawn((ChildOf(entity), PartialVelocity::unlinked()))
-                    .id();
-                world.commands().entity(entity).insert(DisplacementInfo {
-                    start_time,
-                    partial_velocity,
-                });
+                    .entity(entity)
+                    .insert(DisplacementInfo { start_time });
             });
-        app.add_systems(FixedUpdate, (work_displacement,));
+        app.add_systems(FixedUpdate, (work_displacement, rotation_around));
     }
 }
 
-/// Calls for the entity to move in quadratic speed changed with a fixed displacement.
-/// This is directly added to the entity, to enhance efficiency.
+/// Calls for the parent to move in quadratic speed changed with a fixed displacement.
 #[derive(Component, Debug, Clone)]
-#[require(ForcedVelocity)]
+#[require(PartialVelocity::unlinked())]
 pub struct Displacement {
     /// The curve must be derivable for [0.0, 1.0], while 0.0 maps to 0.0, 1.0 maps to 1.0.
     pub curve: fn(f32) -> f32,
@@ -50,7 +45,6 @@ impl Default for Displacement {
 #[derive(Component, Debug, Clone)]
 struct DisplacementInfo {
     start_time: Duration,
-    partial_velocity: Entity,
 }
 /// This will be sent to `notify` Entity, if any.
 #[derive(EntityEvent)]
@@ -60,25 +54,25 @@ pub struct DisplacementComplete {
 
 fn work_displacement(
     commands: ParallelCommands,
-    q_displacement: Query<(Entity, &Displacement, &DisplacementInfo)>,
-    q_partial_velocity: Query<Mut<PartialVelocity>>,
+    mut q_displacement: Query<(
+        Entity,
+        &Displacement,
+        &DisplacementInfo,
+        &mut PartialVelocity,
+    )>,
     time: Res<Time>,
 ) {
     fn derivative(curve: fn(f32) -> f32, value: f32) -> f32 {
         (curve(value + 1e-6) - curve(value)) / 1e-6
     }
-    let q_partial_velocity = std::sync::Mutex::new(q_partial_velocity);
     q_displacement
-        .par_iter()
-        .for_each(|(entity, displacement, info)| {
+        .par_iter_mut()
+        .for_each(|(entity, displacement, info, mut partial_velocity)| {
             let ratio = (time.elapsed() - info.start_time).as_secs_f32()
                 / displacement.duration.as_secs_f32();
             if ratio >= 1.0 {
                 commands.command_scope(|mut commands| {
-                    commands
-                        .entity(entity)
-                        .remove::<Displacement>()
-                        .remove::<DisplacementInfo>();
+                    commands.entity(entity).despawn();
                     if let Some(notify_entity) = displacement.notify {
                         commands.trigger(DisplacementComplete {
                             entity: notify_entity,
@@ -90,13 +84,35 @@ fn work_displacement(
             let new_velocity = derivative(displacement.curve, ratio)
                 / displacement.duration.as_secs_f32()
                 * displacement.displace;
-            {
-                let mut q_partial_velocity = q_partial_velocity.lock().unwrap();
-                let Ok(mut partial_velocity) = q_partial_velocity.get_mut(info.partial_velocity)
-                else {
-                    return;
-                };
-                **partial_velocity = new_velocity;
-            }
+            **partial_velocity = new_velocity;
+        });
+}
+
+/// Adds fixed rotation around this entity.
+#[derive(Component)]
+#[require(Transform, PartialVelocity::unlinked())]
+pub struct RotationAround {
+    pub around: Entity,
+    /// ccw is positive.
+    pub angular_velocity: f32,
+}
+
+fn rotation_around(
+    mut q_rotation: Query<(&mut PartialVelocity, &RotationAround, &GlobalTransform)>,
+    q_transform: Query<&GlobalTransform>,
+    time: Res<Time>,
+) {
+    q_rotation
+        .par_iter_mut()
+        .for_each(|(mut partial_velocity, rotation, transform)| {
+            let Ok(around_transform) = q_transform.get(rotation.around) else {
+                return;
+            };
+            let position = transform.translation().xy();
+            let around = around_transform.translation().xy();
+            let normal = position - around;
+            let next_position = around
+                + Vec2::from_angle(rotation.angular_velocity * time.delta_secs()).rotate(normal);
+            partial_velocity.velocity = (next_position - position) / time.delta_secs();
         });
 }

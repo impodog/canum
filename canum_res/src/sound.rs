@@ -31,8 +31,8 @@ impl Sound {
         self.base_volume = base_volume;
         self
     }
-    pub fn with_volume_multiply(mut self, factor: f32) -> Self {
-        self.base_volume *= factor;
+    pub fn with_volume_add(mut self, decibels: f32) -> Self {
+        self.base_volume += decibels;
         self
     }
 }
@@ -74,7 +74,7 @@ pub(super) fn start_playing_sound(
                     },
                     start_position: details.loop_point.map(Duration::from_secs_f32),
                     paused: sound.paused,
-                    volume: Volume::Linear(details.volume),
+                    volume: Volume::Decibels(details.volume),
                     ..Default::default()
                 },
             ));
@@ -117,7 +117,7 @@ pub(super) fn fade_in(
 ) {
     for (entity, mut timer, mut audio, sound) in q_sound.iter_mut() {
         audio.set_volume(Volume::SILENT.fade_towards(
-            Volume::Linear(sound.base_volume),
+            Volume::Decibels(sound.base_volume),
             timer.elapsed_secs() / timer.duration().as_secs_f32(),
         ));
         timer.tick(time.delta());
@@ -136,7 +136,7 @@ pub(super) fn fade_out(
     time: Res<Time>,
 ) {
     for (entity, mut timer, mut audio, sound) in q_sound.iter_mut() {
-        audio.set_volume(Volume::Linear(sound.base_volume).fade_towards(
+        audio.set_volume(Volume::Decibels(sound.base_volume).fade_towards(
             Volume::SILENT,
             timer.elapsed_secs() / timer.duration().as_secs_f32(),
         ));

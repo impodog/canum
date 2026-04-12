@@ -9,4 +9,4 @@ canum_fx = { path = "../canum_fx" }
 canum_play = { path = "../canum_play" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
-rand = "0.10.0"
+rand = "0.10.1"

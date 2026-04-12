@@ -44,14 +44,15 @@ fn move_closer_start(
     let displace = player_transform.translation().xy() - target_transform.translation().xy()
         + player_velocity.0 * 0.5;
     let duration = (displace.length() / 100.0).min(2.0);
-    commands
-        .entity(event.target)
-        .insert(enemy::movements::Displacement {
+    commands.spawn((
+        ChildOf(event.target),
+        enemy::movements::Displacement {
             displace: displace * 0.9,
             duration: Duration::from_secs_f32(duration),
             notify: Some(event.entity),
             ..default()
-        });
+        },
+    ));
     Ok(())
 }
 fn move_closer_end(event: On<enemy::movements::DisplacementComplete>, mut commands: Commands) {

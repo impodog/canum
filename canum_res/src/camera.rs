@@ -1,8 +1,6 @@
 use crate::config;
 use bevy::{
-    camera::{
-        CameraOutputMode, ImageRenderTarget, RenderTarget, Viewport, visibility::RenderLayers,
-    },
+    camera::{CameraOutputMode, ImageRenderTarget, RenderTarget, visibility::RenderLayers},
     prelude::*,
     render::render_resource::{
         Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,

@@ -13,7 +13,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(respond_player_move);
         app.add_systems(FixedPreUpdate, init_player_acc);
-        app.add_systems(FixedPostUpdate, decay_player_acc);
+        app.add_systems(FixedPostUpdate, (decay_player_acc, rotate_player).chain());
         app.add_systems(FixedFirst, randomize_player);
         app.add_plugins((
             attack::PlayerAttackPlugin,
@@ -99,12 +99,43 @@ fn init_player_acc(mut q_player: Query<&mut PlayerAcc>) {
 fn decay_player_acc(
     mut q_player: Query<(
         &mut PlayerAcc,
-        &mut PlayerShoot,
         &mut AngularVelocity,
         &mut crate::movements::DashTimers,
         &Rotation,
     )>,
     mut q_velocity: Query<&mut movements::PartialVelocity>,
+) {
+    for (mut acc, mut angular_velocity, mut dash_timers, rotation) in q_player.iter_mut() {
+        let Ok(mut partial_velocity) = q_velocity.get_mut(acc.partial_velocity) else {
+            return;
+        };
+        if !acc.changed {
+            dash_timers.total.finish();
+            acc.linear = (acc.linear - 0.05).max(0.0);
+            if rotation.cos < 0.99 {
+                angular_velocity.0 = -rotation.as_radians().signum() * (1.01 - rotation.cos) * 10.0;
+            }
+            if partial_velocity.length_squared() > 0.01 {
+                **partial_velocity *= 0.8;
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn rotate_player(
+    mut q_player: Query<
+        (
+            &PlayerAcc,
+            &mut PlayerShoot,
+            &LinearVelocity,
+            &movements::ForcedVelocity,
+            &mut AngularVelocity,
+            &Rotation,
+        ),
+        With<Player>,
+    >,
+    q_partial_velocity: Query<&movements::PartialVelocity>,
 ) {
     fn wrap_angle(angle: f32) -> f32 {
         if angle > std::f32::consts::PI {
@@ -115,41 +146,36 @@ fn decay_player_acc(
             angle
         }
     }
-
-    for (mut acc, mut player_shoot, mut angular_velocity, mut dash_timers, rotation) in
-        q_player.iter_mut()
+    for (
+        player_acc,
+        mut player_shoot,
+        linear_velocity,
+        forced_velocity,
+        mut angular_velocity,
+        rotation,
+    ) in q_player.iter_mut()
     {
-        let Ok(mut linear_velocity) = q_velocity.get_mut(acc.partial_velocity) else {
+        let Ok(partial_velocity) = q_partial_velocity.get(player_acc.partial_velocity) else {
             return;
         };
-        if !acc.changed {
-            dash_timers.total.finish();
-            acc.linear = (acc.linear - 0.05).max(0.0);
-            if rotation.cos < 0.99 {
-                angular_velocity.0 = -rotation.as_radians().signum() * (1.01 - rotation.cos) * 10.0;
-            }
-            if linear_velocity.length_squared() > 0.01 {
-                **linear_velocity *= 0.8;
-            }
-        }
-        {
-            let target_rotation = linear_velocity.to_angle();
-            let current_rotation = wrap_angle(rotation.as_radians() + std::f32::consts::FRAC_PI_2);
-            let diff = wrap_angle(target_rotation - current_rotation);
-            if diff.abs() > 1e-2 {
-                let base = linear_velocity.length() / 100.0
-                    * (40.0f32)
-                    * (diff.abs() / std::f32::consts::PI + 0.01);
-                if (0.0..std::f32::consts::PI).contains(&diff) {
-                    angular_velocity.0 = base;
-                } else {
-                    angular_velocity.0 = -base;
-                }
+        // player control velocity + collision caused velocity
+        let target_velocity = partial_velocity.velocity + linear_velocity.0 - forced_velocity.0;
+        let target_rotation = target_velocity.to_angle();
+        let current_rotation = wrap_angle(rotation.as_radians() + std::f32::consts::FRAC_PI_2);
+        let diff = wrap_angle(target_rotation - current_rotation);
+        if diff.abs() > 1e-2 {
+            let base = target_velocity.length() / 100.0
+                * (40.0f32)
+                * (diff.abs() / std::f32::consts::PI + 0.01);
+            if (0.0..std::f32::consts::PI).contains(&diff) {
+                angular_velocity.0 = base;
             } else {
-                angular_velocity.0 = 0.0;
+                angular_velocity.0 = -base;
             }
-            player_shoot.0 = current_rotation;
+        } else {
+            angular_velocity.0 = 0.0;
         }
+        player_shoot.0 = current_rotation;
     }
 }
 

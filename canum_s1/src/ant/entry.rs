@@ -8,15 +8,15 @@ impl Plugin for EntryPlugin {
             .register_component_hooks::<AntEntry>()
             .on_add(|mut world, HookContext { entity, .. }| {
                 let ant = world.get::<AntEntry>(entity).unwrap().0;
-                world
-                    .commands()
-                    .entity(ant)
-                    .insert(enemy::movements::Displacement {
+                world.commands().spawn((
+                    ChildOf(ant),
+                    enemy::movements::Displacement {
                         displace: vec2(-400.0, 0.0),
                         duration: Duration::from_secs_f32(0.8),
                         notify: Some(entity),
                         ..default()
-                    });
+                    },
+                ));
                 world
                     .commands()
                     .entity(entity)
