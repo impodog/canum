@@ -1,7 +1,0 @@
-(
-  boss: {
-    "Turf": (
-      gains: { "Completed": 1, "NoHits": 2 },
-    ),
-  }
-)

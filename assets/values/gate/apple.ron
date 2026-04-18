@@ -1,7 +1,0 @@
-(
-  boss: {
-    "Apple": (
-      gains: { "Completed": 1, "NoHits": 1 },
-    ),
-  }
-)

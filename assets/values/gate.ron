@@ -1,0 +1,13 @@
+(
+  boss: {
+    "Apple": (
+      gains: { "Completed": 1, "NoHits": 1 },
+    ),
+    "Turf": (
+      gains: { "Completed": 1, "NoHits": 2 },
+    ),
+    "Ant": (
+      gains: { "Completed": 1, "NoHits": 1 }
+    ),
+  }
+)

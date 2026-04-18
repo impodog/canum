@@ -15,6 +15,14 @@ impl Plugin for HealthPlugin {
                     .observe(enemy_set_defeat_to_win);
             });
         app.world_mut()
+            .register_component_hooks::<EnemySensor>()
+            .on_add(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .entity(entity)
+                    .observe(sensor_propagate_damage);
+            });
+        app.world_mut()
             .register_component_hooks::<DamageSound>()
             .on_add(|mut world, HookContext { entity, .. }| {
                 world.commands().entity(entity).observe(play_damage_sound);
@@ -39,6 +47,21 @@ impl EnemyHealth {
     pub fn new(value: i32) -> Self {
         Self { value }
     }
+}
+
+/// Marks a collider to propagate its taken damage to the parent enemy entity, but not interact with the player.
+#[derive(Component, Default)]
+#[require(Collider, Transform, Friendly(false), Sensor)]
+pub struct EnemySensor;
+
+fn sensor_propagate_damage(event: On<Damage>, q_parent: Query<&ChildOf>, mut commands: Commands) {
+    let Ok(parent) = q_parent.get(event.entity) else {
+        return;
+    };
+    commands.trigger(Damage {
+        entity: parent.0,
+        ..*event
+    });
 }
 
 fn enemy_take_damage(

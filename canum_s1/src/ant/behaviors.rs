@@ -307,9 +307,9 @@ fn spawn_runners_start(
     commands.spawn(Sound::new("Ant_Runner"));
 
     let rest_time = if ant_stage.stage <= 2 {
-        rand_normal(4.0, 1.0)
+        rand_normal(4.0, 0.5)
     } else if ant_stage.stage <= 3 {
-        rand_normal(5.0, 1.5)
+        rand_normal(6.0, 1.0)
     } else {
         rand_normal(3.0, 1.0)
     };

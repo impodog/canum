@@ -58,7 +58,7 @@ impl Default for Dash {
             max_speed: 450.0,
             total_duration: 0.20,
             invincible_duration: 0.04,
-            cooldown_duration: 0.4,
+            cooldown_duration: 0.6,
             sound: "Dash".to_owned(),
         }
     }

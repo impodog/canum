@@ -72,7 +72,7 @@ fn spawn_ant_title(
         canum_ui::text::popup_title(
             fonts.title.clone(),
             lang.get("Ant_BossTitle"),
-            Duration::from_secs(1),
+            Duration::from_secs_f32(1.5),
         ),
     ));
     commands.spawn((Music, Sound::new("Ant_Music")));
