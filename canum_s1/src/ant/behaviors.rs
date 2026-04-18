@@ -1,10 +1,13 @@
 use crate::prelude::*;
 use enemy::behavior::*;
 
+mod ant_lines;
+
 pub(super) struct BehaviorsPlugin;
 
 impl Plugin for BehaviorsPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((ant_lines::AntLinesPlugin,));
         app.add_systems(
             OnEnter(super::ANT_STATE.clone()),
             |mut commands: Commands| {
@@ -70,6 +73,9 @@ pub(super) fn change_ant_stage(
                     .spawn((ChildOf(behaviors), ThrowBlade))
                     .observe(throw_blade_start)
                     .observe(throw_blade_end);
+                commands
+                    .spawn((ChildOf(behaviors), SpawnRunners))
+                    .observe(spawn_runners_start);
             }
             _ => {}
         }
@@ -110,6 +116,15 @@ fn run_to_player_start(
     let player_position = player_transform.translation().xy();
     let displace =
         (player_position - ant_position) * 1.1 + player_velocity.0 * rand_normal(0.2, 0.1);
+    let displace = if rand::random_bool(0.5) {
+        displace
+    } else {
+        Vec2::from_angle(rand::random_range(
+            -std::f32::consts::FRAC_PI_2..std::f32::consts::FRAC_PI_2,
+        ))
+        .rotate(displace.normalize_or_zero())
+            * rand_normal(75.0, 30.0)
+    };
     let duration = (displace.length() / rand_normal(130.0, 5.0)).min(2.0);
     animation.replace("Ant_Run", false, None);
     commands.spawn((
@@ -143,7 +158,7 @@ fn run_to_player_end(
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.5),
-        occupies: occupies![("RunToPlayer", rand_normal(3.0, 0.5))],
+        occupies: occupies![("RunToPlayer", rand_normal(2.5, 0.6))],
     });
     commands.entity(event.entity).despawn_children();
 }
@@ -208,7 +223,7 @@ fn throw_blade_end(
         commands.trigger(BehaveEnd {
             entity: event.entity,
             cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.3)),
-            occupies: occupies![("ThrowBlade", rand_normal(2.0, 0.4))],
+            occupies: occupies![("ThrowBlade", rand_normal(5.0, 1.0))],
         });
     } else {
         let Ok(player_transform) = q_transform.get(player.0) else {
@@ -242,4 +257,48 @@ fn throw_blade_end(
 )]
 struct Blade {
     released: bool,
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Ant_SpawnRunners", 0.8, ["SpawnRunners", "Animation"]))]
+pub struct SpawnRunners;
+
+fn spawn_runners_start(
+    event: On<BehaveStart>,
+    mut commands: Commands,
+    q_transform: Query<&GlobalTransform>,
+    player: Res<player::RandomPlayer>,
+    projectile_bounds: Res<projectile::ProjectileBounds>,
+) {
+    let Ok(player_transform) = q_transform.get(player.0) else {
+        return;
+    };
+    let player_position = player_transform.translation().xy();
+
+    let section = rand::random_range(0..8);
+    let angle = std::f32::consts::FRAC_PI_4 * section as f32;
+    let intersect = math::screen_border_intersect_ray(
+        player_position,
+        Dir2::new_unchecked(Vec2::from_angle(angle)),
+    );
+    let base = intersect + (intersect - player_position).normalize() * 100.0;
+
+    let displace = Vec2::from_angle(angle + std::f32::consts::FRAC_PI_2) * rand_normal(120.0, 15.0);
+    for index in -4..=4 {
+        let position = index as f32 * displace + base;
+        if projectile_bounds.contains(position) {
+            commands.spawn((
+                ant_lines::SubAntRunner {
+                    direction: angle + std::f32::consts::PI,
+                },
+                Transform::from_translation(Vec3::new(position.x, position.y, 14.27)),
+            ));
+        }
+    }
+
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(0.5),
+        occupies: occupies![("SpawnRunners", rand_normal(5.0, 1.0))],
+    });
 }

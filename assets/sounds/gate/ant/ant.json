@@ -2,7 +2,7 @@
   "sounds": {
     "Ant_Damage": {
       "path": "ant_damage_fix.wav",
-      "volume": 0.15,
+      "volume": -15.0,
       "loop_point": 0.0
     },
     "Ant_Run": {

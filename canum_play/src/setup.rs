@@ -199,17 +199,9 @@ fn setup_session(
     };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
     commands.insert_resource(crate::player::RandomPlayer(player));
-    commands.insert_resource(crate::projectile::ProjectileBounds {
-        min: Vec2::new(
-            // Double the actual amount of boundaries, for projectiles to temporarily leave screen.
-            -(CONFIG.display.virtual_size.0 as f32),
-            -(CONFIG.display.virtual_size.1 as f32),
-        ),
-        max: Vec2::new(
-            CONFIG.display.virtual_size.0 as f32,
-            CONFIG.display.virtual_size.1 as f32,
-        ),
-    });
+    commands.insert_resource(crate::projectile::ProjectileBounds(
+        Rect::from_center_half_size(Vec2::ZERO, CONFIG.display.screen_size),
+    ));
 
     commands.trigger(PostStartSession {
         fight: event.fight.clone(),

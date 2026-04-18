@@ -4,6 +4,7 @@ pub mod consts;
 pub mod controls;
 pub mod enemy;
 pub mod health;
+pub mod math;
 pub mod movements;
 pub mod player;
 pub mod projectile;

@@ -8,26 +8,28 @@ impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DisposeQueue>()
             .init_resource::<ProjectileBounds>();
-        app.add_systems(FixedPostUpdate, remove_out_of_bound_projectiles);
-        app.add_systems(FixedLast, dispose_after_collision);
+        app.add_systems(FixedLast, (remove_out_of_bound, dispose_after_collision));
     }
 }
 
 /// Defines the boundary for projectiles not to be erased.
-#[derive(Resource, Default)]
-pub struct ProjectileBounds {
-    pub min: Vec2,
-    pub max: Vec2,
-}
+#[derive(Resource, Default, Deref, DerefMut)]
+pub struct ProjectileBounds(pub Rect);
 
 /// Disables collision with boundaries for certain objects.
 #[derive(Component, Default)]
 pub struct NoCollideBoundary;
 
+/// Removes itself when out of bounds.
+#[derive(Component, Default)]
+#[require(Transform)]
+pub struct RemoveOutOfBounds;
+
 /// Marks a projectile either by player or enemy.
 #[derive(Component, Debug, Default)]
 #[require(
     crate::SessionOnly,
+    RemoveOutOfBounds,
     Transform,
     RigidBody::Dynamic,
     Collider,
@@ -36,9 +38,9 @@ pub struct NoCollideBoundary;
 )]
 pub struct Projectile;
 
-fn remove_out_of_bound_projectiles(
+fn remove_out_of_bound(
     commands: ParallelCommands,
-    q_projectile: Query<(Entity, &GlobalTransform), With<Projectile>>,
+    q_projectile: Query<(Entity, &GlobalTransform), With<RemoveOutOfBounds>>,
     bounds: Res<ProjectileBounds>,
 ) {
     q_projectile.par_iter().for_each(|(entity, transform)| {

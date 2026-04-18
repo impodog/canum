@@ -120,10 +120,10 @@ fn enter_lobby(
         )),
     ));
 
-    commands.insert_resource(crate::projectile::ProjectileBounds {
+    commands.insert_resource(crate::projectile::ProjectileBounds(Rect {
         min: -extend_boundary,
         max: lobby_size + extend_boundary,
-    });
+    }));
     commands.insert_resource(LobbySize(lobby_size));
 
     play_state.set(super::PlayState::Lobby);

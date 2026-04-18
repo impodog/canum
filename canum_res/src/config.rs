@@ -17,6 +17,10 @@ pub struct Display {
     pub half_virtual_size: (f32, f32),
     #[serde(skip)]
     pub screen_size: bevy::prelude::Vec2,
+    #[serde(skip)]
+    pub screen_rect: bevy::prelude::Rect,
+    #[serde(skip)]
+    pub virtual_diagonal: f32,
 }
 impl Default for Display {
     fn default() -> Self {
@@ -26,6 +30,8 @@ impl Default for Display {
             virtual_size: (800, 450),
             half_virtual_size: (400.0, 225.0),
             screen_size: bevy::prelude::Vec2::new(800.0, 450.0),
+            screen_rect: bevy::prelude::Rect::from_center_half_size(Vec2::ZERO, vec2(400.0, 225.0)),
+            virtual_diagonal: 917.878,
         }
     }
 }
@@ -92,6 +98,9 @@ pub static CONFIG: LazyLock<Config> =
                 config.display.virtual_size.0 as f32,
                 config.display.virtual_size.1 as f32,
             );
+            config.display.screen_rect =
+                bevy::prelude::Rect::from_center_size(Vec2::ZERO, config.display.screen_size);
+            config.display.virtual_diagonal = config.display.screen_size.length();
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
             config.client.update_duration = 1.0 / config.client.update_freq;

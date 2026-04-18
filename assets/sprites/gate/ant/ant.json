@@ -14,6 +14,15 @@
         "interval": 200
       }
     ],
-    "Ant_Blade": [{ "path": "blade.png", "count": 4, "interval": 100 }]
+    "Ant_Blade": [{ "path": "blade.png", "count": 4, "interval": 100 }],
+    "Ant_SubAnt": [{ "path": "sub_ant.png", "count": 2, "interval": 450 }],
+    "Ant_SubAntPlane": [
+      {
+        "path": "sub_ant_plane.png",
+        "offset": [32, 0],
+        "count": 2,
+        "interval": 125
+      }
+    ]
   }
 }
