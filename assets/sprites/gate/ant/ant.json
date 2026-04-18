@@ -23,6 +23,22 @@
         "count": 2,
         "interval": 125
       }
+    ],
+    "Ant_Back": [
+      {
+        "path": "ant_back.png",
+        "offset": [400, 0],
+        "count": 1,
+        "size": [400, 225]
+      }
+    ],
+    "Ant_Defeat": [
+      {
+        "path": "ant_defeat.png",
+        "offset": [32, 0],
+        "count": 2,
+        "interval": 1600
+      }
     ]
   }
 }

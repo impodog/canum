@@ -46,6 +46,7 @@ impl Plugin for AntPlugin {
     enemy::health::EnemyHealth::new(3000),
     enemy::health::DamageSound::new("Ant_Damage"),
     player::victory::DefeatToWin::default(),
+    defeat::AntDefeat,
     // This will be removed later by `AntEntry`
     projectile::NoCollideBoundary,
 )]

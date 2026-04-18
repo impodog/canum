@@ -56,7 +56,7 @@ pub(super) fn change_ant_stage(
     };
     let new_stage = if health.value >= 2700 {
         1
-    } else if health.value >= 1500 {
+    } else if health.value >= 2000 {
         2
     } else if health.value >= 600 {
         3
@@ -70,12 +70,14 @@ pub(super) fn change_ant_stage(
         match new_stage {
             2 => {
                 commands
+                    .spawn((ChildOf(behaviors), SpawnRunners))
+                    .observe(spawn_runners_start);
+            }
+            3 => {
+                commands
                     .spawn((ChildOf(behaviors), ThrowBlade))
                     .observe(throw_blade_start)
                     .observe(throw_blade_end);
-                commands
-                    .spawn((ChildOf(behaviors), SpawnRunners))
-                    .observe(spawn_runners_start);
             }
             _ => {}
         }
@@ -260,7 +262,7 @@ struct Blade {
 }
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Ant_SpawnRunners", 0.8, ["SpawnRunners", "Animation"]))]
+#[require(Behavior::new("Ant_SpawnRunners", 0.6, ["SpawnRunners"]))]
 pub struct SpawnRunners;
 
 fn spawn_runners_start(
@@ -269,6 +271,7 @@ fn spawn_runners_start(
     q_transform: Query<&GlobalTransform>,
     player: Res<player::RandomPlayer>,
     projectile_bounds: Res<projectile::ProjectileBounds>,
+    ant_stage: Res<AntStage>,
 ) {
     let Ok(player_transform) = q_transform.get(player.0) else {
         return;
@@ -281,12 +284,17 @@ fn spawn_runners_start(
         player_position,
         Dir2::new_unchecked(Vec2::from_angle(angle)),
     );
-    let base = intersect + (intersect - player_position).normalize() * 100.0;
-
     let displace = Vec2::from_angle(angle + std::f32::consts::FRAC_PI_2) * rand_normal(120.0, 15.0);
-    for index in -4..=4 {
+    let base = intersect
+        + (intersect - player_position).normalize() * 150.0
+        + displace * rand_normal(0.0, 0.1);
+
+    let mut bounds = projectile_bounds.0;
+    bounds.min *= 2.0;
+    bounds.max *= 2.0;
+    for index in -6..=6 {
         let position = index as f32 * displace + base;
-        if projectile_bounds.contains(position) {
+        if bounds.contains(position) {
             commands.spawn((
                 ant_lines::SubAntRunner {
                     direction: angle + std::f32::consts::PI,
@@ -296,9 +304,18 @@ fn spawn_runners_start(
         }
     }
 
+    commands.spawn(Sound::new("Ant_Runner"));
+
+    let rest_time = if ant_stage.stage <= 2 {
+        rand_normal(4.0, 1.0)
+    } else if ant_stage.stage <= 3 {
+        rand_normal(5.0, 1.5)
+    } else {
+        rand_normal(3.0, 1.0)
+    };
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.5),
-        occupies: occupies![("SpawnRunners", rand_normal(5.0, 1.0))],
+        occupies: occupies![("SpawnRunners", rest_time)],
     });
 }

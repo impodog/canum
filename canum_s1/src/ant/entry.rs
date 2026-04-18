@@ -75,4 +75,5 @@ fn spawn_ant_title(
             Duration::from_secs(1),
         ),
     ));
+    commands.spawn((Music, Sound::new("Ant_Music")));
 }

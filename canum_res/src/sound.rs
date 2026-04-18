@@ -39,12 +39,12 @@ impl Sound {
 
 pub(super) fn start_playing_sound(
     commands: ParallelCommands,
-    q_sound: Query<(Entity, &Sound), Added<Sound>>,
+    mut q_sound: Query<(Entity, &mut Sound), Added<Sound>>,
     asset_server: Res<AssetServer>,
     loaded: ResMut<LoadedSounds>,
 ) {
     let loaded = Mutex::new(loaded);
-    q_sound.par_iter().for_each(|(entity, sound)| {
+    q_sound.par_iter_mut().for_each(|(entity, mut sound)| {
         let Some(details) = CONFIG.assets.sounds.get(&sound.name) else {
             if sound.name != "Empty" {
                 log::warn!(
@@ -63,6 +63,7 @@ pub(super) fn start_playing_sound(
             .entry(sound.name.clone())
             .or_insert_with(|| asset_server.load(details.path.as_path()))
             .clone();
+        sound.base_volume += details.volume;
         commands.command_scope(move |mut commands| {
             commands.entity(entity).insert((
                 AudioPlayer::new(handle),
@@ -74,7 +75,7 @@ pub(super) fn start_playing_sound(
                     },
                     start_position: details.loop_point.map(Duration::from_secs_f32),
                     paused: sound.paused,
-                    volume: Volume::Decibels(details.volume),
+                    volume: Volume::Decibels(sound.base_volume),
                     ..Default::default()
                 },
             ));

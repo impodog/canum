@@ -30,6 +30,10 @@ fn setup_ant(
 ) {
     commands.insert_resource(SetupTimer::default());
     window_title.0 = lang.get("Ant_WindowTitle").to_owned();
+    commands.spawn((
+        canum_res::background::Background::new(vec2(800.0, 450.0)),
+        Animation::new("Ant_Back", vec2(800.0, 450.0)).with_color(Color::default().with_alpha(0.8)),
+    ));
 }
 
 fn setup_timer(mut commands: Commands, timer: Option<ResMut<SetupTimer>>, time: Res<Time>) {

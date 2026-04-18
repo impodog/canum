@@ -9,6 +9,15 @@
       "path": "ant_run.wav",
       "volume": 1.0,
       "loop_point": 0.0
+    },
+    "Ant_Music": {
+      "path": "ant_music.ogg",
+      "volume": -10.0,
+      "loop_point": 0.0
+    },
+    "Ant_Runner": {
+      "path": "ant_runner.wav",
+      "volume": 10.0
     }
   }
 }

@@ -21,9 +21,19 @@ pub struct ProjectileBounds(pub Rect);
 pub struct NoCollideBoundary;
 
 /// Removes itself when out of bounds.
-#[derive(Component, Default)]
+#[derive(Component)]
 #[require(Transform)]
-pub struct RemoveOutOfBounds;
+pub struct RemoveOutOfBounds {
+    /// Scales its distance to the bound center before judging whether to remove.
+    pub distance_scale: f32,
+}
+impl Default for RemoveOutOfBounds {
+    fn default() -> Self {
+        Self {
+            distance_scale: 1.0,
+        }
+    }
+}
 
 /// Marks a projectile either by player or enemy.
 #[derive(Component, Debug, Default)]
@@ -40,21 +50,21 @@ pub struct Projectile;
 
 fn remove_out_of_bound(
     commands: ParallelCommands,
-    q_projectile: Query<(Entity, &GlobalTransform), With<RemoveOutOfBounds>>,
+    q_projectile: Query<(Entity, &GlobalTransform, &RemoveOutOfBounds)>,
     bounds: Res<ProjectileBounds>,
 ) {
-    q_projectile.par_iter().for_each(|(entity, transform)| {
-        let position = transform.translation().xy();
-        if position.x > bounds.max.x
-            || position.x < bounds.min.x
-            || position.y > bounds.max.y
-            || position.y < bounds.min.y
-        {
-            commands.command_scope(|mut commands| {
-                commands.entity(entity).despawn();
-            });
-        }
-    });
+    let center = bounds.center();
+    q_projectile
+        .par_iter()
+        .for_each(|(entity, transform, removal)| {
+            let position = transform.translation().xy();
+            let position = (position - center) * removal.distance_scale + center;
+            if !bounds.contains(position) {
+                commands.command_scope(|mut commands| {
+                    commands.entity(entity).despawn();
+                });
+            }
+        });
 }
 
 /// Projectiles are removed one fixed frame after collision detected.

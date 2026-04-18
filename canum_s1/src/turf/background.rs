@@ -34,7 +34,8 @@ fn setup_turf(
     commands.spawn((
         SessionOnly,
         canum_res::background::Background::new(CONFIG.display.screen_size),
-        Animation::new("Turf_Grassland", CONFIG.display.screen_size),
+        Animation::new("Turf_Grassland", CONFIG.display.screen_size)
+            .with_color(Color::default().with_alpha(0.8)),
     ));
     commands.spawn((Music, Sound::new("Turf_Bgm")));
     commands.spawn((SessionOnly, Observer::new(change_turf_background_on_defeat)));

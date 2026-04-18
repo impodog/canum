@@ -18,10 +18,10 @@ impl Plugin for AntLinesPlugin {
 #[derive(Component)]
 #[require(
     enemy::attack::Minion,
-    projectile::RemoveOutOfBounds,
+    projectile::RemoveOutOfBounds {distance_scale: 0.5},
     Animation::new("Ant_SubAntPlane", Vec2::new(40.0, 40.0)),
     movements::ForcedVelocity,
-    movements::SpeedDecay(0.1),
+    movements::SpeedDecay(0.05),
     Collider::rectangle(20.0, 30.0),
     Mass(5.0)
 )]
@@ -54,7 +54,7 @@ fn spawn_ant_runner_line(
     for (related, runner, mut transform, mut forced_velocity) in q_runner.iter_mut() {
         let translation = transform.translation;
         transform.rotation = Quat::from_rotation_z(runner.direction - std::f32::consts::FRAC_PI_2);
-        **forced_velocity = Vec2::from_angle(runner.direction) * 275.0;
+        **forced_velocity = Vec2::from_angle(runner.direction) * 250.0;
         let start = translation.xy();
         let displace = Vec2::from_angle(runner.direction) * CONFIG.display.virtual_diagonal * 1.5;
         commands.spawn((
@@ -77,7 +77,7 @@ fn update_ant_runner_line(
     mut gizmos: Gizmos,
     q_transform: Query<&GlobalTransform>,
 ) {
-    const LINE_COLOR: Color = Color::srgba(0.9, 0.9, 0.75, 0.05);
+    const LINE_COLOR: Color = Color::srgba(0.3, 0.3, 0.2, 0.2);
     for (entity, mut line) in q_line.iter_mut() {
         let Ok(target_transform) = q_transform.get(line.related) else {
             commands.entity(entity).despawn();
@@ -87,7 +87,7 @@ fn update_ant_runner_line(
         line.current_start = target_displace.dot(line.displace) / line.displace.length_squared();
         line.current_start = line.current_start.clamp(0.0, 1.0);
         if line.current_end < 1.0 {
-            line.current_end += 0.04;
+            line.current_end += 0.015;
             line.current_end = line.current_end.max(line.current_start);
         }
         let diff = target_displace - target_displace.project_onto(line.displace);
