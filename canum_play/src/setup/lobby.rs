@@ -58,14 +58,24 @@ fn enter_lobby(
 
     let lobby_size = match event.fight.as_str() {
         "Gate" => {
-            const GATE_LOBBY_SIZE: Vec2 = Vec2::new(4800.0, 450.0);
+            let Some(stage_details) = CONFIG.values.stage.get(event.fight.as_str()) else {
+                return;
+            };
             commands.spawn((
                 SessionOnly,
-                Animation::new("Gate_Lobby", GATE_LOBBY_SIZE)
+                Animation::new(format!("{}_Lobby", event.fight), stage_details.full_size)
                     .with_color(Color::WHITE.with_alpha(0.8)),
-                lobby_displacement(GATE_LOBBY_SIZE),
+                lobby_displacement(stage_details.full_size),
             ));
-            GATE_LOBBY_SIZE
+            if save
+                .progress
+                .completed_stages
+                .contains(event.fight.as_str())
+            {
+                stage_details.full_size
+            } else {
+                stage_details.locked_size
+            }
         }
         _ => {
             play_state.set(super::PlayState::Fighting);

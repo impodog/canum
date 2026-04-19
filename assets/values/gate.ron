@@ -9,5 +9,12 @@
     "Ant": (
       gains: { "Completed": 1, "NoHits": 1 }
     ),
+  },
+  stage: {
+    "Gate": (
+      unlock_prereqs: ["Apple", "Turf", "Ant"],
+      full_size: (4800.0, 450.0),
+      locked_size: (3200.0, 450.0),
+    )
   }
 )

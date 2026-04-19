@@ -7,7 +7,7 @@ pub(super) struct VictoryPlugin;
 impl Plugin for VictoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(update_player_status)
-            .add_observer(update_save);
+            .add_observer(update_tasks);
         app.world_mut()
             .register_component_hooks::<DefeatToWin>()
             .on_remove(|mut world, HookContext { entity, .. }| {
@@ -66,7 +66,7 @@ fn update_player_status(
 #[derive(Event, Default, Debug, Clone, Deref, DerefMut)]
 pub struct CompletedTasks(pub BTreeSet<String>);
 
-fn update_save(
+fn update_tasks(
     _event: On<PlayerWin>,
     mut commands: Commands,
     mut save: ResMut<Save>,
@@ -81,6 +81,7 @@ fn update_save(
         .entry(fight.get().0.clone())
         .or_default();
     let previous_tasks = progress.tasks.clone();
+
     if !progress.defeated {
         progress.defeated = true;
         progress.tasks.insert("Completed".to_owned());
@@ -88,6 +89,7 @@ fn update_save(
     if !**any_hits {
         progress.tasks.insert("NoHits".to_owned());
     }
+
     let completed_tasks = progress
         .tasks
         .difference(&previous_tasks)

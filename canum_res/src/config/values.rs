@@ -1,4 +1,17 @@
+use std::collections::HashSet;
+
 use super::*;
+
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct Values {
+    #[serde(default)]
+    pub include: Vec<PathBuf>,
+    #[serde(default)]
+    /// Maps from boss code name to gains.
+    pub boss: HashMap<String, BossDetails>,
+    #[serde(default)]
+    pub stage: HashMap<String, StageDetails>,
+}
 
 #[derive(Deserialize, Debug, Clone, Default)]
 pub struct BossDetails {
@@ -13,12 +26,10 @@ impl BossDetails {
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
-pub struct Values {
-    #[serde(default)]
-    pub include: Vec<PathBuf>,
-    #[serde(default)]
-    /// Maps from boss code name to gains.
-    pub boss: HashMap<String, BossDetails>,
+pub struct StageDetails {
+    pub unlock_prereqs: HashSet<String>,
+    pub full_size: Vec2,
+    pub locked_size: Vec2,
 }
 
 impl Values {
@@ -43,6 +54,9 @@ impl Values {
         };
         for (name, details) in values.boss {
             base.boss.entry(name).or_default().merge(details);
+        }
+        for (name, details) in values.stage {
+            base.stage.insert(name, details);
         }
         for sub_path in values.include {
             let sub_path = base_path.join(&sub_path);

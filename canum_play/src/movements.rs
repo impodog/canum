@@ -6,8 +6,13 @@ impl Plugin for MovementsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedUpdate, do_speed_shrink);
         app.add_systems(FixedPreUpdate, refresh_dash_timers);
-        app.add_systems(FixedUpdate, perform_dash);
+        app.add_systems(FixedUpdate, (perform_dash, update_dash_velocity).chain());
         app.add_observer(start_dash);
+        app.world_mut().register_component_hooks::<Dash>().on_add(
+            |mut world, HookContext { entity, .. }| {
+                world.commands().spawn((ChildOf(entity), DashVelocity));
+            },
+        );
         app.add_systems(
             FixedLast,
             (update_forced_velocity, update_velocity, speed_decay).chain(),
@@ -36,7 +41,7 @@ fn do_speed_shrink(
 }
 
 #[derive(Component, Debug, Clone)]
-#[require(LinearVelocity, DashTimers, Shields)]
+#[require(ForcedVelocity, DashTimers, Shields)]
 pub struct Dash {
     pub max_speed: f32,
     pub total_duration: f32,
@@ -55,14 +60,19 @@ pub struct DashTimers {
 impl Default for Dash {
     fn default() -> Self {
         Self {
-            max_speed: 450.0,
+            max_speed: 400.0,
             total_duration: 0.20,
-            invincible_duration: 0.04,
+            invincible_duration: 0.02,
             cooldown_duration: 0.6,
             sound: "Dash".to_owned(),
         }
     }
 }
+
+/// Marks a child containing partial velocity controlled by `Dash`.
+#[derive(Component, Default)]
+#[require(PartialVelocity::unlinked())]
+struct DashVelocity;
 
 fn refresh_dash_timers_with(dash: &Dash, timers: &mut DashTimers) {
     timers.total = Timer::from_seconds(dash.total_duration, TimerMode::Once);
@@ -103,21 +113,13 @@ fn start_dash(
     }
     timers.target_velocity = event.base_velocity * dash.max_speed;
 }
-fn perform_dash(
-    mut q_dash: Query<(&Dash, &mut DashTimers, &mut LinearVelocity, &mut Shields)>,
-    time: Res<Time>,
-) {
+fn perform_dash(mut q_dash: Query<(&Dash, &mut DashTimers, &mut Shields)>, time: Res<Time>) {
     q_dash
         .par_iter_mut()
-        .for_each(|(_dash, mut timers, mut linear_velocity, mut shields)| {
+        .for_each(|(_dash, mut timers, mut shields)| {
             if !timers.total.is_finished() {
                 timers.total.tick(time.delta());
                 timers.invincible.tick(time.delta());
-                let diff = timers.target_velocity - linear_velocity.0;
-                let length = diff.length();
-                if let Some(diff) = diff.try_normalize() {
-                    linear_velocity.0 += diff * (100.0f32).min(length);
-                }
             } else if !timers.cooldown.is_finished() {
                 timers.cooldown.tick(time.delta());
             }
@@ -126,6 +128,29 @@ fn perform_dash(
                     && shields.contains_key(&crate::consts::order::DASH_INVINC)
             {
                 shields.remove(&crate::consts::order::DASH_INVINC);
+            }
+        });
+}
+fn update_dash_velocity(
+    mut q_velocity: Query<(&mut PartialVelocity, &ChildOf), With<DashVelocity>>,
+    q_timer: Query<&DashTimers>,
+) {
+    q_velocity
+        .par_iter_mut()
+        .for_each(|(mut partial_velocity, parent)| {
+            let Ok(timers) = q_timer.get(parent.0) else {
+                return;
+            };
+            if !timers.total.is_finished() {
+                let diff = timers.target_velocity - **partial_velocity;
+                let length = diff.length();
+                if let Some(diff) = diff.try_normalize() {
+                    **partial_velocity += diff * (100.0f32).min(length);
+                }
+            } else {
+                let subtract =
+                    partial_velocity.normalize_or_zero() * (25.0f32).min(partial_velocity.length());
+                **partial_velocity -= subtract;
             }
         });
 }
