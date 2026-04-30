@@ -78,7 +78,6 @@ fn enter_lobby(
             }
         }
         _ => {
-            play_state.set(super::PlayState::Fighting);
             return;
         }
     };

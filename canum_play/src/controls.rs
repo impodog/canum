@@ -8,13 +8,21 @@ impl Plugin for ControlsPlugin {
     }
 }
 
+/// Add this marker to UI panels to disable all main controls(player, lobby, shop).
+#[derive(Default, Component)]
+pub struct OverrideMainControls;
+
 fn keyboard_controls(
     mut commands: Commands,
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     save: Res<Save>,
     key: Res<ButtonInput<KeyCode>>,
     q_player: Query<(&GlobalTransform, &crate::player::attack::Weapons)>,
+    override_main_controls: Query<(), With<OverrideMainControls>>,
 ) {
+    if override_main_controls.iter().next().is_some() {
+        return;
+    }
     let Some(primary_player) = primary_player.map(|player| **player) else {
         return;
     };

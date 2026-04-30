@@ -11,9 +11,10 @@ pub use text::Fonts;
 pub mod image;
 pub use image::{Animation, AnimationComplete};
 
-pub mod boss;
-
 pub mod bar;
+pub mod boss;
+pub mod equip;
+pub mod shop;
 
 use prelude::*;
 
@@ -29,6 +30,7 @@ impl Plugin for CanumUiPlugin {
             boss::BossPlugin,
             bar::BarPlugin,
             lobby::LobbyPlugin,
+            equip::EquipPlugin,
         ));
     }
 }

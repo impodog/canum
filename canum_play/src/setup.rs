@@ -44,6 +44,7 @@ pub enum PlayState {
     #[default]
     Fighting,
     Lobby,
+    Shop,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Deref, DerefMut)]
@@ -92,7 +93,8 @@ fn setup_session(
     q_session_only: Query<Entity, With<SessionOnly>>,
     save: Res<Save>,
     mut commands: Commands,
-    mut play_state: ResMut<NextState<GameState>>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut play_state: ResMut<NextState<PlayState>>,
     mut fight: ResMut<NextState<Fight>>,
     mut q_camera: Query<&mut Transform, With<canum_res::camera::PixelCamera>>,
 ) {
@@ -210,7 +212,8 @@ fn setup_session(
 
     commands.insert_resource(FightTime::default());
 
-    play_state.set(GameState::Play);
+    game_state.set(GameState::Play);
+    play_state.set(PlayState::Fighting);
     fight.set(Fight(event.fight.clone()));
 }
 
