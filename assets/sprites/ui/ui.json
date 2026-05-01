@@ -2,6 +2,7 @@
   "include": [
     "marks/marks.json",
     "collectibles/collectibles.json",
-    "charms/charms.json"
+    "charms/charms.json",
+    "weapons/weapons.json"
   ]
 }

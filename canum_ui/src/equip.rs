@@ -1,18 +1,27 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 use crate::prelude::*;
 use canum_save::*;
 
 mod charms;
+pub mod menu;
+mod weapons;
 
 pub(super) struct EquipPlugin;
 
 impl Plugin for EquipPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((charms::CharmsPlugin,));
+        app.add_plugins((
+            charms::CharmsPlugin,
+            menu::MenuPlugin,
+            weapons::WeaponsPlugin,
+        ));
+        app.init_resource::<CurrentMenuNumber>();
         app.add_systems(FixedUpdate, listen_equip_input);
         app.add_observer(setup_equip_menu)
-            .add_observer(update_charms);
+            .add_observer(update_charms)
+            .add_observer(update_weapons)
+            .add_observer(change_select_menu);
     }
 }
 
@@ -27,6 +36,10 @@ pub struct EquipStatusMenu;
 #[derive(Component, Default)]
 #[require(Node)]
 pub struct CharmStatus;
+
+#[derive(Component, Default)]
+#[require(Node)]
+pub struct WeaponStatus;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EquipLevel {
@@ -72,15 +85,28 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
                 },
                 EquipStatusMenu,
                 Animation::new(format!("{kind}_Equip_{level}"), EQUIP_MENU_SIZE),
-                children![(
-                    Node {
-                        position_type: PositionType::Absolute,
-                        ..default()
-                    },
-                    CharmStatus,
-                )]
+                children![
+                    (
+                        Node {
+                            position_type: PositionType::Absolute,
+                            ..default()
+                        },
+                        CharmStatus,
+                    ),
+                    (
+                        Node {
+                            position_type: PositionType::Absolute,
+                            top: px(50),
+                            ..default()
+                        },
+                        WeaponStatus,
+                    )
+                ]
             ),
-            charms::charm_select_menu(kind.clone(), fonts)
+            (
+                weapons::WeaponSelectMenu,
+                menu::select_menu(kind.clone(), "Weapon".to_owned(), fonts)
+            )
         ],
     )
 }
@@ -100,6 +126,12 @@ fn listen_equip_input(
         for entity in q_menu.iter() {
             commands.entity(entity).despawn();
         }
+    }
+    if key.just_pressed(KeyCode::ArrowRight) {
+        commands.trigger(ShiftMenuNumber(1));
+    }
+    if key.just_pressed(KeyCode::ArrowLeft) {
+        commands.trigger(ShiftMenuNumber(-1));
     }
 }
 
@@ -121,7 +153,8 @@ fn setup_equip_menu(
     let level = EquipLevel::S1;
     commands.spawn(equip_menu(kind, level, &fonts));
     commands.trigger(UpdateCharms::NoAction);
-    commands.trigger(charms::CharmSelectInput::Update);
+    commands.trigger(UpdateWeapons::NoAction);
+    commands.trigger(menu::SelectInput::Update);
 }
 
 fn show_charms(charms: &Charms) -> Option<impl Bundle> {
@@ -325,4 +358,113 @@ fn update_charms(
     } else {
         commands.spawn(canum_res::sound::Sound::new("Ui_EquipError"));
     }
+}
+
+/// When spawning menu or changing weapon equip, update all weapon positions. Same as charms.
+#[derive(Default, Event)]
+enum UpdateWeapons {
+    #[default]
+    NoAction,
+    Toggle(String),
+}
+
+fn update_weapons(
+    event: On<UpdateWeapons>,
+    mut commands: Commands,
+    q_menu: Query<Entity, With<WeaponStatus>>,
+    mut save: ResMut<Save>,
+) {
+    let Ok(menu) = q_menu.single() else {
+        return;
+    };
+    let mut new_weapons = save
+        .progress
+        .selected_weapons
+        .iter()
+        .filter(|weapon| save.progress.gained_weapons.contains(*weapon))
+        .cloned()
+        .collect::<VecDeque<_>>();
+    match *event {
+        UpdateWeapons::NoAction => {}
+        UpdateWeapons::Toggle(ref weapon) => {
+            if let Some((index, _)) = new_weapons
+                .iter()
+                .enumerate()
+                .find(|(_, element)| **element == *weapon)
+            {
+                new_weapons.remove(index);
+            } else {
+                new_weapons.push_back(weapon.clone());
+            }
+            commands.spawn(canum_res::sound::Sound::new("Ui_Equip"));
+        }
+    }
+    // New weapons kick older weapons.
+    while new_weapons.len() > save.progress.weapon_slots {
+        new_weapons.pop_front();
+    }
+    commands.entity(menu).despawn_children();
+    let mut position = vec2(100.0, 50.0);
+    const SIZE: Vec2 = vec2(32.0, 32.0);
+    for weapon in new_weapons.iter() {
+        commands.spawn((
+            ChildOf(menu),
+            Node {
+                width: px(SIZE.x),
+                height: px(SIZE.y),
+                left: px(position.x - SIZE.x * 0.5),
+                top: px(position.y - SIZE.y * 0.5),
+                margin: UiRect::all(Val::Auto),
+                ..default()
+            },
+            Animation::new(format!("Weapon_{weapon}"), SIZE),
+        ));
+        position.y += 50.0;
+    }
+    save.progress.selected_weapons = new_weapons.into();
+}
+
+/// Stores the current menu that the player is able to interact with.
+/// 0 - Weapons; 1 - Charms
+#[derive(Resource, Deref, DerefMut, Default)]
+struct CurrentMenuNumber(i8);
+const TOTAL_MENUS: i8 = 2;
+
+#[derive(Event, Deref, DerefMut)]
+struct ShiftMenuNumber(i8);
+
+fn change_select_menu(
+    event: On<ShiftMenuNumber>,
+    mut commands: Commands,
+    mut q_menu: Query<&mut menu::SelectMenu>,
+    q_node: Query<Entity, With<menu::SelectMenuNode>>,
+    mut current_number: ResMut<CurrentMenuNumber>,
+) {
+    let Ok(mut select_menu) = q_menu.single_mut() else {
+        return;
+    };
+    let Ok(entity) = q_node.single() else {
+        return;
+    };
+    **current_number = (**current_number + **event + TOTAL_MENUS) % TOTAL_MENUS;
+    commands
+        .entity(entity)
+        .try_remove::<charms::CharmSelectMenu>()
+        .try_remove::<weapons::WeaponSelectMenu>();
+    match **current_number {
+        0 => {
+            commands.entity(entity).insert(weapons::WeaponSelectMenu);
+            select_menu.group = "Weapon".to_owned();
+        }
+        1 => {
+            commands.entity(entity).insert(charms::CharmSelectMenu);
+            select_menu.group = "Charm".to_owned();
+        }
+        _ => {
+            unreachable!("Should be covered under TOTAL_MENUS");
+        }
+    }
+    select_menu.options.clear();
+    commands.trigger(menu::UpdateMenuStyle);
+    commands.trigger(menu::SelectInput::Update);
 }

@@ -34,7 +34,7 @@ fn add_weapons(event: On<setup::PostStartSession>, mut commands: Commands, save:
     }
     for weapon in save.progress.selected_weapons.iter() {
         match weapon.as_str() {
-            "Filed" => {
+            "A_Filed" => {
                 let mut filed = filed::Filed::default();
                 filed.damage = fmul(filed.damage, damage_multiplier);
                 weapons.push(Some(

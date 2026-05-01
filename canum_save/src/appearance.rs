@@ -33,4 +33,13 @@ impl Lang {
             .map(String::as_str)
             .unwrap_or("<MISSING TEXT>")
     }
+
+    /// Gets the text with the key, or an empty str if none.
+    pub fn get_or_empty<T>(&self, key: &T) -> &str
+    where
+        String: Borrow<T>,
+        T: Ord + Hash + ?Sized,
+    {
+        self.0.get(key).map(String::as_str).unwrap_or("")
+    }
 }

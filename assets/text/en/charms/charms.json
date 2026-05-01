@@ -2,7 +2,8 @@
   "text": {
     "en": {
       "Charm_S1A_SharpLeaf_Title": "Sharp Leaf",
-      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nSlightly increases damage.\n\n[O]."
+      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nSlightly increases damage.\n\nOffensive slot.",
+      "Charm_S1A_SharpLeaf_Short": "Sharp Leaf"
     }
   }
 }

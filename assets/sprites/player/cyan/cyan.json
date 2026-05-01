@@ -7,11 +7,17 @@
     "Cyan_Equip_S1": [
       { "path": "equip.png", "size": [100, 150], "offset": [100, 0] }
     ],
-    "Cyan_Equip_Charms": [
+    "Cyan_Equip_Charm_Select": [
       { "path": "charms.png", "size": [100, 150], "offset": [0, 0] }
     ],
-    "Cyan_Equip_CharmDesc": [
+    "Cyan_Equip_Charm_Desc": [
       { "path": "charm_desc.png", "size": [100, 150], "offset": [0, 0] }
+    ],
+    "Cyan_Equip_Weapon_Select": [
+      { "path": "weapons.png", "size": [100, 150], "offset": [0, 0] }
+    ],
+    "Cyan_Equip_Weapon_Desc": [
+      { "path": "weapon_desc.png", "size": [100, 150], "offset": [0, 0] }
     ]
   }
 }
