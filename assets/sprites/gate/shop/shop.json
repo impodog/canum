@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "Gate_Shop": [{ "path": "shop.png", "size": [400, 225] }]
+  }
+}

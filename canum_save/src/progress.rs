@@ -49,6 +49,21 @@ impl Progress {
     pub fn boss_progress(&mut self, name: impl Into<String>) -> &mut BossProgress {
         self.boss_progress.entry(name.into()).or_default()
     }
+
+    pub fn has_shop_item(&self, item: &canum_res::config::ShopItem) -> bool {
+        use canum_res::config::ShopItem;
+        match item {
+            ShopItem::Charm(charm) => self.gained_charms.contains(charm),
+            ShopItem::Weapon(weapon) => self.gained_weapons.contains(weapon),
+        }
+    }
+    pub fn insert_shop_item(&mut self, item: canum_res::config::ShopItem) {
+        use canum_res::config::ShopItem;
+        match item {
+            ShopItem::Charm(charm) => self.gained_charms.insert(charm),
+            ShopItem::Weapon(weapon) => self.gained_weapons.insert(weapon),
+        };
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]

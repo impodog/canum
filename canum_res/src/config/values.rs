@@ -13,6 +13,8 @@ pub struct Values {
     pub stage: HashMap<String, StageDetails>,
     #[serde(default)]
     pub charm: HashMap<String, CharmDetails>,
+    #[serde(default)]
+    pub shop: HashMap<String, ShopDetails>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
@@ -91,6 +93,32 @@ impl<'de> Deserialize<'de> for CharmCost {
 pub struct CharmDetails {
     pub cost: CharmCost,
     pub effects: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub enum ShopItem {
+    Charm(String),
+    Weapon(String),
+}
+
+impl ShopItem {
+    pub fn to_name(&self) -> String {
+        match self {
+            Self::Charm(name) => format!("Charm_{name}"),
+            Self::Weapon(name) => format!("Weapon_{name}"),
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct ShopItemDetails {
+    pub price: i32,
+    pub item: ShopItem,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct ShopDetails {
+    pub items: Vec<ShopItemDetails>,
 }
 
 impl Values {

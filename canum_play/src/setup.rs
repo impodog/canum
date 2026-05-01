@@ -3,11 +3,12 @@ use bevy::time::Stopwatch;
 use crate::prelude::*;
 
 pub mod lobby;
+pub mod shop;
 
 pub(super) struct SetupPlugin;
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((lobby::LobbyPlugin,));
+        app.add_plugins((lobby::LobbyPlugin, shop::ShopPlugin));
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
         app.add_message::<StartSession>();
