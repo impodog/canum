@@ -62,6 +62,7 @@ pub struct StartSession {
 #[derive(Event, Debug, Clone)]
 pub struct PostStartSession {
     pub fight: String,
+    pub player_entity: Entity,
     pub health_entity: Entity,
 }
 
@@ -88,6 +89,7 @@ fn setup_session_send_message(event: On<StartSession>, mut writer: MessageWriter
     writer.write(event.clone());
 }
 
+#[allow(clippy::too_many_arguments)]
 fn setup_session(
     mut reader: MessageReader<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
@@ -151,26 +153,15 @@ fn setup_session(
     ));
 
     // Spawn player and its weapons, health
+    // Update: weapons are now handled in `canum_addons` crate.
     let mut weapons = Vec::new();
-    for weapon in save
+    for _weapon in save
         .progress
         .selected_weapons
         .iter()
         .take(save.progress.weapon_slots)
     {
-        match weapon.as_str() {
-            "Filed" => {
-                let entity = commands.spawn(crate::player::attack::Filed::default()).id();
-                weapons.push(Some(entity));
-            }
-            "None" | "" => {
-                weapons.push(None);
-            }
-            _ => {
-                warn!("Unknown player weapon {weapon}");
-                weapons.push(None);
-            }
-        }
+        weapons.push(None);
     }
     let player = commands
         .spawn((
@@ -207,6 +198,7 @@ fn setup_session(
 
     commands.trigger(PostStartSession {
         fight: event.fight.clone(),
+        player_entity: player,
         health_entity,
     });
 

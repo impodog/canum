@@ -16,11 +16,5 @@
       full_size: (4800.0, 450.0),
       locked_size: (3200.0, 450.0),
     )
-  },
-  charm: {
-    "TestCharm": (
-      cost: "O",
-      effects: ["TestEffect"]
-    ),
   }
 )

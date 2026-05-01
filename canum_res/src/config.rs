@@ -64,7 +64,7 @@ pub struct Fonts {
 impl Default for Fonts {
     fn default() -> Self {
         Self {
-            ui_font: "./assets/fonts/Crimson.ttf".into(),
+            ui_font: "./assets/fonts/PixelatedElegance.ttf".into(),
             text_font: "./assets/fonts/JetbrainsMono.ttf".into(),
         }
     }

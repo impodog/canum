@@ -7,7 +7,7 @@ pub(super) struct CharmsPlugin;
 impl Plugin for CharmsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedUpdate, listen_charm_select_input);
-        app.add_systems(FixedPostUpdate, update_charm_used);
+        app.add_systems(FixedPostUpdate, (update_charm_used, update_charm_info));
         app.add_observer(update_charm_select);
     }
 }
@@ -15,24 +15,83 @@ impl Plugin for CharmsPlugin {
 const CHARM_SELECT_MENU_LENGTH: usize = 9;
 const CHARM_SELECT_MENU_SIZE: Vec2 = vec2(200.0, 300.0);
 
+#[derive(Component, Default)]
+#[require(Node)]
+pub struct CharmSelectNode;
+
 #[derive(Component, Default, Debug)]
 struct CharmSelectMenu {
     charms: VecDeque<String>,
 }
 
-pub(super) fn charm_select_menu(kind: String) -> impl Bundle {
+#[derive(Component, Default, Debug)]
+struct CharmInfoMenu {
+    charm: String,
+}
+
+pub(super) fn charm_select_menu(kind: String, fonts: &crate::Fonts) -> impl Bundle {
     (
         Node {
             align_content: AlignContent::Start,
             justify_content: JustifyContent::Start,
             margin: UiRect::all(Val::Auto),
-            padding: UiRect::horizontal(px(10.0)),
-            width: px(CHARM_SELECT_MENU_SIZE.x),
-            height: px(CHARM_SELECT_MENU_SIZE.y),
+            flex_direction: FlexDirection::Row,
             ..default()
         },
-        CharmSelectMenu::default(),
-        Animation::new(format!("{kind}_Equip_Charms"), CHARM_SELECT_MENU_SIZE),
+        CharmSelectNode,
+        children![
+            (
+                Node {
+                    margin: UiRect::all(Val::Auto),
+                    width: px(CHARM_SELECT_MENU_SIZE.x),
+                    height: px(CHARM_SELECT_MENU_SIZE.y),
+                    ..default()
+                },
+                CharmSelectMenu::default(),
+                Animation::new(format!("{kind}_Equip_Charms"), CHARM_SELECT_MENU_SIZE),
+            ),
+            (
+                Node {
+                    margin: UiRect::all(Val::Auto),
+                    width: px(CHARM_SELECT_MENU_SIZE.x),
+                    height: px(CHARM_SELECT_MENU_SIZE.y),
+                    ..default()
+                },
+                Animation::new(format!("{kind}_Equip_CharmDesc"), CHARM_SELECT_MENU_SIZE),
+                children![(
+                    Node {
+                        align_content: AlignContent::Start,
+                        justify_content: JustifyContent::Start,
+                        position_type: PositionType::Absolute,
+                        margin: UiRect::all(Val::Auto),
+                        ..default()
+                    },
+                    CharmInfoMenu::default(),
+                    Text::new(""),
+                    TextLayout {
+                        justify: Justify::Left,
+                        linebreak: LineBreak::WordBoundary
+                    },
+                    TextFont {
+                        font: fonts.desc.clone(),
+                        font_size: 25.0,
+                        font_smoothing: FontSmoothing::None,
+                        ..default()
+                    },
+                    TextColor::WHITE,
+                    children![(
+                        TextSpan::new(""),
+                        TextFont {
+                            font: fonts.desc.clone(),
+                            font_size: 14.0,
+                            font_smoothing: FontSmoothing::None,
+                            ..default()
+                        },
+                        TextColor::WHITE,
+                    )]
+                )]
+            )
+        ],
     )
 }
 
@@ -191,9 +250,9 @@ fn update_charm_select(
                 align_content: AlignContent::Center,
                 left: px(position.x),
                 top: px(position.y),
+                margin: UiRect::all(Val::Auto),
                 width: px(32.0),
                 height: px(32.0),
-                margin: UiRect::all(Val::Auto),
                 ..default()
             },
             CharmImage(charm.clone()),
@@ -229,4 +288,30 @@ fn update_charm_used(mut q_charm: Query<(&mut ImageNode, &CharmImage)>, save: Re
             image_node.color.set_alpha(1.0);
         }
     });
+}
+
+fn update_charm_info(
+    mut q_info: Query<(&mut CharmInfoMenu, &mut Text, &Children)>,
+    q_charm: Query<&CharmSelectMenu>,
+    mut q_text_span: Query<&mut TextSpan>,
+    lang: Res<Lang>,
+) {
+    let Ok(charm_select) = q_charm.single() else {
+        return;
+    };
+    for (mut menu, mut text, children) in q_info.iter_mut() {
+        if let Some(charm) = charm_select.charms.front()
+            && menu.charm != *charm
+        {
+            menu.charm = charm.clone();
+            text.0 = lang.get(&format!("Charm_{charm}_Title")).to_owned() + "\n";
+            let Some(child) = children.iter().next() else {
+                continue;
+            };
+            let Ok(mut text_span) = q_text_span.get_mut(child) else {
+                continue;
+            };
+            text_span.0 = lang.get(&format!("Charm_{charm}_Desc")).to_owned();
+        }
+    }
 }

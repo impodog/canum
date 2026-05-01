@@ -9,6 +9,9 @@
     ],
     "Cyan_Equip_Charms": [
       { "path": "charms.png", "size": [100, 150], "offset": [0, 0] }
+    ],
+    "Cyan_Equip_CharmDesc": [
+      { "path": "charm_desc.png", "size": [100, 150], "offset": [0, 0] }
     ]
   }
 }

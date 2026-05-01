@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::prelude::*;
 use canum_save::*;
 
@@ -47,7 +49,7 @@ impl std::fmt::Display for EquipLevel {
 
 const EQUIP_MENU_SIZE: Vec2 = vec2(200.0, 300.0);
 
-fn equip_menu(kind: String, level: EquipLevel) -> impl Bundle {
+fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bundle {
     (
         Node {
             align_content: AlignContent::Center,
@@ -78,7 +80,7 @@ fn equip_menu(kind: String, level: EquipLevel) -> impl Bundle {
                     CharmStatus,
                 )]
             ),
-            charms::charm_select_menu(kind.clone())
+            charms::charm_select_menu(kind.clone(), fonts)
         ],
     )
 }
@@ -107,6 +109,7 @@ fn setup_equip_menu(
     q_menu: Query<(), With<EquipMenu>>,
     mut commands: Commands,
     save: Res<Save>,
+    fonts: Res<crate::Fonts>,
 ) {
     if *state.get() == canum_play::setup::PlayState::Fighting {
         return;
@@ -116,7 +119,7 @@ fn setup_equip_menu(
     }
     let kind = save.appearance.player.clone();
     let level = EquipLevel::S1;
-    commands.spawn(equip_menu(kind, level));
+    commands.spawn(equip_menu(kind, level, &fonts));
     commands.trigger(UpdateCharms::NoAction);
     commands.trigger(charms::CharmSelectInput::Update);
 }
@@ -275,7 +278,18 @@ fn update_charms(
     let Ok(menu) = q_menu.single() else {
         return;
     };
-    let mut new_charms = save.progress.charms.clone();
+    let new_charms = save
+        .progress
+        .charms
+        .selected_charms
+        .iter()
+        .filter(|charm| save.progress.gained_charms.contains(*charm))
+        .cloned()
+        .collect::<HashSet<_>>();
+    let mut new_charms = Charms {
+        selected_charms: new_charms,
+        ..save.progress.charms
+    };
     let is_equip = match *event {
         UpdateCharms::NoAction => None,
         UpdateCharms::Toggle(ref charm) => {
@@ -291,6 +305,7 @@ fn update_charms(
     if let Some(charms) = show_charms(&new_charms) {
         // info!("CHARMS OK!");
         commands.entity(menu).insert(charms);
+        save.progress.selected_effects.clear();
         for charm in new_charms.selected_charms.iter() {
             let Some(details) = CONFIG.values.charm.get(charm) else {
                 continue;

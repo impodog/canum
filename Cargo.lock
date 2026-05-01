@@ -1878,6 +1878,7 @@ version = "0.1.0"
 dependencies = [
  "avian2d",
  "bevy",
+ "canum_addons",
  "canum_fx",
  "canum_play",
  "canum_res",
@@ -1885,6 +1886,16 @@ dependencies = [
  "canum_save",
  "canum_ui",
  "rand 0.10.1",
+]
+
+[[package]]
+name = "canum_addons"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "canum_play",
+ "canum_res",
+ "canum_save",
 ]
 
 [[package]]

@@ -20,7 +20,7 @@ pub struct Fonts {
 fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Fonts {
         title: asset_server.load("assets/fonts/Hack.ttf"),
-        desc: asset_server.load("assets/fonts/Crimson.ttf"),
+        desc: asset_server.load("assets/fonts/GomePixel2.otf"),
     });
 }
 
