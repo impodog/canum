@@ -1,0 +1,7 @@
+{
+  "sounds": {
+    "Ui_Equip": { "path": "equip.wav", "volume": -10.0 },
+    "Ui_Unequip": { "path": "unequip.wav", "volume": -10.0 },
+    "Ui_EquipError": { "path": "equip_error.wav", "volume": -5.0 }
+  }
+}

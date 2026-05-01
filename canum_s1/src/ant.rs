@@ -79,7 +79,7 @@ fn spawn_ant_health_bar(
     let Ok(bottom_center) = q_bottom_center.single() else {
         return;
     };
-    if save.progress.selected_charms.contains("ShowHealth") {
+    if save.progress.selected_effects.contains("ShowHealth") {
         commands.spawn((
             ChildOf(bottom_center),
             canum_ui::bar::health_bar(

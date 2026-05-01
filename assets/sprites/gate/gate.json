@@ -3,6 +3,7 @@
     "apple/apple.json",
     "lobby/lobby.json",
     "turf/turf.json",
-    "ant/ant.json"
+    "ant/ant.json",
+    "charms/charms.json"
   ]
 }

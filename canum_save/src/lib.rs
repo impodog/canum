@@ -10,6 +10,7 @@ mod controls;
 mod progress;
 
 pub use appearance::Lang;
+pub use progress::Charms;
 
 pub struct CanumSavePlugin;
 impl Plugin for CanumSavePlugin {

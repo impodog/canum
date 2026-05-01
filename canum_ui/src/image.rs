@@ -52,13 +52,14 @@ impl Default for Animation {
 }
 
 fn convert_to_image_node(
+    image_node: &mut ImageNode,
     name: String,
     asset_server: &AssetServer,
     atlas: &canum_res::config::SpriteAtlas,
     layouts: &mut Assets<TextureAtlasLayout>,
     atlas_handles: &mut canum_res::AnimationAtlasHandles,
     image_handles: &mut canum_res::AnimationImageHandles,
-) -> ImageNode {
+) {
     let image = image_handles
         .entry(name.clone())
         .or_insert_with(|| asset_server.load(atlas.path.clone()))
@@ -81,11 +82,8 @@ fn convert_to_image_node(
             ))
         })
         .clone();
-    ImageNode {
-        image,
-        texture_atlas: Some(TextureAtlas { layout, index: 0 }),
-        ..Default::default()
-    }
+    image_node.image = image;
+    image_node.texture_atlas = Some(TextureAtlas { layout, index: 0 });
 }
 
 fn modify_animation(
@@ -109,14 +107,17 @@ fn modify_animation(
         .get("Empty")
         .and_then(|sprites| sprites.first())
         .map(|sprite| {
+            let mut image_node = ImageNode::default();
             convert_to_image_node(
+                &mut image_node,
                 "Empty".to_owned(),
                 &asset_server,
                 sprite,
                 &mut layouts,
                 &mut atlas_handles,
                 &mut image_handles,
-            )
+            );
+            image_node
         })
         .unwrap_or_default();
     let mutex = Mutex::new((layouts, atlas_handles, image_handles));
@@ -140,7 +141,8 @@ fn modify_animation(
             {
                 let mut guard = mutex.lock().unwrap();
                 let (layouts, atlas_handles, image_handles) = &mut *guard;
-                *image_node = convert_to_image_node(
+                convert_to_image_node(
+                    &mut image_node,
                     animation.name.clone(),
                     &asset_server,
                     atlas,
