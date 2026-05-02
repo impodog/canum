@@ -16,5 +16,13 @@
       full_size: (4800.0, 450.0),
       locked_size: (3200.0, 450.0),
     )
+  },
+  shop: {
+    "Shop_Ant": (
+      items: [
+        (price: 2, item: Charm("S1A_SharpLeaf")),
+      ],
+      background: "Gate_Shop",
+    )
   }
 )

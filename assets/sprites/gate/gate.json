@@ -4,6 +4,7 @@
     "lobby/lobby.json",
     "turf/turf.json",
     "ant/ant.json",
-    "charms/charms.json"
+    "charms/charms.json",
+    "shop/shop.json"
   ]
 }

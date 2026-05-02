@@ -74,7 +74,6 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
         },
         EquipMenu,
         canum_play::controls::OverrideMainControls,
-        canum_play::SessionOnly,
         children![
             (
                 Node {
@@ -120,7 +119,13 @@ fn listen_equip_input(
     q_menu: Query<Entity, With<EquipMenu>>,
 ) {
     if key.just_pressed(KeyCode::KeyE) {
-        commands.trigger(CallEquipMenu);
+        if q_menu.iter().next().is_some() {
+            for entity in q_menu.iter() {
+                commands.entity(entity).despawn();
+            }
+        } else {
+            commands.trigger(CallEquipMenu);
+        }
     }
     if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
         for entity in q_menu.iter() {

@@ -31,6 +31,7 @@ impl Plugin for CanumUiPlugin {
             bar::BarPlugin,
             lobby::LobbyPlugin,
             equip::EquipPlugin,
+            shop::ShopPlugin,
         ));
     }
 }

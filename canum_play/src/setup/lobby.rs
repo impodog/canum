@@ -30,6 +30,12 @@ pub struct LobbySelect {
     pub position: Vec2,
 }
 
+/// Returns the position of player when pressed 'shop'.
+#[derive(Event, Debug)]
+pub struct LobbyShop {
+    pub position: Vec2,
+}
+
 /// Used by detailing lobby implementations.
 #[derive(Event, Default)]
 pub struct LobbyQuit;

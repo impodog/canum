@@ -84,6 +84,9 @@ fn keyboard_controls(
     if key.just_pressed(save.keyboard.confirm) {
         commands.trigger(crate::setup::lobby::LobbySelect { position });
     }
+    if key.just_pressed(KeyCode::KeyS) {
+        commands.trigger(crate::setup::lobby::LobbyShop { position });
+    }
     if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
         commands.trigger(crate::setup::lobby::LobbyQuit);
     }

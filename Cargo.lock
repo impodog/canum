@@ -1906,6 +1906,7 @@ dependencies = [
  "bevy",
  "canum_res",
  "rand 0.10.1",
+ "rand_distr 0.6.0",
 ]
 
 [[package]]

@@ -49,7 +49,7 @@ impl Default for Client {
     fn default() -> Self {
         Self {
             framerate: 100,
-            frame_duration: Duration::from_secs_f32(1.0 / 60.0),
+            frame_duration: Duration::from_secs_f32(1.0 / 100.0),
             update_freq: 64.0,
             update_duration: 1.0 / 64.0,
         }

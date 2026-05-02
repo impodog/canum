@@ -4,7 +4,25 @@ pub(super) struct ShopPlugin;
 
 impl Plugin for ShopPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(enter_shop);
+        app.add_systems(Startup, setup_shop);
+        app.add_systems(
+            FixedPreUpdate,
+            update_select_item.run_if(in_state(setup::PlayState::Shop)),
+        );
+        app.add_systems(
+            FixedUpdate,
+            update_item_outline.run_if(in_state(setup::PlayState::Shop)),
+        );
+        app.add_systems(
+            FixedPostUpdate,
+            purchase_item.run_if(in_state(setup::PlayState::Shop)),
+        );
+        app.add_systems(
+            FixedLast,
+            quit_shop.run_if(in_state(setup::PlayState::Shop)),
+        );
+        app.add_observer(enter_shop)
+            .add_observer(update_purchase_item);
     }
 }
 
@@ -85,31 +103,77 @@ pub fn reposition_rects(rects: &mut [Rect], bound: Rect) {
         }
 
         // Early exit if overlaps are negligible
-        if total_overlap_area < 1e-3 {
+        if total_overlap_area < 1.0 {
             break;
         }
     }
 }
 
 #[derive(Component)]
-#[require(Transform)]
+#[require(Transform, SelectingItem)]
 pub struct ShopItem {
-    pub name: String,
+    pub item: canum_res::config::ShopItem,
     pub price: i32,
     pub range: Rect,
 }
 
-const ITEM_RECT_SIZE: Vec2 = Vec2::new(100.0, 50.0);
+const ITEM_RECT_SIZE: Vec2 = Vec2::new(150.0, 70.0);
+
+#[derive(Resource)]
+struct ShopDrawing {
+    active: Handle<ColorMaterial>,
+    inactive: Handle<ColorMaterial>,
+    rect: Handle<Mesh>,
+}
+#[derive(Component, Clone, Deref, DerefMut, Default)]
+struct SelectingItem(pub bool);
+
+#[derive(Component, Default)]
+struct ItemOutline;
+
+#[derive(Resource, Debug, Clone)]
+struct ShopFonts {
+    pub title: Handle<Font>,
+    pub desc: Handle<Font>,
+}
+
+fn setup_shop(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+) {
+    let drawing = ShopDrawing {
+        active: materials.add(ColorMaterial::from_color(Srgba::rgb_u8(10, 240, 100))),
+        inactive: materials.add(ColorMaterial::from_color(Color::BLACK)),
+        rect: meshes.add(Rectangle::new(ITEM_RECT_SIZE.x, ITEM_RECT_SIZE.y).to_ring(2.0)),
+    };
+    commands.insert_resource(drawing);
+    let fonts = ShopFonts {
+        title: asset_server.load("assets/fonts/Hack.ttf"),
+        desc: asset_server.load("assets/fonts/GomePixel.otf"),
+    };
+    commands.insert_resource(fonts);
+}
 
 fn enter_shop(
     event: On<PostStartSession>,
     mut commands: Commands,
     mut state: ResMut<NextState<setup::PlayState>>,
     save: Res<Save>,
+    drawing: Res<ShopDrawing>,
+    lang: Res<Lang>,
+    fonts: Res<ShopFonts>,
 ) {
     let Some(details) = CONFIG.values.shop.get(&event.fight) else {
         return;
     };
+    if !details.background.is_empty() {
+        commands.spawn((
+            canum_res::background::Background::new(CONFIG.display.screen_size),
+            Animation::new(details.background.clone(), CONFIG.display.screen_size),
+        ));
+    }
     let mut items = Vec::new();
     for item in details.items.iter() {
         if !save.progress.has_shop_item(&item.item) {
@@ -125,18 +189,168 @@ fn enter_shop(
     for (item, rect) in items.into_iter().zip(rects) {
         let center = rect.center();
         let name = item.item.to_name();
+        let desc = lang.get(&format!("{name}_Short"));
         commands.spawn((
             Transform::from_translation(Vec3::new(center.x, center.y, 15.37)),
             ShopItem {
-                name: name.clone(),
+                item: item.item.clone(),
                 range: rect,
                 price: item.price,
             },
-            children![(
-                Transform::from_translation(Vec3::new(0.0, -16.0, 0.1)),
-                Animation::new(name.clone(), vec2(32.0, 32.0))
-            )],
+            crate::setup::SessionOnly,
+            SelectingItem(false),
+            children![
+                (
+                    Transform::from_translation(Vec3::new(0.0, 16.0, 0.1)),
+                    Animation::new(name.clone(), vec2(32.0, 32.0))
+                ),
+                (
+                    Transform::from_translation(Vec3::new(0.0, -16.0, 0.0)),
+                    Text2d::new(format!("{} / {}", desc, item.price)),
+                    TextFont {
+                        font: fonts.title.clone(),
+                        font_smoothing: bevy::text::FontSmoothing::None,
+                        font_size: 14.0,
+                        ..default()
+                    },
+                    TextColor::WHITE,
+                ),
+                (
+                    Transform::from_translation(Vec3::new(0.0, 0.0, -0.1)),
+                    ItemOutline,
+                    Mesh2d(drawing.rect.clone()),
+                    MeshMaterial2d(drawing.inactive.clone()),
+                )
+            ],
         ));
     }
     state.set(setup::PlayState::Shop);
+}
+
+fn update_select_item(
+    mut q_item: Query<(&ShopItem, &mut SelectingItem)>,
+    q_transform: Query<&GlobalTransform>,
+    player: Option<Res<crate::player::PrimaryPlayer>>,
+) {
+    let Some(player) = player else {
+        return;
+    };
+    let Ok(player_transform) = q_transform.get(player.0) else {
+        return;
+    };
+    let player_position = player_transform.translation().xy();
+    q_item.par_iter_mut().for_each(|(item, mut selecting)| {
+        let current_selecting = item.range.contains(player_position);
+        if **selecting ^ current_selecting {
+            **selecting = current_selecting;
+        }
+    });
+}
+
+fn update_item_outline(
+    mut q_outline: Query<(&mut MeshMaterial2d<ColorMaterial>, &ChildOf), With<ItemOutline>>,
+    q_selecting: Query<Ref<SelectingItem>>,
+    drawing: Res<ShopDrawing>,
+) {
+    q_outline.par_iter_mut().for_each(|(mut material, parent)| {
+        let Ok(selecting) = q_selecting.get(parent.0) else {
+            return;
+        };
+        if selecting.is_changed() {
+            **material = if selecting.0 {
+                drawing.active.clone()
+            } else {
+                drawing.inactive.clone()
+            };
+        }
+    });
+}
+
+/// Input handlers send this when an item is purchased.
+#[derive(Event, Debug, Clone)]
+struct PurchaseItem {
+    item: canum_res::config::ShopItem,
+    price: i32,
+    target_entity: Entity,
+}
+
+/// Informs other systems that a purchase has been made.
+#[derive(Event, Debug, Clone)]
+pub struct PurchaseItemSuccess {
+    pub item: canum_res::config::ShopItem,
+}
+
+fn purchase_item(
+    key: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+    q_item: Query<(Entity, &ShopItem)>,
+    q_transform: Query<&GlobalTransform>,
+    player: Option<Res<crate::player::PrimaryPlayer>>,
+    q_override: Query<(), With<crate::controls::OverrideMainControls>>,
+) {
+    if q_override.iter().next().is_some() {
+        return;
+    }
+    let ok = key.just_pressed(KeyCode::Enter);
+    if ok {
+        let Some(player) = player else {
+            return;
+        };
+        let Ok(player_transform) = q_transform.get(player.0) else {
+            return;
+        };
+        let player_position = player_transform.translation().xy();
+        for (target_entity, item) in q_item.iter() {
+            if item.range.contains(player_position) {
+                commands.trigger(PurchaseItem {
+                    item: item.item.clone(),
+                    price: item.price,
+                    target_entity,
+                });
+            }
+        }
+    }
+}
+
+fn update_purchase_item(
+    event: On<PurchaseItem>,
+    mut save: ResMut<Save>,
+    mut commands: Commands,
+    q_transform: Query<&GlobalTransform>,
+) {
+    if save.progress.has_shop_item(&event.item) {
+        return;
+    }
+    if save.progress.coins < event.price {
+        return;
+    };
+    let Ok(transform) = q_transform.get(event.target_entity) else {
+        return;
+    };
+    let translation = transform.translation();
+    save.progress.coins -= event.price;
+    save.progress.insert_shop_item(event.item.clone());
+    commands.entity(event.target_entity).despawn();
+    commands.spawn(Sound::new("Ui_Purchase"));
+    commands.spawn((
+        crate::setup::SessionOnly,
+        canum_fx::splash::GravitySplash {
+            color: Color::srgba_u8(255, 200, 0, 128),
+            duration: Duration::from_secs_f32(0.8),
+            start_speed: 300.0,
+            number: 20,
+        },
+        Transform::from_translation(translation),
+    ));
+    commands.trigger(PurchaseItemSuccess {
+        item: event.item.clone(),
+    });
+}
+
+fn quit_shop(mut commands: Commands, key: Res<ButtonInput<KeyCode>>) {
+    if key.any_just_pressed([KeyCode::KeyS, KeyCode::Escape, KeyCode::Backspace]) {
+        commands.trigger(crate::setup::StartSession {
+            fight: "LobbySelect".to_owned(),
+        });
+    }
 }

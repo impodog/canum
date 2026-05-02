@@ -119,6 +119,8 @@ pub struct ShopItemDetails {
 #[derive(Deserialize, Debug, Clone, Default)]
 pub struct ShopDetails {
     pub items: Vec<ShopItemDetails>,
+    #[serde(default)]
+    pub background: String,
 }
 
 impl Values {
@@ -149,6 +151,9 @@ impl Values {
         }
         for (name, details) in values.charm {
             base.charm.insert(name, details);
+        }
+        for (name, details) in values.shop {
+            base.shop.insert(name, details);
         }
         for sub_path in values.include {
             let sub_path = base_path.join(&sub_path);

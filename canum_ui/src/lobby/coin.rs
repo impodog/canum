@@ -11,7 +11,7 @@ impl Plugin for CoinPlugin {
 #[derive(Component, Default)]
 pub struct CoinNumber;
 
-fn coin(fonts: &crate::Fonts, number: i32) -> impl Bundle {
+pub fn coin(fonts: &crate::Fonts, number: i32) -> impl Bundle {
     let text_font = TextFont {
         font: fonts.title.clone(),
         font_size: 20.0,

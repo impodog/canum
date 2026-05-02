@@ -1,4 +1,4 @@
-mod coin;
+pub mod coin;
 
 use crate::prelude::*;
 

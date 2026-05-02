@@ -1,5 +1,6 @@
 mod prelude;
 
+pub mod math;
 pub mod splash;
 pub mod transition;
 

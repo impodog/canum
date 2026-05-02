@@ -1,5 +1,5 @@
 (
   charm: {
-    "S1A_SharpLeaf": (cost: "O", effects: ["Damage%10"])
+    "S1A_SharpLeaf": (cost: "O", effects: ["Damage%5"])
   }
 )
