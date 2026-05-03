@@ -4,18 +4,34 @@ pub(super) struct LobbyPlugin;
 
 impl Plugin for LobbyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(setup::Fight("Gate".to_owned())), update_observer);
+        app.add_systems(OnEnter(setup::Fight("Gate".to_owned())), setup_lobby);
     }
 }
 
-fn update_observer(mut commands: Commands) {
+fn setup_lobby(mut commands: Commands, save: Res<Save>) {
     use setup::cutscene::CutsceneDelete;
     commands.spawn((CutsceneDelete, Observer::new(handle_lobby_select)));
     commands.spawn((CutsceneDelete, Observer::new(quit_lobby_panel)));
     commands.spawn((CutsceneDelete, Observer::new(handle_lobby_shop)));
+    if save
+        .progress
+        .has_boss_progress_and("Ant", |boss| boss.defeated)
+    {
+        commands.spawn((
+            Transform::from_translation(Vec3::new(2000.0, 400.0, 0.0)),
+            setup::shop::ShopIndicator,
+        ));
+    }
 }
 
-fn handle_lobby_shop(event: On<setup::lobby::LobbyShop>, mut commands: Commands) {
+fn handle_lobby_shop(
+    event: On<setup::lobby::LobbyShop>,
+    mut commands: Commands,
+    q_shop: Query<(), With<setup::shop::ShopIndicator>>,
+) {
+    if q_shop.iter().next().is_none() {
+        return;
+    }
     let index = (event.position.x / 800.0).floor() as i32;
     if index == 2 {
         commands.trigger(setup::shop::EnterShop {

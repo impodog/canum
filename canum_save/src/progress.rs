@@ -50,6 +50,10 @@ impl Progress {
         self.boss_progress.entry(name.into()).or_default()
     }
 
+    pub fn has_boss_progress_and(&self, name: &str, f: impl FnOnce(&BossProgress) -> bool) -> bool {
+        self.boss_progress.get(name).is_some_and(f)
+    }
+
     pub fn has_shop_item(&self, item: &canum_res::config::ShopItem) -> bool {
         use canum_res::config::ShopItem;
         match item {

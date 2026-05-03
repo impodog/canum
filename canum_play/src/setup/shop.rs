@@ -23,6 +23,7 @@ impl Plugin for ShopPlugin {
             FixedLast,
             quit_shop.run_if(in_state(setup::PlayState::Shop)),
         );
+        app.add_systems(FixedPreUpdate, init_shop_indicator);
         app.add_observer(transition_enter_shop)
             .add_observer(enter_shop)
             .add_observer(update_purchase_item);
@@ -213,7 +214,8 @@ fn enter_shop(
     if !details.background.is_empty() {
         commands.spawn((
             canum_res::background::Background::new(CONFIG.display.screen_size),
-            Animation::new(details.background.clone(), CONFIG.display.screen_size),
+            Animation::new(details.background.clone(), CONFIG.display.screen_size)
+                .with_color(Color::linear_rgba(1.0, 1.0, 1.0, 0.8)),
         ));
     }
     let mut items = Vec::new();
@@ -467,5 +469,22 @@ fn quit_shop(
                 fight: "LobbySelect".to_owned(),
             },
         ));
+    }
+}
+
+#[derive(Component)]
+#[require(Text2d, TextLayout, TextColor::WHITE, TextFont)]
+pub struct ShopIndicator;
+
+fn init_shop_indicator(
+    mut q_indicator: Query<(&mut Text2d, &mut TextFont), Added<ShopIndicator>>,
+    fonts: Res<ShopFonts>,
+    lang: Res<Lang>,
+) {
+    for (mut text, mut font) in q_indicator.iter_mut() {
+        font.font = fonts.desc.clone();
+        font.font_smoothing = bevy::text::FontSmoothing::None;
+        font.font_size = 30.0;
+        text.0 = lang.get("Ui_ShopIndicator_Keyboard").to_owned();
     }
 }

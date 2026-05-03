@@ -1,3 +1,8 @@
 {
-  "include": ["gate/gate.json", "charms/charms.json", "weapons/weapons.json"]
+  "include": [
+    "gate/gate.json",
+    "charms/charms.json",
+    "weapons/weapons.json",
+    "ui/ui.json"
+  ]
 }
