@@ -1,0 +1,9 @@
+{
+  "sounds": {
+    "Runway_Bgm": {
+      "path": "runway.ogg",
+      "volume": 0.0,
+      "loop_point": 0.0
+    }
+  }
+}

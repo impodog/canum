@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "Runway_Background": [{ "path": "runway.png", "size": [200, 225] }]
+  }
+}

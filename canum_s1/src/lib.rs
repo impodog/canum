@@ -1,6 +1,7 @@
 pub mod ant;
 pub mod apple;
 pub mod lobby;
+pub mod runway;
 pub mod turf;
 
 use canum_play::prelude::*;
@@ -14,6 +15,7 @@ impl Plugin for CanumS1Plugin {
             lobby::LobbyPlugin,
             turf::TurfPlugin,
             ant::AntPlugin,
+            runway::RunwayPlugin,
         ));
     }
 }

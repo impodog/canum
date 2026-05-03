@@ -124,7 +124,7 @@ fn handle_panel_select(
                 color: panel.enter_color,
                 remove_self: true,
             },
-            fight: panel.name.clone(),
+            fight: panel.fight_name.clone(),
         },
     ));
 }

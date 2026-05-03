@@ -118,6 +118,21 @@ fn handle_lobby_select(
                 ),
             ));
         }
+        3 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::boss::boss_panel(
+                    fonts,
+                    canum_ui::boss::BossPanel {
+                        name: lang.get("Runway_UiName").to_owned(),
+                        fight_name: "Runway".to_owned(),
+                        marks: marks(&save, "Runway"),
+                        enter_color: Color::linear_rgb(0.5, 1.0, 0.5),
+                    },
+                    time,
+                ),
+            ));
+        }
         _ => {}
     }
 }

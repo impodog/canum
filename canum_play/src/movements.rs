@@ -15,7 +15,12 @@ impl Plugin for MovementsPlugin {
         );
         app.add_systems(
             FixedLast,
-            (update_forced_velocity, update_velocity, speed_decay).chain(),
+            (
+                update_forced_velocity,
+                update_velocity,
+                (speed_decay, update_direct_velocity),
+            )
+                .chain(),
         );
         app.add_systems(FixedLast, auto_flip);
     }
@@ -28,16 +33,33 @@ impl Plugin for MovementsPlugin {
 #[require(Animation)]
 pub struct SpeedShrink(pub f32);
 
+/// Add this part to `PartialVelocity`, so that it won't be included in speed shrink calculation.
+#[derive(Component, Default)]
+pub struct SpeedShrinkExclude;
+
 fn do_speed_shrink(
-    mut q_entity: Query<(&SpeedShrink, &mut Collider, &LinearVelocity, &mut Animation)>,
+    mut q_entity: Query<(
+        &SpeedShrink,
+        &mut Collider,
+        &LinearVelocity,
+        &mut Animation,
+        &Children,
+    )>,
+    q_exclude: Query<&PartialVelocity, With<SpeedShrinkExclude>>,
 ) {
-    q_entity
-        .par_iter_mut()
-        .for_each(|(shrink, mut collider, linear_velocity, mut animation)| {
-            let factor = (0.5f32).powf(linear_velocity.length() / shrink.0);
+    q_entity.par_iter_mut().for_each(
+        |(shrink, mut collider, linear_velocity, mut animation, children)| {
+            let mut velocity = **linear_velocity;
+            for child in children.iter() {
+                if let Ok(partial_velocity) = q_exclude.get(child) {
+                    velocity -= **partial_velocity;
+                }
+            }
+            let factor = (0.5f32).powf(velocity.length() / shrink.0);
             collider.set_scale(Vec2::new(factor, 1.0), 6);
             animation.scale = Vec2::new(factor, 1.0);
-        });
+        },
+    );
 }
 
 #[derive(Component, Debug, Clone)]
@@ -170,6 +192,12 @@ impl Default for SpeedDecay {
 #[require(LinearVelocity, PrevForcedVelocity)]
 pub struct ForcedVelocity(pub Vec2);
 
+/// If an entity has no rigid body, it can use this marker to move directly using `LinearVelocity`.
+/// If the entity has a rigid body this does nothing.
+#[derive(Component, Default)]
+#[require(LinearVelocity)]
+pub struct DirectVelocity;
+
 /// A child of `ForcedVelocity`. Individual components can modify their part of velocity.
 ///
 /// If there are no partial velocities, `ForcedVelocity` is directly modified.
@@ -259,6 +287,22 @@ fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedV
         .for_each(|(decay, mut linear_velocity, forced)| {
             let amount = (linear_velocity.0 - forced.0) * decay.0;
             linear_velocity.0 -= amount;
+        });
+}
+
+#[allow(clippy::type_complexity)]
+fn update_direct_velocity(
+    mut q_velocity: Query<
+        (&mut Transform, &LinearVelocity),
+        (With<DirectVelocity>, Without<RigidBody>),
+    >,
+    time: Res<Time>,
+) {
+    q_velocity
+        .par_iter_mut()
+        .for_each(|(mut transform, linear_velocity)| {
+            transform.translation.x += linear_velocity.x * time.delta_secs();
+            transform.translation.y += linear_velocity.y * time.delta_secs();
         });
 }
 
