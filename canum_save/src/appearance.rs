@@ -23,7 +23,7 @@ pub struct Lang(pub HashMap<String, String>);
 
 impl Lang {
     /// Gets the text with the key, or a placeholder if none.
-    pub fn get<T>(&self, key: &T) -> &str
+    pub fn get<'s, T>(&'s self, key: &T) -> &'s str
     where
         String: Borrow<T>,
         T: Ord + Hash + ?Sized,

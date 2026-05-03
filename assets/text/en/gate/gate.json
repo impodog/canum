@@ -1,5 +1,5 @@
 {
-  "include": ["apple.json", "turf.json", "ant.json"],
+  "include": ["apple.json", "turf.json", "ant.json", "shop.json"],
   "text": {
     "en": {
       "Gate_WindowTitle": "Garden"

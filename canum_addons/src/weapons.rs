@@ -13,18 +13,14 @@ impl Plugin for WeaponsPlugin {
     }
 }
 
-fn fmul(first: i32, second: f32) -> i32 {
-    (first as f32 * second) as i32
-}
-
 fn add_weapons(event: On<setup::PostStartSession>, mut commands: Commands, save: Res<Save>) {
     let mut weapons = Vec::new();
-    let mut damage_multiplier: f32 = 1.0;
+    let mut damage_multiplier: f64 = 1.0;
     for effect in save.progress.selected_effects.iter() {
         if let Some(value) = effect.strip_prefix("Damage%") {
             match value.parse::<i32>() {
                 Ok(percent) => {
-                    damage_multiplier += percent as f32 / 100.0;
+                    damage_multiplier += percent as f64 / 100.0;
                 }
                 Err(err) => {
                     error!("Invalid damage multiplier effect: {value}, {err}");
@@ -36,7 +32,7 @@ fn add_weapons(event: On<setup::PostStartSession>, mut commands: Commands, save:
         match weapon.as_str() {
             "A_Filed" => {
                 let mut filed = filed::Filed::default();
-                filed.damage = fmul(filed.damage, damage_multiplier);
+                filed.damage = filed.damage.mul(damage_multiplier);
                 weapons.push(Some(
                     commands.spawn((ChildOf(event.player_entity), filed)).id(),
                 ));

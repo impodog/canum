@@ -12,7 +12,7 @@ impl Plugin for FiledPlugin {
 #[require(FiledTimer, Transform)]
 pub struct Filed {
     pub interval: f32,
-    pub damage: i32,
+    pub damage: math::ApproxFloat,
     pub order: u8,
     pub size: Vec2,
     pub speed: f32,
@@ -26,7 +26,7 @@ impl Default for Filed {
     fn default() -> Self {
         Self {
             interval: 0.1,
-            damage: 10,
+            damage: math::ApproxFloat::from(10),
             order: crate::consts::order::PLAYER_PROJ,
             size: Vec2::new(5.0, 10.0),
             speed: 450.0,
@@ -74,7 +74,7 @@ fn filed_shoot(
         commands.spawn((
             PlayerProjectile,
             crate::health::ContactDamage {
-                value: filed.damage,
+                value: filed.damage.sample(),
                 projectile: true,
                 order: filed.order,
             },

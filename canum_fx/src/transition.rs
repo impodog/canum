@@ -14,7 +14,7 @@ impl Plugin for TransitionPlugin {
 #[derive(Component, Debug, Clone)]
 #[require(Transform, Visibility::Hidden, PureColorClock)]
 pub struct PureColor {
-    pub destroy: Entity,
+    pub destroy: Option<Entity>,
     pub duration: Duration,
     pub color: Color,
     pub remove_self: bool,
@@ -36,12 +36,14 @@ struct PureColorClock {
 
 fn init_pure_color(
     mut commands: Commands,
-    q_pure_color: Query<(Entity, &PureColor), Added<PureColor>>,
+    mut q_pure_color: Query<(Entity, &mut PureColor), Added<PureColor>>,
 ) {
-    for (entity, pure_color) in q_pure_color.iter() {
+    for (entity, mut pure_color) in q_pure_color.iter_mut() {
+        pure_color.color = pure_color.color.to_linear().into();
         let child = commands
             .spawn((
-                Transform::from_translation(Vec3::new(0.0, 0.0, 134.37)),
+                ChildOf(entity),
+                Transform::from_translation(Vec3::new(0.0, 0.0, 114.37)),
                 Sprite {
                     custom_size: Some(Vec2::new(
                         CONFIG.display.virtual_size.0 as f32,
@@ -51,12 +53,11 @@ fn init_pure_color(
                     ..default()
                 },
                 Visibility::Visible,
-                ChildOf(entity),
             ))
             .id();
         commands.entity(entity).insert(PureColorClock {
             timer: Timer::new(pure_color.duration, TimerMode::Once),
-            half_timer: Timer::new(pure_color.duration / 2, TimerMode::Once),
+            half_timer: Timer::new(pure_color.duration.mul_f64(0.5), TimerMode::Once),
             child: Some(child),
         });
     }
@@ -91,7 +92,9 @@ fn work_pure_color(
             );
         }
         if clock.half_timer.just_finished() {
-            if let Ok(mut commands) = commands.get_entity(pure_color.destroy) {
+            if let Some(destroy) = pure_color.destroy
+                && let Ok(mut commands) = commands.get_entity(destroy)
+            {
                 commands.despawn();
             }
             *visibility = Visibility::Inherited;

@@ -90,8 +90,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
 fn handle_panel_select(
     _event: On<setup::lobby::LobbySelect>,
     mut commands: Commands,
-    q_panel: Query<(Entity, &BossPanel, &BossPanelAdded)>,
-    mut next_state: ResMut<NextState<setup::GameState>>,
+    q_panel: Query<(&BossPanel, &BossPanelAdded)>,
     state: Res<State<setup::GameState>>,
     q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
     time: Res<Time>,
@@ -102,7 +101,7 @@ fn handle_panel_select(
     let Ok(camera_entity) = q_camera.single() else {
         return;
     };
-    let Ok((panel_entity, panel, panel_add_time)) = q_panel.single() else {
+    let Ok((panel, panel_add_time)) = q_panel.single() else {
         return;
     };
     // Disallow spawning and entering the panel on the same frame.
@@ -111,41 +110,21 @@ fn handle_panel_select(
     }
 
     let sound_entity = commands
-        .spawn((setup::CutsceneWait, canum_res::sound::Sound::new("Confirm")))
-        .id();
-    commands
         .spawn((
-            ChildOf(camera_entity),
-            canum_fx::transition::PureColor {
-                destroy: sound_entity,
-                duration: std::time::Duration::from_secs_f32(2.0),
+            setup::cutscene::CutsceneWait,
+            canum_res::sound::Sound::new("Confirm"),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_entity),
+        canum_play::setup::cutscene::PureColorCutscene {
+            transition: canum_fx::transition::PureColor {
+                destroy: Some(sound_entity),
+                duration: std::time::Duration::from_secs_f32(1.5),
                 color: panel.enter_color,
                 remove_self: true,
             },
-            children![setup::CutsceneWait],
-        ))
-        .observe(unleash_cutscene_when_pure_color_half_point);
-    commands.insert_resource(setup::CutsceneNext {
-        event: setup::StartSession {
-            fight: panel.fight_name.clone(),
+            fight: panel.name.clone(),
         },
-    });
-    commands.entity(panel_entity).despawn();
-    next_state.set(setup::GameState::Cutscene);
-}
-
-fn unleash_cutscene_when_pure_color_half_point(
-    event: On<canum_fx::transition::PureColorHalfPoint>,
-    mut commands: Commands,
-    q_children: Query<&Children>,
-    q_wait: Query<(), With<setup::CutsceneWait>>,
-) {
-    let Ok(children) = q_children.get(event.entity) else {
-        return;
-    };
-    for child in children.iter() {
-        if q_wait.get(child).is_ok() {
-            commands.entity(child).despawn();
-        }
-    }
+    ));
 }

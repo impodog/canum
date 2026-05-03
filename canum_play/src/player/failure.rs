@@ -32,7 +32,7 @@ fn update_player_status(
             .remove::<RigidBody>();
         commands.spawn((
             ChildOf(entity),
-            crate::setup::CutsceneWait,
+            crate::setup::cutscene::CutsceneWait,
             Transform::from_translation(Vec3::new(0.0, 0.0, -0.1)),
             canum_fx::splash::Splash {
                 color: Color::linear_rgba(0.5, 1.0, 1.0, 0.8),
@@ -42,10 +42,10 @@ fn update_player_status(
         ));
         commands.spawn((
             ChildOf(entity),
-            crate::setup::CutsceneWait,
+            crate::setup::cutscene::CutsceneWait,
             canum_res::sound::Sound::new("Death"),
         ));
-        commands.insert_resource(crate::setup::CutsceneNext {
+        commands.insert_resource(crate::setup::cutscene::CutsceneNext {
             event: crate::setup::StartSession {
                 fight: "LobbySelect".to_owned(),
             },

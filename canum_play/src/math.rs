@@ -57,3 +57,49 @@ pub fn rect_intersect_ray(rect: Rect, point: Vec2, direction: Dir2) -> Option<Ve
 pub fn screen_border_intersect_ray(point: Vec2, direction: Dir2) -> Vec2 {
     rect_intersect_ray(CONFIG.display.screen_rect, point, direction).unwrap_or(point)
 }
+
+/// By using probability, generate a sequence of integers to approximate the actual float number.
+#[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct ApproxFloat {
+    pub integer: i32,
+    pub float: f64,
+}
+
+impl ApproxFloat {
+    pub fn sample(&self) -> i32 {
+        if self.float > 0.0 && self.float <= 1.0 && rand::random_bool(self.float) {
+            self.integer + 1
+        } else {
+            self.integer
+        }
+    }
+    pub fn add(&self, rhs: f64) -> Self {
+        let rem = self.float + rhs;
+        let floor = rem.floor();
+        Self {
+            integer: self.integer + floor as i32,
+            float: rem - floor,
+        }
+    }
+    pub fn mul(&self, rhs: f64) -> Self {
+        let new_value = (self.integer as f64 + self.float) * rhs;
+        Self::from(new_value)
+    }
+}
+impl From<f64> for ApproxFloat {
+    fn from(value: f64) -> Self {
+        let floor = value.floor();
+        Self {
+            integer: floor as i32,
+            float: value - floor,
+        }
+    }
+}
+impl From<i32> for ApproxFloat {
+    fn from(value: i32) -> Self {
+        Self {
+            integer: value,
+            float: 0.0,
+        }
+    }
+}

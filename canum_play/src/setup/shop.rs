@@ -1,3 +1,5 @@
+use bevy::text::TextBounds;
+
 use super::*;
 
 pub(super) struct ShopPlugin;
@@ -11,7 +13,7 @@ impl Plugin for ShopPlugin {
         );
         app.add_systems(
             FixedUpdate,
-            update_item_outline.run_if(in_state(setup::PlayState::Shop)),
+            (update_item_outline, update_item_description).run_if(in_state(setup::PlayState::Shop)),
         );
         app.add_systems(
             FixedPostUpdate,
@@ -21,7 +23,8 @@ impl Plugin for ShopPlugin {
             FixedLast,
             quit_shop.run_if(in_state(setup::PlayState::Shop)),
         );
-        app.add_observer(enter_shop)
+        app.add_observer(transition_enter_shop)
+            .add_observer(enter_shop)
             .add_observer(update_purchase_item);
     }
 }
@@ -103,14 +106,14 @@ pub fn reposition_rects(rects: &mut [Rect], bound: Rect) {
         }
 
         // Early exit if overlaps are negligible
-        if total_overlap_area < 1.0 {
+        if total_overlap_area < 0.1 {
             break;
         }
     }
 }
 
 #[derive(Component)]
-#[require(Transform, SelectingItem)]
+#[require(Transform, Visibility, SelectingItem)]
 pub struct ShopItem {
     pub item: canum_res::config::ShopItem,
     pub price: i32,
@@ -123,13 +126,21 @@ const ITEM_RECT_SIZE: Vec2 = Vec2::new(150.0, 70.0);
 struct ShopDrawing {
     active: Handle<ColorMaterial>,
     inactive: Handle<ColorMaterial>,
-    rect: Handle<Mesh>,
+    not_enough: Handle<ColorMaterial>,
+    fill_back: Handle<ColorMaterial>,
+    rect_outline: Handle<Mesh>,
+    rect_fill: Handle<Mesh>,
 }
 #[derive(Component, Clone, Deref, DerefMut, Default)]
 struct SelectingItem(pub bool);
 
+/// Marks the outline mesh, to update color accordingly.
 #[derive(Component, Default)]
 struct ItemOutline;
+
+/// Marks the descriptions so that it only shows up when item is selected.
+#[derive(Component, Default)]
+struct ItemDescription;
 
 #[derive(Resource, Debug, Clone)]
 struct ShopFonts {
@@ -146,7 +157,10 @@ fn setup_shop(
     let drawing = ShopDrawing {
         active: materials.add(ColorMaterial::from_color(Srgba::rgb_u8(10, 240, 100))),
         inactive: materials.add(ColorMaterial::from_color(Color::BLACK)),
-        rect: meshes.add(Rectangle::new(ITEM_RECT_SIZE.x, ITEM_RECT_SIZE.y).to_ring(2.0)),
+        not_enough: materials.add(ColorMaterial::from_color(Srgba::rgb_u8(240, 50, 10))),
+        fill_back: materials.add(ColorMaterial::from_color(Srgba::rgb_u8(20, 20, 20))),
+        rect_outline: meshes.add(Rectangle::new(ITEM_RECT_SIZE.x, ITEM_RECT_SIZE.y).to_ring(2.0)),
+        rect_fill: meshes.add(Rectangle::new(ITEM_RECT_SIZE.x, ITEM_RECT_SIZE.y)),
     };
     commands.insert_resource(drawing);
     let fonts = ShopFonts {
@@ -154,6 +168,34 @@ fn setup_shop(
         desc: asset_server.load("assets/fonts/GomePixel.otf"),
     };
     commands.insert_resource(fonts);
+}
+
+/// Send this to start a transition sequence to shop.
+#[derive(Event, Debug, Clone)]
+pub struct EnterShop {
+    pub fight: String,
+}
+
+fn transition_enter_shop(
+    event: On<EnterShop>,
+    mut commands: Commands,
+    q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
+) {
+    let Ok(camera) = q_camera.single() else {
+        return;
+    };
+    commands.spawn((
+        ChildOf(camera),
+        crate::setup::cutscene::PureColorCutscene {
+            transition: canum_fx::transition::PureColor {
+                destroy: None,
+                duration: Duration::from_secs_f32(0.8),
+                color: Color::srgb_u8(200, 200, 80),
+                remove_self: true,
+            },
+            fight: event.fight.clone(),
+        },
+    ));
 }
 
 fn enter_shop(
@@ -185,11 +227,17 @@ fn enter_shop(
         items.len(),
         Rect::from_center_size(Vec2::ZERO, ITEM_RECT_SIZE),
     );
-    reposition_rects(&mut rects, CONFIG.display.screen_rect);
+    {
+        let mut spawning_range = CONFIG.display.screen_rect;
+        spawning_range.max.y -= 50.0;
+        reposition_rects(&mut rects, spawning_range);
+    }
     for (item, rect) in items.into_iter().zip(rects) {
         let center = rect.center();
         let name = item.item.to_name();
-        let desc = lang.get(&format!("{name}_Short"));
+        let short_title = lang.get(&format!("{name}_Short"));
+        let desc = lang.get(&format!("{name}_ShopDesc"));
+        let displace = rect.center().x.signum() * -ITEM_RECT_SIZE.x;
         commands.spawn((
             Transform::from_translation(Vec3::new(center.x, center.y, 15.37)),
             ShopItem {
@@ -206,7 +254,15 @@ fn enter_shop(
                 ),
                 (
                     Transform::from_translation(Vec3::new(0.0, -16.0, 0.0)),
-                    Text2d::new(format!("{} / {}", desc, item.price)),
+                    Text2d::new(format!("{} ({}G)", short_title, item.price)),
+                    TextLayout {
+                        justify: Justify::Center,
+                        linebreak: LineBreak::WordOrCharacter
+                    },
+                    TextBounds {
+                        width: Some(ITEM_RECT_SIZE.x),
+                        height: None
+                    },
                     TextFont {
                         font: fonts.title.clone(),
                         font_smoothing: bevy::text::FontSmoothing::None,
@@ -216,9 +272,26 @@ fn enter_shop(
                     TextColor::WHITE,
                 ),
                 (
+                    Transform::from_translation(Vec3::new(displace, 0.0, 1.0)),
+                    ItemDescription,
+                    Mesh2d(drawing.rect_fill.clone()),
+                    MeshMaterial2d(drawing.fill_back.clone()),
+                    Visibility::Hidden,
+                    children![(
+                        Text2d::new(desc),
+                        TextFont {
+                            font: fonts.desc.clone(),
+                            font_smoothing: bevy::text::FontSmoothing::None,
+                            font_size: 14.0,
+                            ..default()
+                        },
+                        TextColor::WHITE,
+                    )]
+                ),
+                (
                     Transform::from_translation(Vec3::new(0.0, 0.0, -0.1)),
                     ItemOutline,
-                    Mesh2d(drawing.rect.clone()),
+                    Mesh2d(drawing.rect_outline.clone()),
                     MeshMaterial2d(drawing.inactive.clone()),
                 )
             ],
@@ -249,21 +322,46 @@ fn update_select_item(
 
 fn update_item_outline(
     mut q_outline: Query<(&mut MeshMaterial2d<ColorMaterial>, &ChildOf), With<ItemOutline>>,
-    q_selecting: Query<Ref<SelectingItem>>,
+    q_selecting: Query<(Ref<SelectingItem>, &ShopItem)>,
     drawing: Res<ShopDrawing>,
+    save: Res<Save>,
 ) {
     q_outline.par_iter_mut().for_each(|(mut material, parent)| {
-        let Ok(selecting) = q_selecting.get(parent.0) else {
+        let Ok((selecting, item)) = q_selecting.get(parent.0) else {
             return;
         };
         if selecting.is_changed() {
             **material = if selecting.0 {
-                drawing.active.clone()
+                if save.progress.coins >= item.price {
+                    drawing.active.clone()
+                } else {
+                    drawing.not_enough.clone()
+                }
             } else {
                 drawing.inactive.clone()
             };
         }
     });
+}
+
+fn update_item_description(
+    mut q_description: Query<(&mut Visibility, &ChildOf), With<ItemDescription>>,
+    q_selecting: Query<Ref<SelectingItem>>,
+) {
+    q_description
+        .par_iter_mut()
+        .for_each(|(mut visibility, parent)| {
+            let Ok(selecting) = q_selecting.get(parent.0) else {
+                return;
+            };
+            if selecting.is_changed() {
+                *visibility = if selecting.0 {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                };
+            }
+        });
 }
 
 /// Input handlers send this when an item is purchased.
@@ -322,6 +420,7 @@ fn update_purchase_item(
         return;
     }
     if save.progress.coins < event.price {
+        commands.spawn(Sound::new("Ui_EquipError"));
         return;
     };
     let Ok(transform) = q_transform.get(event.target_entity) else {
@@ -347,10 +446,26 @@ fn update_purchase_item(
     });
 }
 
-fn quit_shop(mut commands: Commands, key: Res<ButtonInput<KeyCode>>) {
+fn quit_shop(
+    mut commands: Commands,
+    key: Res<ButtonInput<KeyCode>>,
+    q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
+) {
     if key.any_just_pressed([KeyCode::KeyS, KeyCode::Escape, KeyCode::Backspace]) {
-        commands.trigger(crate::setup::StartSession {
-            fight: "LobbySelect".to_owned(),
-        });
+        let Ok(camera) = q_camera.single() else {
+            return;
+        };
+        commands.spawn((
+            ChildOf(camera),
+            crate::setup::cutscene::PureColorCutscene {
+                transition: canum_fx::transition::PureColor {
+                    destroy: None,
+                    duration: Duration::from_secs_f32(0.8),
+                    color: Color::srgb_u8(200, 200, 200),
+                    remove_self: true,
+                },
+                fight: "LobbySelect".to_owned(),
+            },
+        ));
     }
 }

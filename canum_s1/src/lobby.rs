@@ -9,15 +9,16 @@ impl Plugin for LobbyPlugin {
 }
 
 fn update_observer(mut commands: Commands) {
-    commands.spawn((setup::CutsceneDelete, Observer::new(handle_lobby_select)));
-    commands.spawn((setup::CutsceneDelete, Observer::new(quit_lobby_panel)));
-    commands.spawn((setup::CutsceneDelete, Observer::new(handle_lobby_shop)));
+    use setup::cutscene::CutsceneDelete;
+    commands.spawn((CutsceneDelete, Observer::new(handle_lobby_select)));
+    commands.spawn((CutsceneDelete, Observer::new(quit_lobby_panel)));
+    commands.spawn((CutsceneDelete, Observer::new(handle_lobby_shop)));
 }
 
 fn handle_lobby_shop(event: On<setup::lobby::LobbyShop>, mut commands: Commands) {
     let index = (event.position.x / 800.0).floor() as i32;
     if index == 2 {
-        commands.trigger(setup::StartSession {
+        commands.trigger(setup::shop::EnterShop {
             fight: "Shop_Ant".to_owned(),
         });
     }

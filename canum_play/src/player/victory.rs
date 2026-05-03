@@ -51,10 +51,10 @@ fn update_player_status(
             .remove::<RigidBody>();
         commands.spawn((
             ChildOf(entity),
-            crate::setup::CutsceneWait,
+            crate::setup::cutscene::CutsceneWait,
             canum_res::sound::Sound::new("Victory"),
         ));
-        commands.insert_resource(crate::setup::CutsceneNext {
+        commands.insert_resource(crate::setup::cutscene::CutsceneNext {
             event: crate::setup::StartSession {
                 fight: "Victory".to_owned(),
             },

@@ -31,7 +31,7 @@ fn on_defeat(
         .remove::<RigidBody>();
     commands.spawn((
         ChildOf(event.entity),
-        setup::CutsceneWait,
+        setup::cutscene::CutsceneWait,
         canum_fx::splash::Splash {
             color: Color::srgba(0.1, 0.3, 0.3, 0.5),
             duration: Duration::from_secs_f32(0.25),

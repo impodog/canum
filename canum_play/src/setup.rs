@@ -2,13 +2,18 @@ use bevy::time::Stopwatch;
 
 use crate::prelude::*;
 
+pub mod cutscene;
 pub mod lobby;
 pub mod shop;
 
 pub(super) struct SetupPlugin;
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((lobby::LobbyPlugin, shop::ShopPlugin));
+        app.add_plugins((
+            lobby::LobbyPlugin,
+            shop::ShopPlugin,
+            cutscene::CutscenePlugin,
+        ));
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>();
         app.add_message::<StartSession>();
@@ -22,11 +27,6 @@ impl Plugin for SetupPlugin {
             .init_state::<PlayState>()
             .init_state::<Fight>();
         app.add_systems(PreUpdate, tick_fight_time);
-        app.add_systems(
-            FixedLast,
-            wait_for_cutscene.run_if(in_state(crate::setup::GameState::Cutscene)),
-        );
-        app.add_systems(OnEnter(GameState::Cutscene), cutscene_delete);
         app.add_observer(change_music_when_win)
             .add_observer(change_music_when_lose);
     }
@@ -212,41 +212,6 @@ fn setup_session(
 
 fn tick_fight_time(time: Res<Time>, mut fight_time: ResMut<FightTime>) {
     fight_time.tick(time.delta());
-}
-
-#[derive(Resource, Debug, Clone)]
-pub struct CutsceneNext {
-    pub event: StartSession,
-}
-
-/// Instructs the cutscene state to wait for all these entities to despawn, then the next session may load.
-#[derive(Component, Default)]
-pub struct CutsceneWait;
-
-fn wait_for_cutscene(
-    mut commands: Commands,
-    cutscene_next: Option<Res<CutsceneNext>>,
-    q_wait: Query<(), With<CutsceneWait>>,
-) {
-    if let Some(cutscene_next) = cutscene_next
-        && q_wait.iter().next().is_none()
-    {
-        commands.trigger(cutscene_next.event.clone());
-    }
-}
-
-/// When the entering cutscene, all entitied marked with this are deleted.
-/// This also adds `SessionOnly` as a weaker constraint.
-#[derive(Component, Default)]
-#[require(SessionOnly)]
-pub struct CutsceneDelete;
-
-fn cutscene_delete(mut commands: Commands, q_cutscene_delete: Query<Entity, With<CutsceneDelete>>) {
-    for entity in q_cutscene_delete.iter() {
-        if let Ok(mut commands) = commands.get_entity(entity) {
-            commands.despawn();
-        }
-    }
 }
 
 fn change_music_when_win(

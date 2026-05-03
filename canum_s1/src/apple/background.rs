@@ -59,7 +59,7 @@ fn change_background_apple_tree(
                 .with_color(Color::default().with_alpha(0.6))
                 .with_visibility(Visibility::Hidden),
             canum_fx::transition::PureColor {
-                destroy: previous,
+                destroy: Some(previous),
                 color: Color::linear_rgb(0.5, 0.5, 0.5),
                 duration: Duration::from_secs_f32(1.0),
                 remove_self: false,
