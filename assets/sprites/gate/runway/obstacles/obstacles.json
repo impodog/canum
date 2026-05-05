@@ -1,0 +1,7 @@
+{
+  "sprites": {
+    "Runway_Bar_Left": [{ "path": "bar.png", "offset": [0, 0] }],
+    "Runway_Bar_Middle": [{ "path": "bar.png", "offset": [32, 0] }],
+    "Runway_Bar_Right": [{ "path": "bar.png", "offset": [64, 0] }]
+  }
+}

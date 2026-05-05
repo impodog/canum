@@ -67,7 +67,7 @@ where
 #[derive(Component, Debug, Clone, Default)]
 #[require(BehaviorManagerInfo, Transform)]
 pub struct BehaviorManager {
-    /// The target that all behaviors affect. Defaults to the parent of the manager.
+    /// The target that all behaviors affect. Defaults to the parent of the manager. If parent does not exist, defaults to itself.
     pub target: Option<Entity>,
 }
 impl BehaviorManager {
@@ -94,10 +94,11 @@ impl Default for BehaviorManagerInfo {
 fn start_behavior(
     commands: ParallelCommands,
     mut q_manager: Query<(
+        Entity,
         &BehaviorManager,
         &mut BehaviorManagerInfo,
         &Children,
-        &ChildOf,
+        Option<&ChildOf>,
     )>,
     q_behavior: Query<(&Behavior, &Weight)>,
     time: Res<Time>,
@@ -106,7 +107,7 @@ fn start_behavior(
 
     q_manager
         .par_iter_mut()
-        .for_each(|(manager, mut info, children, parent)| {
+        .for_each(|(manager_entity, manager, mut info, children, parent)| {
             info.cooldown.tick(time.delta());
             if !info.cooldown.is_finished() {
                 return;
@@ -166,7 +167,9 @@ fn start_behavior(
             commands.command_scope(|mut commands| {
                 commands.trigger(BehaveStart {
                     entity: *entity,
-                    target: manager.target.unwrap_or(parent.0),
+                    target: manager
+                        .target
+                        .unwrap_or(parent.map(|parent| parent.0).unwrap_or(manager_entity)),
                 });
             });
         });

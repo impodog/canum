@@ -21,11 +21,11 @@ impl Plugin for MovementsPlugin {
     }
 }
 
-/// Calls for the parent to move in quadratic speed changed with a fixed displacement.
+/// Calls for the parent to move in speed linked to a curve, with a fixed displacement.
 #[derive(Component, Debug, Clone)]
 #[require(PartialVelocity::unlinked())]
 pub struct Displacement {
-    /// The curve must be derivable for [0.0, 1.0], while 0.0 maps to 0.0, 1.0 maps to 1.0.
+    /// The curve must be derivable for (0.0, 1.0), while 0.0 maps to 0.0, 1.0 maps to 1.0.
     pub curve: fn(f32) -> f32,
     pub displace: Vec2,
     pub duration: Duration,
@@ -63,7 +63,9 @@ fn work_displacement(
     time: Res<Time>,
 ) {
     fn derivative(curve: fn(f32) -> f32, value: f32) -> f32 {
-        (curve(value + 1e-6) - curve(value)) / 1e-6
+        let next = (value + 1e-6).min(1.0);
+        let ans = (curve(next) - curve(value)) / (next - value);
+        if ans.is_finite() { ans } else { 0.0 }
     }
     q_displacement
         .par_iter_mut()
