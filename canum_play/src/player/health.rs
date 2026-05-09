@@ -31,7 +31,7 @@ impl Default for IntegerHealth {
     fn default() -> Self {
         Self {
             count: 6,
-            invinc_order: 200,
+            invinc_order: consts::order::HEALTH_INVINC,
             invinc_time: 1.0,
         }
     }

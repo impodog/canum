@@ -1,5 +1,4 @@
 mod health;
-mod lobby;
 mod prelude;
 mod setup;
 
@@ -12,8 +11,8 @@ pub mod image;
 pub use image::{Animation, AnimationComplete};
 
 pub mod bar;
-pub mod boss;
 pub mod equip;
+pub mod lobby;
 pub mod shop;
 
 use prelude::*;
@@ -27,7 +26,6 @@ impl Plugin for CanumUiPlugin {
             image::SpritePlugin,
             health::HealthPlugin,
             text::TextPlugin,
-            boss::BossPlugin,
             bar::BarPlugin,
             lobby::LobbyPlugin,
             equip::EquipPlugin,

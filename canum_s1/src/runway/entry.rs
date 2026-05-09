@@ -102,6 +102,27 @@ fn lion_reached_destination(
         )))
         .observe(game_start);
 
+    const BUMPER_HEIGHT: f32 = 10.0;
+    commands.spawn((
+        Transform::from_translation(Vec3::new(
+            0.0,
+            CONFIG.display.half_virtual_size.1 - BUMPER_HEIGHT * 0.5,
+            0.0,
+        )),
+        Sensor,
+        health::Friendly(false),
+        Collider::rectangle(CONFIG.display.screen_size.x, BUMPER_HEIGHT),
+        health::ContactDamage {
+            value: 1000,
+            order: consts::order::HEALTH_INVINC - 1,
+            projectile: false,
+        },
+        obstacle::BumpAway {
+            direction: Dir2::from_xy_unchecked(0.0, -1.0),
+            strength: 30.0,
+        },
+    ));
+
     let Ok(bottom_left) = q_bottom_left.single() else {
         return;
     };
@@ -121,7 +142,7 @@ fn game_start(
     mut q_lion: Query<(Entity, &mut Animation), With<RunwayLion>>,
     mut speed: ResMut<running::RollingSpeed>,
 ) {
-    const ROLLING_SPEED: f32 = 150.0;
+    const ROLLING_SPEED: f32 = 130.0;
     commands.trigger(RunwayOfficialStart);
     commands.spawn((Music, Sound::new("Runway_Bgm")));
     commands.spawn(RunwayObstacles);
@@ -136,5 +157,5 @@ fn game_start(
             linked: None,
         },
     ));
-    speed.0 = 150.0;
+    speed.0 = ROLLING_SPEED;
 }

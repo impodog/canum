@@ -6,6 +6,7 @@ pub mod enemy;
 pub mod health;
 pub mod math;
 pub mod movements;
+pub mod obstacle;
 pub mod player;
 pub mod projectile;
 pub mod setup;
@@ -26,6 +27,7 @@ impl Plugin for CanumPlayPlugin {
             setup::SetupPlugin,
             enemy::EnemyPlugin,
             projectile::ProjectilePlugin,
+            obstacle::ObstaclePlugin,
         ));
     }
 }

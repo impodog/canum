@@ -105,6 +105,8 @@ pub struct PhysicsHooks<'w, 's> {
     q_no: Query<'w, 's, &'static crate::projectile::NoCollideBoundary>,
     q_boundary: Query<'w, 's, &'static crate::setup::Boundaries>,
     q_projectile: Query<'w, 's, &'static crate::projectile::Projectile>,
+    q_oneway: Query<'w, 's, &'static crate::obstacle::OnewayCollision>,
+    q_velocity: Query<'w, 's, &'static LinearVelocity>,
 }
 impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
     fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
@@ -122,6 +124,19 @@ impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
         }
         if self.q_boundary.get(collider1).is_ok() && self.q_no.get(collider2).is_ok() {
             return false;
+        }
+        if let Ok([velocity1, velocity2]) = self.q_velocity.get_many([collider1, collider2]) {
+            let relative = velocity2.0 - velocity1.0;
+            if let Ok(oneway) = self.q_oneway.get(collider1)
+                && !oneway.test_velocity(relative)
+            {
+                return false;
+            }
+            if let Ok(oneway) = self.q_oneway.get(collider2)
+                && oneway.test_velocity(relative)
+            {
+                return false;
+            }
         }
         true
     }

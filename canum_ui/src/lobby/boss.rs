@@ -90,7 +90,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
 fn handle_panel_select(
     _event: On<setup::lobby::LobbySelect>,
     mut commands: Commands,
-    q_panel: Query<(&BossPanel, &BossPanelAdded)>,
+    q_panel: Query<(Entity, &BossPanel, &BossPanelAdded)>,
     state: Res<State<setup::GameState>>,
     q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
     time: Res<Time>,
@@ -101,7 +101,7 @@ fn handle_panel_select(
     let Ok(camera_entity) = q_camera.single() else {
         return;
     };
-    let Ok((panel, panel_add_time)) = q_panel.single() else {
+    let Ok((panel_entity, panel, panel_add_time)) = q_panel.single() else {
         return;
     };
     // Disallow spawning and entering the panel on the same frame.
@@ -115,6 +115,7 @@ fn handle_panel_select(
             canum_res::sound::Sound::new("Confirm"),
         ))
         .id();
+    commands.entity(panel_entity).despawn();
     commands.spawn((
         ChildOf(camera_entity),
         canum_play::setup::cutscene::PureColorCutscene {

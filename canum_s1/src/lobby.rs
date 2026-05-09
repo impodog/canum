@@ -45,7 +45,7 @@ fn handle_lobby_shop(
 fn handle_lobby_select(
     event: On<setup::lobby::LobbySelect>,
     mut commands: Commands,
-    q_panel: Query<(), With<canum_ui::boss::BossPanel>>,
+    q_panel: Query<(), With<canum_ui::lobby::boss::BossPanel>>,
     q_center: Query<Entity, With<canum_ui::Center>>,
     fonts: Res<canum_ui::Fonts>,
     lang: Res<Lang>,
@@ -76,9 +76,9 @@ fn handle_lobby_select(
         0 => {
             commands.spawn((
                 ChildOf(center),
-                canum_ui::boss::boss_panel(
+                canum_ui::lobby::boss::boss_panel(
                     fonts,
-                    canum_ui::boss::BossPanel {
+                    canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Apple_UiName").to_owned(),
                         fight_name: "Apple".to_owned(),
                         marks: marks(&save, "Apple"),
@@ -91,9 +91,9 @@ fn handle_lobby_select(
         1 => {
             commands.spawn((
                 ChildOf(center),
-                canum_ui::boss::boss_panel(
+                canum_ui::lobby::boss::boss_panel(
                     fonts,
-                    canum_ui::boss::BossPanel {
+                    canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Turf_UiName").to_owned(),
                         fight_name: "Turf".to_owned(),
                         marks: marks(&save, "Turf"),
@@ -106,9 +106,9 @@ fn handle_lobby_select(
         2 => {
             commands.spawn((
                 ChildOf(center),
-                canum_ui::boss::boss_panel(
+                canum_ui::lobby::boss::boss_panel(
                     fonts,
-                    canum_ui::boss::BossPanel {
+                    canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Ant_UiName").to_owned(),
                         fight_name: "Ant".to_owned(),
                         marks: marks(&save, "Ant"),
@@ -121,9 +121,9 @@ fn handle_lobby_select(
         3 => {
             commands.spawn((
                 ChildOf(center),
-                canum_ui::boss::boss_panel(
+                canum_ui::lobby::boss::boss_panel(
                     fonts,
-                    canum_ui::boss::BossPanel {
+                    canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Runway_UiName").to_owned(),
                         fight_name: "Runway".to_owned(),
                         marks: marks(&save, "Runway"),
@@ -140,7 +140,7 @@ fn handle_lobby_select(
 fn quit_lobby_panel(
     _event: On<setup::lobby::LobbyQuit>,
     mut commands: Commands,
-    q_panel: Query<Entity, With<canum_ui::boss::BossPanel>>,
+    q_panel: Query<Entity, With<canum_ui::lobby::boss::BossPanel>>,
 ) {
     for entity in q_panel.iter() {
         commands.entity(entity).despawn();

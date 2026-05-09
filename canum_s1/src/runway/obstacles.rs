@@ -16,6 +16,9 @@ impl Plugin for ObstaclesPlugin {
                 commands
                     .spawn((ChildOf(entity), RotatingBar))
                     .observe(rotating_bar);
+                commands
+                    .spawn((ChildOf(entity), StaircaseBars))
+                    .observe(staircase_bars);
             });
     }
 }
@@ -101,6 +104,41 @@ fn rotating_bar(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(1.0),
-        occupies: occupies![("Slow", 3.0)],
+        occupies: occupies![("Slow", rand_normal(4.0, 0.5))],
+    });
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Runway_StaircaseBars", 0.5, ["Slow"]))]
+struct StaircaseBars;
+
+fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
+    let begin_sign = rand::random_bool(0.5);
+    let number = rand::random_range(3..5);
+    let length = rand_normal(CONFIG.display.half_virtual_size.0 * 0.6, 20.0);
+    let spacing = rand_normal(200.0, 25.0);
+    for index in 0..number {
+        let sign: f32 = if begin_sign ^ ((index & 1) == 0) {
+            1.0
+        } else {
+            -1.0
+        };
+        commands.spawn((
+            Bar { length },
+            projectile::RemoveOutOfBounds {
+                distance_scale: 0.3,
+            },
+            Transform::from_translation(vec3(
+                CONFIG.display.half_virtual_size.0 * 0.5
+                    + (CONFIG.display.half_virtual_size.0 - length) * 0.5 * sign,
+                -CONFIG.display.half_virtual_size.1 - spacing * index as f32,
+                1.0,
+            )),
+        ));
+    }
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(2.0),
+        occupies: occupies![("Slow", rand_normal(7.0, 0.5))],
     });
 }
