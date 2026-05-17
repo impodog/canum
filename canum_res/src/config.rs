@@ -60,12 +60,14 @@ impl Default for Client {
 pub struct Fonts {
     pub ui_font: PathBuf,
     pub text_font: PathBuf,
+    pub title_font: PathBuf,
 }
 impl Default for Fonts {
     fn default() -> Self {
         Self {
             ui_font: "./assets/fonts/PixelatedElegance.ttf".into(),
-            text_font: "./assets/fonts/JetbrainsMono.ttf".into(),
+            text_font: "./assets/fonts/terminal-grotesque.ttf".into(),
+            title_font: "./assets/fonts/Hack.ttf".into(),
         }
     }
 }

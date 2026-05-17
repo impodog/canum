@@ -93,6 +93,14 @@ fn work_invincibility_timer(
 )]
 pub struct Friendly(pub bool);
 
+/// Marks to collide only with the player.
+#[derive(Component, Default)]
+pub struct CollidePlayerOnly;
+
+/// Insert this component to temporarily disable collision from opposite friendliness.
+#[derive(Component, Default)]
+pub struct DisableOpposingCollision;
+
 impl Friendly {
     pub const FRIENDLY: Friendly = Friendly(true);
     pub const UNFRIENDLY: Friendly = Friendly(false);
@@ -102,11 +110,14 @@ impl Friendly {
 #[derive(SystemParam)]
 pub struct PhysicsHooks<'w, 's> {
     q_friendly: Query<'w, 's, &'static Friendly>,
+    q_disable_opposite: Query<'w, 's, &'static DisableOpposingCollision>,
     q_no: Query<'w, 's, &'static crate::projectile::NoCollideBoundary>,
     q_boundary: Query<'w, 's, &'static crate::setup::Boundaries>,
     q_projectile: Query<'w, 's, &'static crate::projectile::Projectile>,
     q_oneway: Query<'w, 's, &'static crate::obstacle::OnewayCollision>,
     q_velocity: Query<'w, 's, &'static LinearVelocity>,
+    q_player_only: Query<'w, 's, &'static CollidePlayerOnly>,
+    q_player: Query<'w, 's, &'static crate::player::Player>,
 }
 impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
     fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
@@ -115,6 +126,11 @@ impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
         }
         #[allow(clippy::collapsible_if)]
         if let Ok([friendly1, friendly2]) = self.q_friendly.get_many([collider1, collider2]) {
+            if self.q_disable_opposite.get(collider1).is_ok()
+                || self.q_disable_opposite.get(collider2).is_ok()
+            {
+                return false;
+            }
             if friendly1.0 == friendly2.0 {
                 return false;
             }
@@ -137,6 +153,12 @@ impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
             {
                 return false;
             }
+        }
+        if self.q_player_only.get(collider1).is_ok() && self.q_player.get(collider2).is_err() {
+            return false;
+        }
+        if self.q_player_only.get(collider2).is_ok() && self.q_player.get(collider1).is_err() {
+            return false;
         }
         true
     }

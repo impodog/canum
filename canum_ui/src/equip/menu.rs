@@ -136,7 +136,7 @@ pub fn select_menu(kind: String, group: String, fonts: &crate::Fonts) -> impl Bu
                         TextSpan::new(""),
                         TextFont {
                             font: fonts.desc.clone(),
-                            font_size: 14.0,
+                            font_size: 16.0,
                             font_smoothing: FontSmoothing::None,
                             ..default()
                         },

@@ -7,7 +7,7 @@ impl Plugin for ObstaclesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             FixedPreUpdate,
-            init_bar.run_if(in_state(RUNWAY_STATE.clone())),
+            (init_bar, init_spike, init_tree).run_if(in_state(RUNWAY_STATE.clone())),
         );
         app.world_mut()
             .register_component_hooks::<ObstacleBehaviors>()
@@ -19,6 +19,9 @@ impl Plugin for ObstaclesPlugin {
                 commands
                     .spawn((ChildOf(entity), StaircaseBars))
                     .observe(staircase_bars);
+                commands
+                    .spawn((ChildOf(entity), SpawnTree))
+                    .observe(spawn_tree);
             });
     }
 }
@@ -140,5 +143,74 @@ fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(2.0),
         occupies: occupies![("Slow", rand_normal(7.0, 0.5))],
+    });
+}
+
+#[derive(Component, Default)]
+#[require(Obstacle)]
+pub struct Spike {
+    pub direction: f32,
+}
+impl Spike {
+    pub const SPIKE_EXTENTS: Vec2 = vec2(32.0, 32.0);
+}
+
+fn init_spike(
+    mut q_spike: Query<(Entity, &mut Transform, &mut Collider, &Spike), Added<Spike>>,
+    mut commands: Commands,
+) {
+    const HALF_FACTOR: f32 = 0.45;
+    for (entity, mut transform, mut collider, spike) in q_spike.iter_mut() {
+        commands
+            .entity(entity)
+            .insert(Animation::new("Runway_Spike", Spike::SPIKE_EXTENTS));
+        transform.rotation = Quat::from_rotation_z(spike.direction - std::f32::consts::FRAC_PI_2);
+        *collider = Collider::triangle_unchecked(
+            vec2(
+                -Spike::SPIKE_EXTENTS.x * HALF_FACTOR,
+                -Spike::SPIKE_EXTENTS.y * HALF_FACTOR,
+            ),
+            vec2(
+                Spike::SPIKE_EXTENTS.x * HALF_FACTOR,
+                -Spike::SPIKE_EXTENTS.y * HALF_FACTOR,
+            ),
+            vec2(0.0, Spike::SPIKE_EXTENTS.y * 0.5),
+        );
+    }
+}
+
+#[derive(Component)]
+#[require(Obstacle, Animation::new("Runway_Tree", vec2(32.0, 64.0)))]
+struct Tree;
+
+fn init_tree(mut q_tree: Query<&mut Collider, Added<Tree>>) {
+    const COLLIDER_SIZE: Vec2 = vec2(10.0, 10.0);
+    for mut collider in q_tree.iter_mut() {
+        *collider = Collider::compound(vec![(
+            vec2(0.0, -32.0 + COLLIDER_SIZE.y),
+            0.0,
+            Collider::rectangle(COLLIDER_SIZE.x, COLLIDER_SIZE.y),
+        )]);
+    }
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Runway_SpawnTree", 0.4, ["Tree"]))]
+struct SpawnTree;
+
+fn spawn_tree(event: On<BehaveStart>, mut commands: Commands) {
+    let x = rand::random_range(10.0..CONFIG.display.half_virtual_size.0 - 10.0);
+    commands.spawn((
+        Tree,
+        Transform::from_translation(Vec3::new(
+            x,
+            -64.0 - CONFIG.display.half_virtual_size.1,
+            25.37,
+        )),
+    ));
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(0.1),
+        occupies: occupies![("Tree", rand_normal(4.0, 1.0))],
     });
 }

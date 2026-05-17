@@ -52,7 +52,9 @@ fn bump_away(q_bump: Query<(&BumpAway, &CollidingEntities)>, commands: ParallelC
                     .spawn(BumpAwayCanceller(*entity))
                     .observe(cancel_bump_away)
                     .id();
-                commands.entity(*entity).insert(ColliderDisabled);
+                commands
+                    .entity(*entity)
+                    .insert(health::DisableOpposingCollision);
                 commands.spawn((
                     ChildOf(*entity),
                     crate::enemy::movements::Displacement {
@@ -75,5 +77,7 @@ fn cancel_bump_away(
     let Ok(cancel) = q_cancel.get(event.entity) else {
         return;
     };
-    commands.entity(cancel.0).try_remove::<ColliderDisabled>();
+    commands
+        .entity(cancel.0)
+        .try_remove::<health::DisableOpposingCollision>();
 }

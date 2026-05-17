@@ -165,8 +165,8 @@ fn setup_shop(
     };
     commands.insert_resource(drawing);
     let fonts = ShopFonts {
-        title: asset_server.load("assets/fonts/Hack.ttf"),
-        desc: asset_server.load("assets/fonts/GomePixel.otf"),
+        title: asset_server.load(CONFIG.fonts.title_font.clone()),
+        desc: asset_server.load(CONFIG.fonts.text_font.clone()),
     };
     commands.insert_resource(fonts);
 }

@@ -167,7 +167,7 @@ fn setup_session(
     let player = commands
         .spawn((
             crate::player::Player,
-            Animation::new("Cyan", Vec2::new(20.0, 20.0)),
+            Animation::new("Cyan", Vec2::new(18.0, 18.0)),
             crate::player::attack::Weapons(weapons.clone()),
         ))
         .add_children(

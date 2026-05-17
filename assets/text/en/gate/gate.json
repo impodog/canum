@@ -1,8 +1,29 @@
 {
-  "include": ["apple.json", "turf.json", "ant.json", "shop.json"],
   "text": {
     "en": {
-      "Gate_WindowTitle": "Garden"
+      "Gate_WindowTitle": "Garden",
+
+      "Apple_BossTitle": "Sketchy\n+Apple",
+      "Apple_UiName": "Apple",
+      "Apple_WindowTitle": "Tree Fight",
+      "Apple_Victory_WindowTitle": "Oh wait, we weren't fighting the tree?",
+
+      "Turf_BossTitle": "+Turf\nAlliance",
+      "Turf_UiName": "Turf Alliance",
+      "Turf_WindowTitle": "Nice Golf Course",
+      "Turf_Victory_WindowTitle": "I shot a birdie!",
+
+      "Ant_BossTitle": "+Ant Worker",
+      "Ant_UiName": "Ant",
+      "Ant_WindowTitle": "This game has ants?",
+      "Ant_Victory_WindowTitle": "That's just one of them.",
+
+      "Runway_BossTitle": "Forest Trails",
+      "Runway_UiName": "Trails",
+      "Runway_WindowTitle": "Forest Fun Time",
+      "Runway_Victory_WindowTitle": "I wonder how that lion does.",
+
+      "Charm_S1A_SharpLeaf_ShopDesc": "...sharper weapons..."
     }
   }
 }

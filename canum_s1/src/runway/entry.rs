@@ -102,6 +102,7 @@ fn lion_reached_destination(
         )))
         .observe(game_start);
 
+    // Spawn the bumping edge of the screen.
     const BUMPER_HEIGHT: f32 = 10.0;
     commands.spawn((
         Transform::from_translation(Vec3::new(
@@ -110,7 +111,7 @@ fn lion_reached_destination(
             0.0,
         )),
         Sensor,
-        health::Friendly(false),
+        health::CollidePlayerOnly,
         Collider::rectangle(CONFIG.display.screen_size.x, BUMPER_HEIGHT),
         health::ContactDamage {
             value: 1000,

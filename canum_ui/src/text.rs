@@ -19,8 +19,8 @@ pub struct Fonts {
 
 fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Fonts {
-        title: asset_server.load("assets/fonts/Hack.ttf"),
-        desc: asset_server.load("assets/fonts/GomePixel2.otf"),
+        title: asset_server.load(CONFIG.fonts.title_font.clone()),
+        desc: asset_server.load(CONFIG.fonts.text_font.clone()),
     });
 }
 
