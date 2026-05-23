@@ -1,6 +1,9 @@
 {
   "include": ["obstacles/obstacles.json"],
   "sprites": {
-    "Runway_Background": [{ "path": "runway.png", "size": [200, 225] }]
+    "Runway_Background": [{ "path": "runway.png", "size": [200, 225] }],
+    "Runway_Lightning": [
+      { "path": "lightning.png", "size": [32, 80], "count": 9, "interval": 100 }
+    ]
   }
 }

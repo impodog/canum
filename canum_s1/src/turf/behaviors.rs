@@ -125,7 +125,7 @@ fn spawn_spiker_start(event: On<BehaveStart>, mut commands: Commands) {
 #[require(
     Animation,
     enemy::attack::EnemyProjectile,
-    movements::ForcedVelocity(Vec2::new(250.0, 0.0)),
+    movements::ForcedVelocity::new(Vec2::new(250.0, 0.0)),
     Collider::triangle(vec2(-5.0, -10.0), vec2(5.0, -10.0), vec2(0.0, 10.0)),
     Mass(5.0)
 )]
@@ -215,7 +215,7 @@ fn spawn_shooter_start(event: On<BehaveStart>, mut commands: Commands) {
 #[require(
     enemy::attack::Minion,
     Animation::new("Turf_Shooter_Static", Vec2::new(64.0, 64.0)),
-    movements::ForcedVelocity(Vec2::new(0.0, rand_normal(300.0, 10.0))),
+    movements::ForcedVelocity::new(Vec2::new(0.0, rand_normal(300.0, 10.0))),
     Collider::triangle(vec2(-5.0, -10.0), vec2(5.0, -10.0), vec2(0.0, 10.0)),
     Mass(10.0)
 )]

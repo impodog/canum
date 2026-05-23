@@ -69,11 +69,16 @@ where
 pub struct BehaviorManager {
     /// The target that all behaviors affect. Defaults to the parent of the manager. If parent does not exist, defaults to itself.
     pub target: Option<Entity>,
+    /// Temporarily disables the behavior manager for a manual behavior.
+    pub disabled: bool,
 }
 impl BehaviorManager {
     /// Manages the parent entity, with activity settings.
     pub fn new() -> Self {
-        Self { target: None }
+        Self {
+            target: None,
+            disabled: false,
+        }
     }
 }
 
@@ -108,6 +113,10 @@ fn start_behavior(
     q_manager
         .par_iter_mut()
         .for_each(|(manager_entity, manager, mut info, children, parent)| {
+            if manager.disabled {
+                return;
+            }
+
             info.cooldown.tick(time.delta());
             if !info.cooldown.is_finished() {
                 return;

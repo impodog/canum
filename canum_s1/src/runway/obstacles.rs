@@ -180,14 +180,14 @@ fn init_spike(
 }
 
 #[derive(Component)]
-#[require(Obstacle, Animation::new("Runway_Tree", vec2(32.0, 64.0)))]
+#[require(Obstacle, Animation::new("Runway_Tree", vec2(64.0, 128.0)))]
 struct Tree;
 
 fn init_tree(mut q_tree: Query<&mut Collider, Added<Tree>>) {
-    const COLLIDER_SIZE: Vec2 = vec2(10.0, 10.0);
+    const COLLIDER_SIZE: Vec2 = vec2(32.0, 10.0);
     for mut collider in q_tree.iter_mut() {
         *collider = Collider::compound(vec![(
-            vec2(0.0, -32.0 + COLLIDER_SIZE.y),
+            vec2(0.0, -64.0 + COLLIDER_SIZE.y),
             0.0,
             Collider::rectangle(COLLIDER_SIZE.x, COLLIDER_SIZE.y),
         )]);
@@ -204,13 +204,13 @@ fn spawn_tree(event: On<BehaveStart>, mut commands: Commands) {
         Tree,
         Transform::from_translation(Vec3::new(
             x,
-            -64.0 - CONFIG.display.half_virtual_size.1,
+            -128.0 - CONFIG.display.half_virtual_size.1,
             25.37,
         )),
     ));
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.1),
-        occupies: occupies![("Tree", rand_normal(4.0, 1.0))],
+        occupies: occupies![("Tree", rand_normal(3.0, 2.0).clamp(0.5, 4.0))],
     });
 }

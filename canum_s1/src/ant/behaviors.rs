@@ -241,7 +241,7 @@ fn throw_blade_end(
                 let position = transform.translation().xy();
                 let direction =
                     player_position - position + player_velocity.0 * rand_normal(0.4, 0.2);
-                forced_velocity.0 = direction.normalize_or_zero() * 350.0;
+                **forced_velocity = direction.normalize_or_zero() * 350.0;
                 blade.released = true;
             }
             commands.spawn((ChildOf(entity), Sound::new("Turf_Shooter_Shoot")));

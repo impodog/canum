@@ -70,8 +70,9 @@ fn work_displacement(
     q_displacement
         .par_iter_mut()
         .for_each(|(entity, displacement, info, mut partial_velocity)| {
-            let ratio = (time.elapsed() - info.start_time).as_secs_f32()
+            let ratio = (time.elapsed_secs() - info.start_time.as_secs_f32())
                 / displacement.duration.as_secs_f32();
+            let ratio = ratio.clamp(0.0, 1.0);
             if ratio >= 1.0 {
                 commands.command_scope(|mut commands| {
                     commands.entity(entity).despawn();

@@ -15,12 +15,14 @@ impl Plugin for TextPlugin {
 pub struct Fonts {
     pub title: Handle<Font>,
     pub desc: Handle<Font>,
+    pub game: Handle<Font>,
 }
 
 fn setup_fonts(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(Fonts {
         title: asset_server.load(CONFIG.fonts.title_font.clone()),
         desc: asset_server.load(CONFIG.fonts.text_font.clone()),
+        game: asset_server.load(CONFIG.fonts.game_font.clone()),
     });
 }
 

@@ -191,7 +191,7 @@ fn transition_enter_shop(
             transition: canum_fx::transition::PureColor {
                 destroy: None,
                 duration: Duration::from_secs_f32(0.8),
-                color: Color::srgb_u8(200, 200, 80),
+                color: Color::srgb_u8(20, 20, 0),
                 remove_self: true,
             },
             fight: event.fight.clone(),

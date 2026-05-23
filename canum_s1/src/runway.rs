@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub mod attacks;
 mod entry;
 mod obstacles;
+mod problem;
 mod running;
 
 pub(super) struct RunwayPlugin;
@@ -16,6 +17,7 @@ impl Plugin for RunwayPlugin {
             running::RunningPlugin,
             attacks::AttacksPlugin,
             obstacles::ObstaclesPlugin,
+            problem::ProblemPlugin,
         ));
     }
 }

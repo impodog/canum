@@ -190,7 +190,20 @@ impl Default for SpeedDecay {
 /// Makes up part of the actual `LinearVelocity`, and this part is unaffected by `SpeedDecay`.
 #[derive(Component, Debug, Clone, Default, Deref, DerefMut)]
 #[require(LinearVelocity, PrevForcedVelocity)]
-pub struct ForcedVelocity(pub Vec2);
+pub struct ForcedVelocity {
+    #[deref]
+    pub velocity: Vec2,
+    /// Tracks its partial velocity children number, used for updating only when changed.
+    pub partial_count: usize,
+}
+impl ForcedVelocity {
+    pub fn new(velocity: Vec2) -> Self {
+        Self {
+            velocity,
+            partial_count: 0,
+        }
+    }
+}
 
 /// If an entity has no rigid body, it can use this marker to move directly using `LinearVelocity`.
 /// If the entity has a rigid body this does nothing.
@@ -241,6 +254,7 @@ fn update_forced_velocity(
     q_forced.par_iter_mut().for_each(|(mut forced, children)| {
         let mut total = Vec2::ZERO;
         let mut any_changed = false;
+        let mut count = 0;
         for child in children.iter() {
             let Ok(partial) = q_partial.get(child) else {
                 continue;
@@ -254,13 +268,18 @@ fn update_forced_velocity(
                 any_changed = true;
                 continue;
             }
+            count += 1;
             total += partial.velocity;
             if partial.is_changed() {
                 any_changed = true;
             }
         }
+        if count != forced.partial_count {
+            forced.partial_count = count;
+            any_changed = true;
+        }
         if any_changed {
-            forced.0 = total;
+            forced.velocity = total;
         }
     });
 }
@@ -276,8 +295,8 @@ fn update_velocity(
         .par_iter_mut()
         .for_each(|(forced, mut linear_velocity, mut prev)| {
             if forced.is_changed() {
-                linear_velocity.0 += forced.0 - prev.0;
-                prev.0 = forced.0;
+                linear_velocity.0 += forced.velocity - prev.0;
+                prev.0 = forced.velocity;
             }
         });
 }
@@ -285,7 +304,7 @@ fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedV
     q_velocity
         .par_iter_mut()
         .for_each(|(decay, mut linear_velocity, forced)| {
-            let amount = (linear_velocity.0 - forced.0) * decay.0;
+            let amount = (linear_velocity.0 - forced.velocity) * decay.0;
             linear_velocity.0 -= amount;
         });
 }

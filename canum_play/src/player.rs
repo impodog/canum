@@ -159,7 +159,8 @@ fn rotate_player(
             return;
         };
         // player control velocity + collision caused velocity
-        let target_velocity = partial_velocity.velocity + linear_velocity.0 - forced_velocity.0;
+        let target_velocity =
+            partial_velocity.velocity + linear_velocity.0 - forced_velocity.velocity;
         let target_rotation = target_velocity.to_angle();
         let current_rotation = wrap_angle(rotation.as_radians() + std::f32::consts::FRAC_PI_2);
         let diff = wrap_angle(target_rotation - current_rotation);
