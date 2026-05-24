@@ -20,10 +20,13 @@ impl Plugin for ProblemPlugin {
 }
 
 #[derive(Component)]
-#[require(Text2d)]
+#[require(Text2d, SessionOnly)]
 struct Problem {
     answer: i32,
 }
+
+#[derive(Resource, Default)]
+pub(super) struct ProblemSuccessCount(pub(super) usize);
 
 #[derive(Component)]
 #[require(TextSpan)]
@@ -97,6 +100,9 @@ impl ProblemGenerator {
             }
         }
     }
+    // fn generate_two_digits_harder(&mut self) -> i32 {
+    //     Self::generate_digit_mild() * 10 + Self::generate_digit_even()
+    // }
     fn generate_four_digits(&mut self) -> i32 {
         Self::generate_digit_mild() * 1000
             + Self::generate_digit_even() * 100
@@ -107,11 +113,13 @@ impl ProblemGenerator {
 
 fn init_problem(mut commands: Commands) {
     commands.insert_resource(ProblemGenerator::default());
+    commands.insert_resource(ProblemSuccessCount::default());
     commands.spawn((SessionOnly, Observer::new(handle_problem_result)));
 }
 
 fn quit_problem(mut commands: Commands) {
     commands.remove_resource::<ProblemGenerator>();
+    commands.remove_resource::<ProblemSuccessCount>();
 }
 
 fn spawn_problem(
@@ -244,11 +252,13 @@ fn handle_problem_result(
     q_problem: Query<Entity, With<Problem>>,
     mut q_lion: Query<(Entity, &Children, &mut Animation), With<RunwayLion>>,
     mut q_manager: Query<&mut enemy::behavior::BehaviorManager>,
+    mut success_count: ResMut<ProblemSuccessCount>,
 ) {
     let Some(primary_player) = primary_player else {
         return;
     };
     if event.0 {
+        success_count.0 += 1;
         commands.spawn(Sound::new("Runway_Correct"));
         let Ok((lion, lion_children, mut animation)) = q_lion.single_mut() else {
             return;

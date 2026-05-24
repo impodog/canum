@@ -110,7 +110,7 @@ fn rotating_bar(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(1.0),
-        occupies: occupies![("Slow", rand_normal(4.0, 0.5))],
+        occupies: occupies![("Slow", rand_normal(5.5, 0.7))],
     });
 }
 
@@ -122,7 +122,7 @@ fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
     let begin_sign = rand::random_bool(0.5);
     let number = rand::random_range(3..5);
     let length = rand_normal(CONFIG.display.half_virtual_size.0 * 0.6, 20.0);
-    let spacing = rand_normal(225.0, 25.0);
+    let spacing = rand_normal(250.0, 25.0);
     for index in 0..number {
         let sign: f32 = if begin_sign ^ ((index & 1) == 0) {
             1.0
@@ -145,7 +145,7 @@ fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(2.0),
-        occupies: occupies![("Slow", rand_normal(8.0, 0.5))],
+        occupies: occupies![("Slow", rand_normal(9.0, 0.5))],
     });
 }
 
@@ -281,7 +281,8 @@ struct SpawnBoxAndBar;
 fn spawn_box_and_bar(event: On<BehaveStart>, mut commands: Commands) {
     let start_y = -CONFIG.display.half_virtual_size.1 - BreakableBox::SIZE.y * 0.5;
     let box_position = rand::random_range(
-        BreakableBox::SIZE.x..=CONFIG.display.half_virtual_size.0 - BreakableBox::SIZE.x,
+        BreakableBox::SIZE.x * 2.0
+            ..=CONFIG.display.half_virtual_size.0 - BreakableBox::SIZE.x * 2.0,
     );
     commands.spawn((
         BreakableBox,
@@ -311,6 +312,6 @@ fn spawn_box_and_bar(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.5),
-        occupies: occupies![("Slow", rand_normal(8.0, 0.6))],
+        occupies: occupies![("Slow", rand_normal(10.0, 0.6))],
     });
 }

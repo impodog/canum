@@ -12,18 +12,14 @@ impl Plugin for DefeatPlugin {
 }
 
 fn test_if_defeated(
-    q_lion: Query<&GlobalTransform, With<RunwayLion>>,
+    success_count: Res<problem::ProblemSuccessCount>,
     mut q_lion_animation: Query<&mut Animation, With<RunwayLion>>,
     mut q_boss: Query<(Entity, &mut player::victory::DefeatToWin), With<RunwayBoss>>,
     mut commands: Commands,
     mut speed: ResMut<running::RollingSpeed>,
     q_behavior: Query<Entity, With<enemy::behavior::BehaviorManager>>,
 ) {
-    let Ok(transform) = q_lion.single() else {
-        return;
-    };
-    let translation = transform.translation();
-    if translation.y - CONFIG.display.half_virtual_size.1 >= -1.0 {
+    if success_count.0 >= 5 {
         let Ok((entity, mut defeated)) = q_boss.single_mut() else {
             return;
         };

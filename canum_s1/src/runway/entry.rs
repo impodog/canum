@@ -87,7 +87,6 @@ fn lion_reached_destination(
     fonts: Res<canum_ui::Fonts>,
     lang: Res<Lang>,
 ) {
-    info!("Completed!");
     let Ok(mut animation) = q_lion.get_mut(event.entity) else {
         return;
     };
