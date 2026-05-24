@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub mod attacks;
+mod defeat;
 mod entry;
 mod obstacles;
 mod problem;
@@ -15,9 +15,9 @@ impl Plugin for RunwayPlugin {
         app.add_plugins((
             entry::EntryPlugin,
             running::RunningPlugin,
-            attacks::AttacksPlugin,
             obstacles::ObstaclesPlugin,
             problem::ProblemPlugin,
+            defeat::DefeatPlugin,
         ));
     }
 }
@@ -37,8 +37,7 @@ pub struct RunwayBoss {
     Collider::rectangle(40.0, 50.0),
     health::Friendly(false),
     SessionOnly,
-    movements::ForcedVelocity,
-    attacks::LionBehaviors
+    movements::ForcedVelocity
 )]
 pub struct RunwayLion;
 

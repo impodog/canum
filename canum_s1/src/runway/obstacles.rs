@@ -7,7 +7,7 @@ impl Plugin for ObstaclesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             FixedPreUpdate,
-            (init_bar, init_spike, init_tree).run_if(in_state(RUNWAY_STATE.clone())),
+            (init_bar, init_spike, init_tree, init_box).run_if(in_state(RUNWAY_STATE.clone())),
         );
         app.world_mut()
             .register_component_hooks::<ObstacleBehaviors>()
@@ -22,6 +22,9 @@ impl Plugin for ObstaclesPlugin {
                 commands
                     .spawn((ChildOf(entity), SpawnTree))
                     .observe(spawn_tree);
+                commands
+                    .spawn((ChildOf(entity), SpawnBoxAndBar))
+                    .observe(spawn_box_and_bar);
             });
     }
 }
@@ -119,7 +122,7 @@ fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
     let begin_sign = rand::random_bool(0.5);
     let number = rand::random_range(3..5);
     let length = rand_normal(CONFIG.display.half_virtual_size.0 * 0.6, 20.0);
-    let spacing = rand_normal(200.0, 25.0);
+    let spacing = rand_normal(225.0, 25.0);
     for index in 0..number {
         let sign: f32 = if begin_sign ^ ((index & 1) == 0) {
             1.0
@@ -142,7 +145,7 @@ fn staircase_bars(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(2.0),
-        occupies: occupies![("Slow", rand_normal(7.0, 0.5))],
+        occupies: occupies![("Slow", rand_normal(8.0, 0.5))],
     });
 }
 
@@ -211,6 +214,103 @@ fn spawn_tree(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.1),
-        occupies: occupies![("Tree", rand_normal(3.0, 2.0).clamp(0.5, 4.0))],
+        occupies: occupies![("Tree", rand_normal(3.0, 2.0).clamp(0.5, 3.0))],
+    });
+}
+
+#[derive(Component)]
+#[require(Obstacle, Animation, enemy::health::EnemyHealth::new(Self::HEALTH))]
+struct BreakableBox;
+impl BreakableBox {
+    const SIZE: Vec2 = vec2(60.0, 60.0);
+    const HEALTH: i32 = 100;
+}
+
+fn init_box(
+    mut q_box: Query<(Entity, &mut Animation, &mut Collider), Added<BreakableBox>>,
+    mut commands: Commands,
+) {
+    for (entity, mut animation, mut collider) in q_box.iter_mut() {
+        *animation = Animation::new("Runway_Box", BreakableBox::SIZE);
+        animation.set_pause(1);
+        *collider = Collider::rectangle(BreakableBox::SIZE.x * 0.95, BreakableBox::SIZE.y * 0.95);
+        commands
+            .entity(entity)
+            .observe(box_breaks)
+            .observe(box_damaged);
+    }
+}
+
+fn box_damaged(event: On<health::Damage>, q_box: Query<(&enemy::health::EnemyHealth, &Animation)>) {
+    let Ok((health, animation)) = q_box.get(event.entity) else {
+        return;
+    };
+    if health.value > 0 {
+        let index = ((BreakableBox::HEALTH - health.value) * 3 / BreakableBox::HEALTH) as usize;
+        animation.set_pause(index + 1);
+    }
+}
+
+fn box_breaks(
+    event: On<enemy::health::EnemyDefeated>,
+    q_box: Query<&Animation>,
+    mut commands: Commands,
+) {
+    let Ok(animation) = q_box.get(event.entity) else {
+        return;
+    };
+    animation.set_pause(0);
+    animation.set_inform(AnimationInform {
+        entity: event.entity,
+        index: vec![0],
+    });
+    commands
+        .entity(event.entity)
+        .remove::<Collider>()
+        .observe(box_break_animation_done);
+}
+
+fn box_break_animation_done(event: On<AnimationComplete>, mut commands: Commands) {
+    commands.entity(event.entity).despawn();
+}
+
+#[derive(Component)]
+#[require(Behavior::new("Runway_SpawnBoxAndBar", 0.5, ["Slow"]))]
+struct SpawnBoxAndBar;
+
+fn spawn_box_and_bar(event: On<BehaveStart>, mut commands: Commands) {
+    let start_y = -CONFIG.display.half_virtual_size.1 - BreakableBox::SIZE.y * 0.5;
+    let box_position = rand::random_range(
+        BreakableBox::SIZE.x..=CONFIG.display.half_virtual_size.0 - BreakableBox::SIZE.x,
+    );
+    commands.spawn((
+        BreakableBox,
+        Transform::from_translation(vec3(box_position, start_y, 0.1)),
+    ));
+    let left_length = box_position - BreakableBox::SIZE.x * 0.5;
+    let left_length = (left_length - 10.0).max(10.0);
+    let right_length =
+        (CONFIG.display.half_virtual_size.0 - box_position) - BreakableBox::SIZE.x * 0.5;
+    let right_length = (right_length - 10.0).max(100.0);
+    commands.spawn((
+        Bar {
+            length: left_length,
+        },
+        Transform::from_translation(vec3(left_length * 0.5, start_y, 0.0)),
+    ));
+    commands.spawn((
+        Bar {
+            length: right_length,
+        },
+        Transform::from_translation(vec3(
+            CONFIG.display.half_virtual_size.0 - right_length * 0.5,
+            start_y,
+            0.0,
+        )),
+    ));
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(0.5),
+        occupies: occupies![("Slow", rand_normal(8.0, 0.6))],
     });
 }

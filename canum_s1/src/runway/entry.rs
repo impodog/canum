@@ -143,7 +143,7 @@ fn game_start(
     mut q_lion: Query<(Entity, &mut Animation), With<RunwayLion>>,
     mut speed: ResMut<running::RollingSpeed>,
 ) {
-    const ROLLING_SPEED: f32 = 130.0;
+    const ROLLING_SPEED: f32 = 120.0;
     commands.trigger(RunwayOfficialStart);
     commands.spawn((Music, Sound::new("Runway_Bgm")));
     commands.spawn(RunwayObstacles);

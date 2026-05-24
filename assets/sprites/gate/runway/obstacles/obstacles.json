@@ -7,6 +7,7 @@
     "Runway_Tree": [
       { "path": "tree.png", "size": [32, 64], "offset": [0, 0] },
       { "path": "tree.png", "size": [32, 64], "offset": [32, 0] }
-    ]
+    ],
+    "Runway_Box": [{ "path": "box.png", "count": 5, "interval": 200 }]
   }
 }

@@ -77,13 +77,13 @@ impl ProblemGenerator {
         [
             (1, 3.0),
             (2, 3.0),
-            (3, 2.5),
-            (4, 2.5),
-            (5, 2.0),
-            (6, 1.5),
-            (7, 1.0),
-            (8, 0.5),
-            (9, 0.5),
+            (3, 2.0),
+            (4, 2.0),
+            (5, 1.0),
+            (6, 0.5),
+            (7, 0.5),
+            (8, 0.2),
+            (9, 0.1),
         ]
         .choose_weighted(&mut rand::rng(), |(_, w)| *w)
         .unwrap()
@@ -258,11 +258,11 @@ fn handle_problem_result(
                 manager.disabled = true;
             }
         }
-        animation.replace("Lion_Hit", false, None);
+        animation.replace("Runway_Lion_Hit", false, None);
         let entity = commands
             .spawn((
                 ChildOf(lion),
-                Transform::from_translation(vec3(0.0, -10.0, 0.1)),
+                Transform::from_translation(vec3(0.0, -20.0, 0.1)),
                 LionGetHit,
                 bevy::sprite::Anchor::BOTTOM_CENTER,
             ))
@@ -298,7 +298,7 @@ fn lion_get_hit_over(
         return;
     };
     animation.replace("Runway_Lion_Running", false, None);
-    let back = CONFIG.display.half_virtual_size.1 * 0.161;
+    let back = CONFIG.display.half_virtual_size.1 * 0.201;
     commands.spawn((
         ChildOf(entity),
         enemy::movements::Displacement {

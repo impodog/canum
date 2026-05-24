@@ -4,6 +4,16 @@
     "Runway_Background": [{ "path": "runway.png", "size": [200, 225] }],
     "Runway_Lightning": [
       { "path": "lightning.png", "size": [32, 80], "count": 9, "interval": 100 }
+    ],
+    "Runway_Lion_Running": [
+      { "path": "lion.png", "offset": [32, 0], "count": 2, "interval": 300 }
+    ],
+    "Runway_Lion_Posing": [
+      { "path": "lion.png", "offset": [96, 0], "count": 2, "interval": 200 }
+    ],
+    "Runway_Lion_Hit": [{ "path": "lion.png", "offset": [160, 0] }],
+    "Runway_Lion_Defeat": [
+      { "path": "lion.png", "offset": [192, 0], "count": 2, "interval": 600 }
     ]
   }
 }

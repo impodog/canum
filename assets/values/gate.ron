@@ -9,10 +9,13 @@
     "Ant": (
       gains: { "Completed": 1, "NoHits": 1 }
     ),
+    "Runway": (
+      gains: { "Completed": 1, "NoHits": 2 }
+    ),
   },
   stage: {
     "Gate": (
-      unlock_prereqs: ["Apple", "Turf", "Ant"],
+      unlock_prereqs: ["Apple", "Turf", "Ant", "Runway"],
       full_size: (4800.0, 450.0),
       locked_size: (3200.0, 450.0),
     )
@@ -20,7 +23,7 @@
   shop: {
     "Shop_Ant": (
       items: [
-        (price: 2, item: Charm("S1A_SharpLeaf")),
+        (price: 3, item: Charm("S1A_SharpLeaf")),
       ],
       background: "Gate_Shop",
     )
