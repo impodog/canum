@@ -175,7 +175,7 @@ pub struct ContactDamage {
 }
 /// Stores the projectile's contact history, preventing multiple hits.
 #[derive(Component, Debug, Deref, DerefMut, Default)]
-struct ProjectileContacted(BTreeSet<Entity>);
+pub struct ProjectileContacted(BTreeSet<Entity>);
 
 fn init_contact_damage(
     commands: ParallelCommands,

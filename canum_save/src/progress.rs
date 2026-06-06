@@ -14,7 +14,7 @@ pub struct Progress {
     pub weapon_slots: usize,
     pub unlocked_dash: bool,
     pub selected_weapons: Vec<String>,
-    pub selected_effects: HashSet<String>,
+    pub selected_effects: crate::util::HashMultiSet,
     pub selected_health: String,
     pub charms: Charms,
     pub gained_charms: BTreeSet<String>,

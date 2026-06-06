@@ -5,6 +5,7 @@ pub(super) struct FiledPlugin;
 impl Plugin for FiledPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedPostUpdate, init_filed);
+        app.add_systems(FixedPostUpdate, filed_play_effect);
     }
 }
 
@@ -21,6 +22,11 @@ pub struct Filed {
 struct FiledTimer {
     interval: Timer,
 }
+
+/// Marks the filed bullet, for playing splash effect.
+#[derive(Component, Default)]
+#[require(canum_play::projectile::Projectile)]
+pub struct FiledBullet;
 
 impl Default for Filed {
     fn default() -> Self {
@@ -73,6 +79,7 @@ fn filed_shoot(
             ));
         commands.spawn((
             PlayerProjectile,
+            FiledBullet,
             crate::health::ContactDamage {
                 value: filed.damage.sample(),
                 projectile: true,
@@ -85,4 +92,33 @@ fn filed_shoot(
             LinearVelocity(direction * filed.speed),
         ));
     }
+}
+
+fn filed_play_effect(
+    commands: ParallelCommands,
+    q_filed: Query<(&GlobalTransform, &canum_play::health::ProjectileContacted), With<FiledBullet>>,
+    q_transform: Query<&GlobalTransform>,
+) {
+    q_filed
+        .par_iter()
+        .for_each(|(global_transform, contacted)| {
+            let Some(contacted) = contacted.first() else {
+                return;
+            };
+            let Ok(target_transform) = q_transform.get(*contacted) else {
+                return;
+            };
+            let translation = global_transform.translation() - target_transform.translation();
+            let rotation = global_transform.rotation().to_euler(EulerRot::XYZ).2
+                - target_transform.rotation().to_euler(EulerRot::XYZ).2;
+            let transform = Transform::from_translation(translation)
+                .with_rotation(Quat::from_rotation_z(rotation));
+            commands.command_scope(|mut commands| {
+                commands.spawn((
+                    ChildOf(*contacted),
+                    Animation::new("Filed_Splash", vec2(16.0, 16.0)).once_then_despawn(),
+                    transform,
+                ));
+            });
+        });
 }

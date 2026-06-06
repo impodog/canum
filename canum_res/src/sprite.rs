@@ -4,7 +4,7 @@ use std::{
     collections::HashMap,
     sync::{
         Mutex,
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicU64, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -21,6 +21,7 @@ pub struct Animation {
     pub visibility: Visibility,
     pub inform: Mutex<Option<AnimationInform>>,
     pub starting_index: usize,
+    pub self_despawn: bool,
 }
 impl Clone for Animation {
     fn clone(&self) -> Self {
@@ -33,6 +34,7 @@ impl Clone for Animation {
             visibility: self.visibility,
             inform: Mutex::new(self.inform.lock().unwrap().clone()),
             starting_index: 0,
+            self_despawn: self.self_despawn,
         }
     }
 }
@@ -64,12 +66,18 @@ impl Animation {
             visibility: Visibility::default(),
             inform: Mutex::new(None),
             starting_index: 0,
+            self_despawn: false,
         }
     }
     /// Creates a once-animation. This sends `self.inform` `AnimationComplete` after complete playing, if any.
     pub fn once(self) -> Self {
         self.pause.store(0, Ordering::Release);
         self
+    }
+    /// This animation plays once and then despawn itself.
+    pub fn once_then_despawn(mut self) -> Self {
+        self.self_despawn = true;
+        self.once()
     }
     pub fn with_color(mut self, color: Color) -> Self {
         self.color = color;
@@ -121,6 +129,7 @@ fn convert_to_sprite(
     sprite: &mut Sprite,
     name: String,
     asset_server: &AssetServer,
+    atlas_name: String,
     atlas: &crate::config::SpriteAtlas,
     starting_index: usize,
     layouts: &mut Assets<TextureAtlasLayout>,
@@ -134,7 +143,7 @@ fn convert_to_sprite(
     sprite.image = image;
     let layout = atlas_handles
         .0
-        .entry(name)
+        .entry(atlas_name)
         .or_insert_with(|| {
             layouts.add(TextureAtlasLayout::from_grid(
                 UVec2 {
@@ -171,6 +180,7 @@ pub(crate) fn modify_animation(
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut atlas_handles: ResMut<AnimationAtlasHandles>,
     mut image_handles: ResMut<AnimationImageHandles>,
+    commands: ParallelCommands,
 ) {
     let mut default_sprite = Sprite::default();
     config::CONFIG
@@ -183,6 +193,7 @@ pub(crate) fn modify_animation(
                 &mut default_sprite,
                 "Empty".to_owned(),
                 &asset_server,
+                "Empty".to_owned(),
                 sprite_atlas,
                 0,
                 &mut layouts,
@@ -207,7 +218,10 @@ pub(crate) fn modify_animation(
                 *sprite = default_sprite.clone();
                 return;
             }
-            let atlas = &config[rand::random_range(0..config.len())];
+            let atlas_index = rand::random_range(0..config.len());
+            let atlas = &config[atlas_index];
+            let atlas_name = format!("{}{atlas_index}", animation.name);
+
             {
                 let mut guard = mutex.lock().unwrap();
                 let (layouts, atlas_handles, image_handles) = &mut *guard;
@@ -215,6 +229,7 @@ pub(crate) fn modify_animation(
                     sprite.as_mut(),
                     animation.name.clone(),
                     &asset_server,
+                    atlas_name.clone(),
                     atlas,
                     animation.starting_index,
                     layouts,
@@ -229,6 +244,10 @@ pub(crate) fn modify_animation(
                 TimerMode::Repeating,
             );
             clock.total = atlas.count as usize;
+            commands.command_scope(|mut commands| {
+                commands.trigger(UpdateSpriteHandle(animation.name.clone()));
+                commands.trigger(UpdateSpriteHandle(atlas_name));
+            });
         });
 }
 
@@ -241,7 +260,7 @@ pub struct AnimationComplete {
 
 pub(crate) fn tick_animation(
     commands: ParallelCommands,
-    mut query: Query<(Entity, &Animation, &mut Sprite, &mut AnimationClock)>,
+    mut query: Query<(Entity, Ref<Animation>, &mut Sprite, &mut AnimationClock)>,
     time: Res<Time>,
 ) {
     query
@@ -250,6 +269,9 @@ pub(crate) fn tick_animation(
             let Some(texture_atlas) = &mut sprite.texture_atlas else {
                 return;
             };
+            if animation.is_changed() {
+                return;
+            }
             let pause = animation.pause.load(Ordering::Acquire);
             let just_unpaused = if clock.paused {
                 if (texture_atlas.index + 1) % clock.total == pause {
@@ -286,6 +308,92 @@ pub(crate) fn tick_animation(
                         }
                     }
                 }
+                if clock.paused && animation.self_despawn {
+                    // This is checked after triggering AnimationComplete for further operations, if any.
+                    commands.command_scope(|mut commands| {
+                        commands.entity(entity).despawn();
+                    });
+                }
             }
         });
+}
+
+#[derive(Deref, DerefMut)]
+pub(crate) struct RandomClearingTimer(Timer);
+impl Default for RandomClearingTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(30.0, TimerMode::Repeating))
+    }
+}
+
+/// Stores the last updated time of a named handle.
+#[derive(Resource, Default, Deref, DerefMut)]
+pub struct UpdateTimes(HashMap<String, AtomicU64>);
+
+/// Refresh this handle's last updated time.
+#[derive(Event)]
+pub struct UpdateSpriteHandle(pub String);
+
+/// This will create a new entry.
+#[derive(Resource, Default)]
+pub(crate) struct UpdateHandleStrongQueue(Vec<String>);
+
+pub(crate) fn update_handle(
+    event: On<UpdateSpriteHandle>,
+    update_time: Res<UpdateTimes>,
+    time: Res<Time>,
+    mut strong_queue: ResMut<UpdateHandleStrongQueue>,
+) {
+    if let Some(value) = update_time.get(&event.0) {
+        value.store(time.elapsed().as_secs(), Ordering::Release);
+    } else {
+        strong_queue.0.push(event.0.clone());
+    }
+}
+pub(crate) fn update_handle_strong(
+    mut strong_queue: ResMut<UpdateHandleStrongQueue>,
+    mut update_time: ResMut<UpdateTimes>,
+    time: Res<Time>,
+) {
+    let tick = time.elapsed().as_secs();
+    while let Some(name) = strong_queue.0.pop() {
+        update_time.insert(name, AtomicU64::new(tick));
+    }
+}
+
+/// Scans all stored handles, and randomly clear some to free up space.
+pub(crate) fn random_clearing(
+    mut image_handles: ResMut<AnimationImageHandles>,
+    mut atlas_handles: ResMut<AnimationAtlasHandles>,
+    mut timer: Local<RandomClearingTimer>,
+    update_times: Res<UpdateTimes>,
+    time: Res<Time>,
+) {
+    let current_tick = time.elapsed().as_secs();
+    if timer.tick(time.delta()).is_finished() {
+        let new_handles = image_handles
+            .0
+            .drain()
+            .filter(|(name, _)| {
+                let Some(update_time) = update_times.0.get(name) else {
+                    return true;
+                };
+                let update_time = update_time.load(Ordering::Acquire);
+                update_time - current_tick <= 15
+            })
+            .collect::<HashMap<_, _>>();
+        image_handles.0 = new_handles;
+        let new_handles = atlas_handles
+            .0
+            .drain()
+            .filter(|(name, _)| {
+                let Some(update_time) = update_times.0.get(name) else {
+                    return true;
+                };
+                let update_time = update_time.load(Ordering::Acquire);
+                update_time - current_tick <= 31
+            })
+            .collect::<HashMap<_, _>>();
+        atlas_handles.0 = new_handles;
+    }
 }

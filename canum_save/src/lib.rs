@@ -8,6 +8,7 @@ pub(crate) use serde::{Deserialize, Serialize};
 mod appearance;
 mod controls;
 mod progress;
+pub mod util;
 
 pub use appearance::Lang;
 pub use progress::Charms;

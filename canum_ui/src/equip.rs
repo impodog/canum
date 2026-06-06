@@ -348,9 +348,9 @@ fn update_charms(
             let Some(details) = CONFIG.values.charm.get(charm) else {
                 continue;
             };
-            save.progress
-                .selected_effects
-                .extend(details.effects.iter().cloned());
+            for effect in details.effects.iter().cloned() {
+                save.progress.selected_effects.insert(effect);
+            }
         }
         save.progress.charms = new_charms;
         if let Some(is_equip) = is_equip {
@@ -444,6 +444,7 @@ fn change_select_menu(
     mut q_menu: Query<&mut menu::SelectMenu>,
     q_node: Query<Entity, With<menu::SelectMenuNode>>,
     mut current_number: ResMut<CurrentMenuNumber>,
+    save: Res<Save>,
 ) {
     let Ok(mut select_menu) = q_menu.single_mut() else {
         return;
@@ -452,6 +453,19 @@ fn change_select_menu(
         return;
     };
     **current_number = (**current_number + **event + TOTAL_MENUS) % TOTAL_MENUS;
+    match **current_number {
+        0 => {
+            if save.progress.gained_weapons.is_empty() {
+                return;
+            }
+        }
+        1 => {
+            if save.progress.gained_charms.is_empty() {
+                return;
+            }
+        }
+        _ => {}
+    }
     commands
         .entity(entity)
         .try_remove::<charms::CharmSelectMenu>()

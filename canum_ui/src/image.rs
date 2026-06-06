@@ -51,10 +51,12 @@ impl Default for Animation {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn convert_to_image_node(
     image_node: &mut ImageNode,
     name: String,
     asset_server: &AssetServer,
+    atlas_name: String,
     atlas: &canum_res::config::SpriteAtlas,
     layouts: &mut Assets<TextureAtlasLayout>,
     atlas_handles: &mut canum_res::AnimationAtlasHandles,
@@ -65,7 +67,7 @@ fn convert_to_image_node(
         .or_insert_with(|| asset_server.load(atlas.path.clone()))
         .clone();
     let layout = atlas_handles
-        .entry(name)
+        .entry(atlas_name)
         .or_insert_with(|| {
             layouts.add(TextureAtlasLayout::from_grid(
                 UVec2 {
@@ -100,6 +102,7 @@ fn modify_animation(
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut atlas_handles: ResMut<canum_res::AnimationAtlasHandles>,
     mut image_handles: ResMut<canum_res::AnimationImageHandles>,
+    commands: ParallelCommands,
 ) {
     let default_image = CONFIG
         .assets
@@ -112,6 +115,7 @@ fn modify_animation(
                 &mut image_node,
                 "Empty".to_owned(),
                 &asset_server,
+                "Empty".to_owned(),
                 sprite,
                 &mut layouts,
                 &mut atlas_handles,
@@ -137,7 +141,9 @@ fn modify_animation(
                 *image_node = default_image.clone();
                 return;
             }
-            let atlas = &config[rand::random_range(0..config.len())];
+            let atlas_index = rand::random_range(0..config.len());
+            let atlas = &config[atlas_index];
+            let atlas_name = format!("{}{atlas_index}", animation.name);
             {
                 let mut guard = mutex.lock().unwrap();
                 let (layouts, atlas_handles, image_handles) = &mut *guard;
@@ -145,6 +151,7 @@ fn modify_animation(
                     &mut image_node,
                     animation.name.clone(),
                     &asset_server,
+                    atlas_name.clone(),
                     atlas,
                     layouts,
                     atlas_handles,
@@ -164,6 +171,10 @@ fn modify_animation(
                 );
                 clock.total = atlas.count as usize;
             }
+            commands.command_scope(|mut commands| {
+                commands.trigger(canum_res::UpdateSpriteHandle(animation.name.clone()));
+                commands.trigger(canum_res::UpdateSpriteHandle(atlas_name));
+            });
         });
 }
 

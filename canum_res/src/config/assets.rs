@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use super::*;
 
 /// One sprite atlas that will be played repeatedly in the game.
@@ -13,6 +15,8 @@ pub struct SpriteAtlas {
     /// Milliseconds between switching frames.
     #[serde(default = "return_750")]
     pub interval: u32,
+    #[serde(default = "Default::default")]
+    pub specific_interval: BTreeMap<usize, u32>,
 }
 const fn return_default_size() -> (u32, u32) {
     (32, 32)
