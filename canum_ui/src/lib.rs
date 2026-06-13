@@ -2,7 +2,7 @@ mod health;
 mod prelude;
 mod setup;
 
-pub use setup::{BottomCenter, BottomLeft, Center, TopLeft, TopRight};
+pub use setup::{BottomCenter, BottomLeft, BottomRight, Center, TopLeft, TopRight};
 
 pub mod text;
 pub use text::Fonts;

@@ -1,0 +1,11 @@
+{
+  "include": [],
+  "sprites": {
+    "Achievement_Background_Progress": [
+      { "path": "background.png", "size": [100, 75], "offset": [0, 0] }
+    ],
+    "Achievement_Background_Special": [
+      { "path": "background.png", "size": [100, 75], "offset": [100, 0] }
+    ]
+  }
+}

@@ -3,6 +3,14 @@
     "Ui_Equip": { "path": "equip.wav", "volume": -10.0 },
     "Ui_Unequip": { "path": "unequip.wav", "volume": -10.0 },
     "Ui_EquipError": { "path": "equip_error.wav", "volume": -5.0 },
-    "Ui_Purchase": { "path": "purchase.wav", "volume": -5.0 }
+    "Ui_Purchase": { "path": "purchase.wav", "volume": -5.0 },
+    "Ui_Achievement_Progress": {
+      "path": "achievement_progress.wav",
+      "volume": 0.0
+    },
+    "Ui_Achievement_Special": {
+      "path": "achievement_special.wav",
+      "volume": 0.0
+    }
   }
 }

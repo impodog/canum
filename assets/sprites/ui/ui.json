@@ -3,6 +3,7 @@
     "marks/marks.json",
     "collectibles/collectibles.json",
     "charms/charms.json",
-    "weapons/weapons.json"
+    "weapons/weapons.json",
+    "achievements/achievements.json"
   ]
 }

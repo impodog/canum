@@ -17,6 +17,7 @@ pub struct Animation {
     pub repeating: bool,
     /// Pause the animation on a certain frame.
     pub pause: Option<usize>,
+    pub color: Color,
 }
 #[derive(Default, Debug, Component)]
 pub(crate) struct AnimationClock {
@@ -32,6 +33,7 @@ impl Animation {
             size,
             repeating: false,
             pause: None,
+            color: Color::default(),
         }
     }
     /// Sets the animation to repeating mode.
@@ -42,6 +44,11 @@ impl Animation {
     /// Pauses the animation on the given frame index.
     pub fn with_pause(mut self, index: usize) -> Self {
         self.pause = Some(index);
+        self
+    }
+    /// Sets the animation's color.
+    pub fn with_color(mut self, color: impl Into<Color>) -> Self {
+        self.color = color.into();
         self
     }
 }
@@ -58,6 +65,7 @@ fn convert_to_image_node(
     asset_server: &AssetServer,
     atlas_name: String,
     atlas: &canum_res::config::SpriteAtlas,
+    color: Color,
     layouts: &mut Assets<TextureAtlasLayout>,
     atlas_handles: &mut canum_res::AnimationAtlasHandles,
     image_handles: &mut canum_res::AnimationImageHandles,
@@ -86,6 +94,7 @@ fn convert_to_image_node(
         .clone();
     image_node.image = image;
     image_node.texture_atlas = Some(TextureAtlas { layout, index: 0 });
+    image_node.color = color;
 }
 
 fn modify_animation(
@@ -117,6 +126,7 @@ fn modify_animation(
                 &asset_server,
                 "Empty".to_owned(),
                 sprite,
+                Color::default(),
                 &mut layouts,
                 &mut atlas_handles,
                 &mut image_handles,
@@ -153,6 +163,7 @@ fn modify_animation(
                     &asset_server,
                     atlas_name.clone(),
                     atlas,
+                    animation.color,
                     layouts,
                     atlas_handles,
                     image_handles,

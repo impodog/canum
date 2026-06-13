@@ -23,6 +23,9 @@ pub struct Center;
 #[derive(Component, Default)]
 pub struct BottomCenter;
 
+#[derive(Component, Default)]
+pub struct BottomRight;
+
 fn setup_ui(
     event: On<canum_play::setup::PostStartSession>,
     save: Res<Save>,
@@ -96,6 +99,16 @@ fn setup_ui(
             margin: UiRect::horizontal(Val::Auto),
             bottom: px(10.0),
             padding: UiRect::bottom(px(0)),
+            ..default()
+        },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        BottomRight,
+        Node {
+            position_type: PositionType::Absolute,
+            right: px(10.0),
+            bottom: px(15.0),
             ..default()
         },
     ));

@@ -2,25 +2,19 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Charms {
-    pub has_offensive: bool,
-    pub has_defensive: bool,
-    pub selected_charms: HashSet<String>,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Progress {
     pub weapon_slots: usize,
     pub unlocked_dash: bool,
     pub selected_weapons: Vec<String>,
-    pub selected_effects: crate::util::HashMultiSet,
+    pub selected_effects: crate::util::BTreeMultiSet,
     pub selected_health: String,
     pub charms: Charms,
     pub gained_charms: BTreeSet<String>,
     pub gained_weapons: BTreeSet<String>,
     pub boss_progress: HashMap<String, BossProgress>,
     pub completed_stages: HashSet<String>,
+    pub achievements: Achievements,
     pub current_lobby: String,
     pub lobby_position: Vec2,
     pub coins: i32,
@@ -39,6 +33,7 @@ impl Default for Progress {
             gained_weapons: BTreeSet::from_iter(["A_Filed".to_owned()]),
             boss_progress: Default::default(),
             completed_stages: Default::default(),
+            achievements: Default::default(),
             current_lobby: "Gate".to_owned(),
             lobby_position: Vec2::new(400.0, 225.0),
             coins: 0,
@@ -75,4 +70,29 @@ pub struct BossProgress {
     pub defeated: bool,
     pub fail_times: usize,
     pub tasks: BTreeSet<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Charms {
+    pub has_offensive: bool,
+    pub has_defensive: bool,
+    pub selected_charms: HashSet<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Achievements {
+    pub gained: HashSet<String>,
+    pub progress: HashMap<String, crate::util::AnyValue>,
+}
+
+impl Achievements {
+    /// Attempts to get an achievement, if not previously acquired.
+    pub fn insert(&mut self, name: impl Into<String>) -> bool {
+        self.gained.insert(name.into())
+    }
+
+    /// Gets a new `crate::util::AnyValue` storing the progress.
+    pub fn progress(&mut self, name: impl Into<String>) -> &mut crate::util::AnyValue {
+        self.progress.entry(name.into()).or_default()
+    }
 }

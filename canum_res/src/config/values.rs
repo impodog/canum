@@ -15,6 +15,8 @@ pub struct Values {
     pub charm: HashMap<String, CharmDetails>,
     #[serde(default)]
     pub shop: HashMap<String, ShopDetails>,
+    #[serde(default)]
+    pub achievement: HashMap<String, AchievementDetails>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
@@ -123,6 +125,26 @@ pub struct ShopDetails {
     pub background: String,
 }
 
+#[derive(Deserialize, Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AchievementKind {
+    #[default]
+    Progress,
+    Special,
+}
+impl AchievementKind {
+    pub fn as_name(self) -> &'static str {
+        match self {
+            Self::Progress => "Progress",
+            Self::Special => "Special",
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct AchievementDetails {
+    pub kind: AchievementKind,
+}
+
 impl Values {
     pub fn load(base: &mut Values, path: PathBuf) {
         let base_path = path
@@ -154,6 +176,9 @@ impl Values {
         }
         for (name, details) in values.shop {
             base.shop.insert(name, details);
+        }
+        for (name, details) in values.achievement {
+            base.achievement.insert(name, details);
         }
         for sub_path in values.include {
             let sub_path = base_path.join(&sub_path);

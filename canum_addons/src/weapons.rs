@@ -16,7 +16,11 @@ impl Plugin for WeaponsPlugin {
 fn add_weapons(event: On<setup::PostStartSession>, mut commands: Commands, save: Res<Save>) {
     let mut weapons = Vec::new();
     let mut damage_multiplier: f64 = 1.0;
-    for effect in save.progress.selected_effects.iter() {
+    for effect in save
+        .progress
+        .selected_effects
+        .range_starting_with("Damage%")
+    {
         if let Some(value) = effect.strip_prefix("Damage%") {
             match value.parse::<i32>() {
                 Ok(percent) => {
@@ -28,6 +32,7 @@ fn add_weapons(event: On<setup::PostStartSession>, mut commands: Commands, save:
             }
         }
     }
+
     for weapon in save.progress.selected_weapons.iter() {
         match weapon.as_str() {
             "A_Filed" => {

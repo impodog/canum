@@ -379,7 +379,7 @@ pub(crate) fn random_clearing(
                     return true;
                 };
                 let update_time = update_time.load(Ordering::Acquire);
-                update_time - current_tick <= 15
+                current_tick - update_time <= 15
             })
             .collect::<HashMap<_, _>>();
         image_handles.0 = new_handles;
@@ -391,7 +391,7 @@ pub(crate) fn random_clearing(
                     return true;
                 };
                 let update_time = update_time.load(Ordering::Acquire);
-                update_time - current_tick <= 31
+                current_tick - update_time <= 31
             })
             .collect::<HashMap<_, _>>();
         atlas_handles.0 = new_handles;
