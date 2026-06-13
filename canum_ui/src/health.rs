@@ -5,6 +5,59 @@ pub(super) struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedPostUpdate, update_integer_health);
+        app.init_resource::<HealthDetails>();
+        app.add_observer(spawn_health_uis);
+    }
+}
+
+#[derive(Resource, Debug, Clone)]
+pub enum HealthDetails {
+    BasicHp(usize),
+}
+impl Default for HealthDetails {
+    fn default() -> Self {
+        Self::BasicHp(6)
+    }
+}
+
+fn spawn_health_uis(
+    event: On<canum_play::setup::StartSessionLast>,
+    mut commands: Commands,
+    health: Res<HealthDetails>,
+    q_top_left: Query<Entity, With<crate::TopLeft>>,
+    q_children: Query<&Children>,
+    q_health: Query<(), With<canum_play::health::HealthBar>>,
+) {
+    let Ok(top_left) = q_top_left.single() else {
+        return;
+    };
+    let Ok(children) = q_children.get(event.player_entity) else {
+        return;
+    };
+    let mut health_entity = None;
+    if q_health.get(event.player_entity).is_ok() {
+        health_entity = Some(event.player_entity);
+    } else {
+        for child in children.iter() {
+            if q_health.get(child).is_ok() {
+                health_entity = Some(child);
+                break;
+            }
+        }
+    }
+    let Some(health_entity) = health_entity else {
+        error!(
+            "Player doesn't have a child or self marked with `canum_play::health::HealthBar`, so no health bar UI is spawned."
+        );
+        return;
+    };
+    match health.as_ref() {
+        HealthDetails::BasicHp(number) => {
+            commands.spawn((
+                ChildOf(top_left),
+                crate::health::integer_health(health_entity, *number),
+            ));
+        }
     }
 }
 

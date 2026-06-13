@@ -39,7 +39,7 @@ pub struct EnemyDefeated {
 
 /// Basic enemy's health, takes damages unmodified from player projectiles.
 #[derive(Component, Default, Debug, Clone)]
-#[require(Shields)]
+#[require(HealthBar)]
 pub struct EnemyHealth {
     pub value: i32,
 }

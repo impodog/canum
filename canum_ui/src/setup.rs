@@ -26,11 +26,7 @@ pub struct BottomCenter;
 #[derive(Component, Default)]
 pub struct BottomRight;
 
-fn setup_ui(
-    event: On<canum_play::setup::PostStartSession>,
-    save: Res<Save>,
-    mut commands: Commands,
-) {
+fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Commands) {
     let root = commands
         .spawn((
             Node {
@@ -44,18 +40,16 @@ fn setup_ui(
             canum_play::SessionOnly,
         ))
         .id();
-    let top_left = commands
-        .spawn((
-            ChildOf(root),
-            TopLeft,
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(3.0),
-                top: px(3.0),
-                ..default()
-            },
-        ))
-        .id();
+    commands.spawn((
+        ChildOf(root),
+        TopLeft,
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(3.0),
+            top: px(3.0),
+            ..default()
+        },
+    ));
     commands.spawn((
         ChildOf(root),
         TopRight,
@@ -112,15 +106,4 @@ fn setup_ui(
             ..default()
         },
     ));
-    match save.progress.selected_health.as_str() {
-        "BasicHp" => {
-            commands.spawn((
-                ChildOf(top_left),
-                crate::health::integer_health(event.health_entity, 6),
-            ));
-        }
-        _ => {
-            warn!("Unknown health type. No UI available.")
-        }
-    }
 }

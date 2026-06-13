@@ -23,6 +23,11 @@ pub struct Damage {
     pub order: u8,
 }
 
+/// Marks this entity a health bar of its parent.
+#[derive(Component, Default, Debug, Clone, Copy)]
+#[require(Shields)]
+pub struct HealthBar;
+
 /// Stores the layers of shields added to the entity.
 /// Shields with larger priority will be used first.
 #[derive(Component, Default, Debug, Deref, DerefMut)]

@@ -453,6 +453,7 @@ fn change_select_menu(
         return;
     };
     **current_number = (**current_number + **event + TOTAL_MENUS) % TOTAL_MENUS;
+    #[allow(clippy::collapsible_match)]
     match **current_number {
         0 => {
             if save.progress.gained_weapons.is_empty() {

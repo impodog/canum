@@ -40,7 +40,7 @@ pub struct LobbyShop {
 #[derive(Event, Default)]
 pub struct LobbyQuit;
 
-fn select_lobby(event: On<PostStartSession>, mut commands: Commands, save: Res<Save>) {
+fn select_lobby(event: On<StartSessionFirst>, mut commands: Commands, save: Res<Save>) {
     if event.fight != "LobbySelect" {
         return;
     }
@@ -51,7 +51,7 @@ fn select_lobby(event: On<PostStartSession>, mut commands: Commands, save: Res<S
 
 #[allow(clippy::single_match)]
 fn enter_lobby(
-    event: On<PostStartSession>,
+    event: On<StartSessionFirst>,
     mut commands: Commands,
     save: Res<Save>,
     mut q_player: Query<&mut Transform, With<crate::player::Player>>,

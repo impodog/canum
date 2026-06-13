@@ -21,7 +21,7 @@ pub struct ActuallyHit {
 
 /// Basic player health bar, allowing to take only integer number of damage.
 #[derive(Component, Debug)]
-#[require(Shields)]
+#[require(HealthBar)]
 pub struct IntegerHealth {
     pub count: i32,
     pub invinc_order: u8,

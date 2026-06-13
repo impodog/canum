@@ -19,7 +19,7 @@ fn update_any_hits(_event: On<super::health::ActuallyHit>, mut any_hits: ResMut<
     any_hits.0 = true;
 }
 
-fn init_tracking(_event: On<crate::setup::PostStartSession>, mut commands: Commands) {
+fn init_tracking(_event: On<crate::setup::StartSessionFirst>, mut commands: Commands) {
     commands.insert_resource(AnyHits::default());
 }
 

@@ -15,13 +15,15 @@ impl Plugin for SetupPlugin {
             cutscene::CutscenePlugin,
         ));
         app.init_resource::<CurrentSession>()
-            .init_resource::<FightTime>();
+            .init_resource::<FightTime>()
+            .init_resource::<PostStartSessionSynchronizer>();
         app.add_message::<StartSession>();
         app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
         app.register_required_components::<canum_res::sound::Music, crate::SessionOnly>();
 
         app.add_observer(setup_session_send_message);
         app.add_systems(FixedLast, setup_session);
+        app.add_systems(FixedFirst, send_delayed_start_session_events);
 
         app.init_state::<GameState>()
             .init_state::<PlayState>()
@@ -59,12 +61,33 @@ pub struct FightTime(pub Stopwatch);
 pub struct StartSession {
     pub fight: String,
 }
-/// Sent after responding to `StartSession` with extra information, used for spawning UIs.
+
+/// Sent after `StartSession` (which spawns absolutely necessary entities), used for initializing values and adding counters.
 #[derive(Event, Debug, Clone)]
-pub struct PostStartSession {
+pub struct StartSessionFirst {
     pub fight: String,
     pub player_entity: Entity,
-    pub health_entity: Entity,
+}
+
+/// Sent after responding to `StartSessionFirst`, used for making modifications.
+#[derive(Event, Debug, Clone)]
+pub struct StartSessionMiddle {
+    pub fight: String,
+    pub player_entity: Entity,
+}
+
+/// Sent after responding to `StartSessionFirst`, used for spawning addons.
+#[derive(Event, Debug, Clone)]
+pub struct StartSessionAction {
+    pub fight: String,
+    pub player_entity: Entity,
+}
+
+/// Sent after responding to `StartSessionMiddle` with extra information, used for spawning UIs.
+#[derive(Event, Debug, Clone)]
+pub struct StartSessionLast {
+    pub fight: String,
+    pub player_entity: Entity,
 }
 
 #[derive(Resource, Debug, Default)]
@@ -178,17 +201,17 @@ fn setup_session(
                 .as_slice(),
         )
         .id();
-    let health_entity = match save.progress.selected_health.as_str() {
-        "BasicHp" => commands
-            .entity(player)
-            .insert(crate::player::health::IntegerHealth::default())
-            .id(),
+    match save.progress.selected_health.as_str() {
+        "BasicHp" => {
+            commands
+                .entity(player)
+                .insert(crate::player::health::IntegerHealth::default());
+        }
         health => {
             warn!("Unknown player health {health}, using default");
             commands
                 .entity(player)
-                .insert(crate::player::health::IntegerHealth::default())
-                .id()
+                .insert(crate::player::health::IntegerHealth::default());
         }
     };
     commands.insert_resource(crate::player::PrimaryPlayer(player));
@@ -197,10 +220,9 @@ fn setup_session(
         Rect::from_center_half_size(Vec2::ZERO, CONFIG.display.screen_size),
     ));
 
-    commands.trigger(PostStartSession {
+    commands.trigger(StartSessionFirst {
         fight: event.fight.clone(),
         player_entity: player,
-        health_entity,
     });
 
     commands.insert_resource(FightTime::default());
@@ -208,6 +230,54 @@ fn setup_session(
     game_state.set(GameState::Play);
     play_state.set(PlayState::Fighting);
     fight.set(Fight(event.fight.clone()));
+
+    commands.insert_resource(PostStartSessionSynchronizer::default());
+}
+
+#[derive(Resource, Default)]
+struct PostStartSessionSynchronizer {
+    first_tick: bool,
+    middle_sent: bool,
+    action_sent: bool,
+    last_sent: bool,
+}
+
+fn send_delayed_start_session_events(
+    mut commands: Commands,
+    mut synchronizer: ResMut<PostStartSessionSynchronizer>,
+    primary_player: Option<Res<crate::player::PrimaryPlayer>>,
+    fight: Res<State<Fight>>,
+) {
+    let Some(primary_player) = primary_player else {
+        return;
+    };
+    if !synchronizer.last_sent {
+        if !synchronizer.action_sent {
+            if !synchronizer.middle_sent {
+                if synchronizer.first_tick {
+                    commands.trigger(StartSessionMiddle {
+                        fight: fight.get().0.clone(),
+                        player_entity: primary_player.0,
+                    });
+                    synchronizer.middle_sent = true;
+                } else {
+                    synchronizer.first_tick = true;
+                }
+            } else {
+                commands.trigger(StartSessionAction {
+                    fight: fight.get().0.clone(),
+                    player_entity: primary_player.0,
+                });
+                synchronizer.action_sent = true;
+            }
+        } else {
+            commands.trigger(StartSessionLast {
+                fight: fight.get().0.clone(),
+                player_entity: primary_player.0,
+            });
+            synchronizer.last_sent = true;
+        }
+    }
 }
 
 fn tick_fight_time(time: Res<Time>, mut fight_time: ResMut<FightTime>) {

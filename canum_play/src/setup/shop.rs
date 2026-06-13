@@ -200,7 +200,7 @@ fn transition_enter_shop(
 }
 
 fn enter_shop(
-    event: On<PostStartSession>,
+    event: On<StartSessionFirst>,
     mut commands: Commands,
     mut state: ResMut<NextState<setup::PlayState>>,
     save: Res<Save>,

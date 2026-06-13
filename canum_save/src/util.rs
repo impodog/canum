@@ -48,6 +48,7 @@ impl BTreeMultiSet {
         self.0.clear();
     }
 
+    /// Gets an iterator over multiset values falling into the given range.
     pub fn range<'a, Q, R>(&'a self, range: R) -> Range<'a>
     where
         String: Borrow<Q>,
@@ -61,6 +62,7 @@ impl BTreeMultiSet {
         }
     }
 
+    /// Gets an iterator over multiset values whose prefix is the given string.
     pub fn range_starting_with<'a>(&'a self, prefix: impl Into<String>) -> Range<'a> {
         let prefix = prefix.into();
         let prefix_end = format!("{prefix}~");
