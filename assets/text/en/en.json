@@ -3,6 +3,7 @@
     "gate/gate.json",
     "charms/charms.json",
     "weapons/weapons.json",
-    "ui/ui.json"
+    "ui/ui.json",
+    "achievements/achievements.json"
   ]
 }

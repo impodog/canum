@@ -1,3 +1,5 @@
+mod simple;
+
 use crate::prelude::*;
 
 pub(super) struct AchievementsPlugin;
@@ -7,12 +9,19 @@ impl Plugin for AchievementsPlugin {
         app.add_observer(get_achievement)
             .add_observer(show_achievement);
         app.add_systems(FixedPreUpdate, fade_achievement);
+        app.add_plugins((simple::SimpleAchievementPlugin,));
     }
 }
 
+/// Calls the system to gain an achievement(if not already).
 #[derive(Event, Debug, Clone)]
 pub struct GetAchievement {
     pub name: String,
+}
+impl GetAchievement {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { name: name.into() }
+    }
 }
 
 fn get_achievement(
@@ -67,6 +76,7 @@ fn show_achievement(
     mut commands: Commands,
     q_bottom_right: Query<Entity, With<canum_ui::BottomRight>>,
     fonts: Res<canum_ui::Fonts>,
+    lang: Res<Lang>,
 ) {
     let Ok(bottom_right) = q_bottom_right.single() else {
         return;
@@ -75,7 +85,15 @@ fn show_achievement(
     const WIDTH: f32 = 200.0;
     const HEIGHT: f32 = 150.0;
     const IMAGE_WIDTH: f32 = 32.0;
-    const IMAGE_START_Y: f32 = 5.0 - HEIGHT * 0.5 + IMAGE_WIDTH * 0.5;
+    const IMAGE_START_Y: f32 = 5.0;
+
+    let title = format!(
+        "{}\n\n- {} -\n{}",
+        lang.get(&format!("Achievement_Complete_{}", event.kind.as_name())),
+        event.title.clone(),
+        lang.get(&format!("Achievement_{}_Desc", event.name)),
+    );
+
     commands.spawn((
         ChildOf(bottom_right),
         AchievementPopup::default(),
@@ -97,7 +115,7 @@ fn show_achievement(
                     top: px(IMAGE_START_Y),
                     width: px(IMAGE_WIDTH),
                     height: px(IMAGE_WIDTH),
-                    margin: UiRect::all(Val::Auto),
+                    margin: UiRect::horizontal(Val::Auto),
                     ..default()
                 },
                 canum_ui::Animation::new(event.picture.clone(), vec2(IMAGE_WIDTH, IMAGE_WIDTH))
@@ -108,13 +126,13 @@ fn show_achievement(
                     position_type: PositionType::Absolute,
                     width: px(WIDTH - 5.0),
                     top: px(IMAGE_START_Y + 32.0),
-                    margin: UiRect::all(Val::Auto),
+                    margin: UiRect::horizontal(Val::Auto),
                     ..default()
                 },
-                Text::new(event.title.clone()),
+                Text::new(title),
                 TextLayout {
                     linebreak: LineBreak::WordOrCharacter,
-                    ..default()
+                    justify: Justify::Center
                 },
                 TextFont {
                     font: fonts.desc.clone(),

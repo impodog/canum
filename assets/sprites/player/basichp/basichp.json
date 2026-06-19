@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "BasicHp": [{ "path": "basichp.png", "count": 5, "interval": 50 }]
+    "Hp_BasicHp": [{ "path": "basichp.png", "count": 5, "interval": 50 }],
+    "Hp_RedHeart": [{ "path": "heart.png", "count": 5, "interval": 50 }]
   }
 }

@@ -99,6 +99,10 @@ pub struct CurrentSession {
 #[derive(Component, Default)]
 pub struct SessionOnly;
 
+/// When the session changes, remove all of its children.
+#[derive(Component, Default)]
+pub struct ChildSessionOnly;
+
 /// Limits the moving range of entites. This is a invisible box.
 #[derive(Component, Default)]
 #[require(Collider, RigidBody::Static, Transform, SessionOnly)]
@@ -117,6 +121,7 @@ fn setup_session_send_message(event: On<StartSession>, mut writer: MessageWriter
 fn setup_session(
     mut reader: MessageReader<StartSession>,
     q_session_only: Query<Entity, With<SessionOnly>>,
+    q_child_session_only: Query<Entity, With<ChildSessionOnly>>,
     save: Res<Save>,
     mut commands: Commands,
     mut game_state: ResMut<NextState<GameState>>,
@@ -136,6 +141,9 @@ fn setup_session(
     // Despawn previous entities
     for entity in q_session_only.iter() {
         commands.entity(entity).despawn();
+    }
+    for entity in q_child_session_only.iter() {
+        commands.entity(entity).despawn_children();
     }
 
     // Spawn boundaries to restrict player and enemy

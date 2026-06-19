@@ -1,10 +1,11 @@
 use crate::prelude::*;
+use canum_play::setup::ChildSessionOnly;
 
 pub(super) struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(setup_ui);
+        app.add_systems(Startup, setup_ui);
     }
 }
 
@@ -26,7 +27,7 @@ pub struct BottomCenter;
 #[derive(Component, Default)]
 pub struct BottomRight;
 
-fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Commands) {
+fn setup_ui(mut commands: Commands) {
     let root = commands
         .spawn((
             Node {
@@ -37,11 +38,11 @@ fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Com
                 ..default()
             },
             UiAntiAlias::Off,
-            canum_play::SessionOnly,
         ))
         .id();
     commands.spawn((
         ChildOf(root),
+        ChildSessionOnly,
         TopLeft,
         Node {
             position_type: PositionType::Absolute,
@@ -52,6 +53,7 @@ fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Com
     ));
     commands.spawn((
         ChildOf(root),
+        ChildSessionOnly,
         TopRight,
         Node {
             position_type: PositionType::Absolute,
@@ -63,6 +65,7 @@ fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Com
     ));
     commands.spawn((
         ChildOf(root),
+        ChildSessionOnly,
         BottomLeft,
         Node {
             position_type: PositionType::Absolute,
@@ -73,6 +76,7 @@ fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Com
     ));
     commands.spawn((
         ChildOf(root),
+        ChildSessionOnly,
         Center,
         Node {
             position_type: PositionType::Absolute,
@@ -86,6 +90,7 @@ fn setup_ui(_event: On<canum_play::setup::StartSessionMiddle>, mut commands: Com
     ));
     commands.spawn((
         ChildOf(root),
+        ChildSessionOnly,
         BottomCenter,
         Node {
             position_type: PositionType::Absolute,

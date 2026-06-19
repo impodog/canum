@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Charm_S1A_SharpLeaf": [{ "path": "charms1.png", "offset": [0, 0] }]
+    "Charm_S1A_SharpLeaf": [{ "path": "charms1.png", "offset": [0, 0] }],
+    "Charm_S1B_RedHeart": [{ "path": "charms1.png", "offset": [32, 0] }]
   }
 }

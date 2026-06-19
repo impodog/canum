@@ -6,18 +6,24 @@ use crate::*;
 pub struct Progress {
     pub weapon_slots: usize,
     pub unlocked_dash: bool,
+
     pub selected_weapons: Vec<String>,
     pub selected_effects: crate::util::BTreeMultiSet,
     pub selected_health: String,
     pub charms: Charms,
     pub gained_charms: BTreeSet<String>,
     pub gained_weapons: BTreeSet<String>,
+
     pub boss_progress: HashMap<String, BossProgress>,
     pub completed_stages: HashSet<String>,
     pub achievements: Achievements,
+
     pub current_lobby: String,
     pub lobby_position: Vec2,
+
     pub coins: i32,
+
+    pub first_time_flags: HashSet<String>,
 }
 
 impl Default for Progress {
@@ -37,6 +43,7 @@ impl Default for Progress {
             current_lobby: "Gate".to_owned(),
             lobby_position: Vec2::new(400.0, 225.0),
             coins: 0,
+            first_time_flags: Default::default(),
         }
     }
 }
@@ -62,6 +69,10 @@ impl Progress {
             ShopItem::Charm(charm) => self.gained_charms.insert(charm),
             ShopItem::Weapon(weapon) => self.gained_weapons.insert(weapon),
         };
+    }
+    /// Returns true if this is the first time this flag is invoked.
+    pub fn first_time(&mut self, flag: impl Into<String>) -> bool {
+        self.first_time_flags.insert(flag.into())
     }
 }
 

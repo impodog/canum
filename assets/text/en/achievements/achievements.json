@@ -1,0 +1,9 @@
+{
+  "include": ["simple.json"],
+  "text": {
+    "en": {
+      "Achievement_Complete_Progress": "Achievement Complete!",
+      "Achievement_Complete_Special": "Secret Discovered!"
+    }
+  }
+}

@@ -160,6 +160,22 @@ macro_rules! implement_integer {
                 }
             }
         }
+        impl std::cmp::PartialEq<$rhs> for AnyValue {
+            fn eq(&self, other: &$rhs) -> bool {
+                match self {
+                    Self::Integer(lhs) => *lhs == *other as i64,
+                    Self::Float(lhs) => *lhs == *other as f64,
+                }
+            }
+        }
+        impl std::cmp::PartialOrd<$rhs> for AnyValue {
+            fn partial_cmp(&self, other: &$rhs) -> Option<std::cmp::Ordering> {
+                match self {
+                    Self::Integer(lhs) => lhs.partial_cmp(&(*other as i64)),
+                    Self::Float(lhs) => lhs.partial_cmp(&(*other as f64)),
+                }
+            }
+        }
     };
 }
 macro_rules! implement_float {
@@ -180,6 +196,22 @@ macro_rules! implement_float {
                     Self::Float(lhs) => *lhs - rhs as f64,
                 };
                 *self = Self::Float(result);
+            }
+        }
+        impl std::cmp::PartialEq<$rhs> for AnyValue {
+            fn eq(&self, other: &$rhs) -> bool {
+                match self {
+                    Self::Integer(lhs) => (*lhs as $rhs - *other).abs() < 1e-10,
+                    Self::Float(lhs) => (*lhs - *other as f64).abs() < 1e-10,
+                }
+            }
+        }
+        impl std::cmp::PartialOrd<$rhs> for AnyValue {
+            fn partial_cmp(&self, other: &$rhs) -> Option<std::cmp::Ordering> {
+                match self {
+                    Self::Integer(lhs) => (*lhs as $rhs - *other).partial_cmp(&0.0),
+                    Self::Float(lhs) => (*lhs - *other as f64).partial_cmp(&0.0),
+                }
             }
         }
     };

@@ -12,11 +12,31 @@ impl Plugin for HealthPlugin {
 
 #[derive(Resource, Debug, Clone)]
 pub enum HealthDetails {
-    BasicHp(usize),
+    BasicHp(BasicHpDetails),
 }
 impl Default for HealthDetails {
     fn default() -> Self {
-        Self::BasicHp(6)
+        Self::BasicHp(default())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BasicHpDetails {
+    /// Image array of health pips. This should be of same length of `count`.
+    pub array: Vec<String>,
+}
+impl Default for BasicHpDetails {
+    fn default() -> Self {
+        let mut array = Vec::new();
+        for _ in 0..6 {
+            array.push("Hp_BasicHp".to_owned());
+        }
+        Self { array }
+    }
+}
+impl BasicHpDetails {
+    pub fn count(&self) -> usize {
+        self.array.len()
     }
 }
 
@@ -52,10 +72,10 @@ fn spawn_health_uis(
         return;
     };
     match health.as_ref() {
-        HealthDetails::BasicHp(number) => {
+        HealthDetails::BasicHp(basic_hp) => {
             commands.spawn((
                 ChildOf(top_left),
-                crate::health::integer_health(health_entity, *number),
+                crate::health::integer_health(health_entity, basic_hp),
             ));
         }
     }
@@ -70,9 +90,9 @@ struct IntegerHealthUi {
     pub ui_count: usize,
 }
 
-pub(crate) fn integer_health(watch: Entity, number: usize) -> impl Bundle {
+pub(crate) fn integer_health(watch: Entity, basic_hp: &BasicHpDetails) -> impl Bundle {
     let mut sub_nodes = Vec::new();
-    for _ in 0..number {
+    for animation_name in basic_hp.array.iter() {
         sub_nodes.push((
             Node {
                 align_self: AlignSelf::Center,
@@ -80,13 +100,13 @@ pub(crate) fn integer_health(watch: Entity, number: usize) -> impl Bundle {
                 height: px(32.0),
                 ..default()
             },
-            Animation::new("BasicHp", Vec2::new(32.0, 32.0)).with_pause(0),
+            Animation::new(animation_name, Vec2::new(32.0, 32.0)).with_pause(0),
         ));
     }
     (
         IntegerHealthUi {
             watch,
-            ui_count: number,
+            ui_count: basic_hp.count(),
         },
         Node {
             align_content: AlignContent::Start,

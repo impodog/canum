@@ -23,7 +23,8 @@
       "Runway_WindowTitle": "Forest Fun Time",
       "Runway_Victory_WindowTitle": "I wonder how that lion does.",
 
-      "Charm_S1A_SharpLeaf_ShopDesc": "... damage..."
+      "Charm_S1A_SharpLeaf_ShopDesc": "Damage up",
+      "Charm_S1B_RedHeart_ShopDesc": "Health up"
     }
   }
 }
