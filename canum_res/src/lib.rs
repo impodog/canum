@@ -5,6 +5,9 @@ pub mod config;
 mod sprite;
 pub use sprite::*;
 
+mod font;
+pub use font::*;
+
 mod framerate;
 
 pub mod background;
@@ -35,7 +38,10 @@ impl Plugin for CanumResPlugin {
             )
                 .chain(),
         );
-        app.add_systems(Startup, (camera::setup_camera, window::setup_window));
+        app.add_systems(
+            Startup,
+            (camera::setup_camera, window::setup_window, font::setup_font),
+        );
         app.add_systems(Update, (window::update_window, camera::update_camera));
         app.add_systems(
             FixedUpdate,

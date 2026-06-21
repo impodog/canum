@@ -42,7 +42,6 @@ fn apply_health_effects(
     {
         if let Some(value) = effect.strip_prefix("Health+") {
             let (value, image) = value.split_once(':').unwrap_or((value, "Hp_BasicHp"));
-            info!("Image = {image}");
             match value.parse::<isize>() {
                 Ok(add) => match health.as_mut() {
                     HealthDetails::BasicHp(basic_hp) => {

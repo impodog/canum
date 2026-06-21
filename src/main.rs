@@ -14,6 +14,9 @@ fn main() {
             avian2d::PhysicsPlugins::default()
                 .with_length_unit(16.0)
                 .with_collision_hooks::<canum_play::health::PhysicsHooks>(),
+            bevy_image_font::ImageFontPlugin,
+        ))
+        .add_plugins((
             canum_res::CanumResPlugin,
             canum_save::CanumSavePlugin,
             canum_play::CanumPlayPlugin,

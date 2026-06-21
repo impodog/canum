@@ -4,13 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18.1", default-features = false, features = [
-  "bevy_asset",
-  "bevy_sprite",
-  "bevy_sprite_render",
-  "bevy_text",
-  "png",
-] }
+bevy = {
+  version = "0.18.1",
+  default-features = false,
+  features = [
+    "bevy_asset",
+    "bevy_sprite",
+    "bevy_sprite_render",
+    "bevy_text",
+    "png",
+  ]
+}
+bevy_image_font = "0.11.0"
 log = "0.4.29"
 rand = "0.10.1"
 ron = "0.12.1"

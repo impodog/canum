@@ -143,17 +143,10 @@ struct ItemOutline;
 #[derive(Component, Default)]
 struct ItemDescription;
 
-#[derive(Resource, Debug, Clone)]
-struct ShopFonts {
-    pub title: Handle<Font>,
-    pub desc: Handle<Font>,
-}
-
 fn setup_shop(
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    asset_server: Res<AssetServer>,
 ) {
     let drawing = ShopDrawing {
         active: materials.add(ColorMaterial::from_color(Srgba::rgb_u8(10, 240, 100))),
@@ -164,11 +157,6 @@ fn setup_shop(
         rect_fill: meshes.add(Rectangle::new(ITEM_RECT_SIZE.x, ITEM_RECT_SIZE.y)),
     };
     commands.insert_resource(drawing);
-    let fonts = ShopFonts {
-        title: asset_server.load(CONFIG.fonts.title_font.clone()),
-        desc: asset_server.load(CONFIG.fonts.text_font.clone()),
-    };
-    commands.insert_resource(fonts);
 }
 
 /// Send this to start a transition sequence to shop.
@@ -206,7 +194,7 @@ fn enter_shop(
     save: Res<Save>,
     drawing: Res<ShopDrawing>,
     lang: Res<Lang>,
-    fonts: Res<ShopFonts>,
+    fonts: Res<canum_res::PixelFonts>,
 ) {
     let Some(details) = CONFIG.values.shop.get(&event.fight) else {
         return;
@@ -256,22 +244,14 @@ fn enter_shop(
                 ),
                 (
                     Transform::from_translation(Vec3::new(0.0, -16.0, 0.0)),
-                    Text2d::new(format!("{} ({}G)", short_title, item.price)),
-                    TextLayout {
-                        justify: Justify::Center,
-                        linebreak: LineBreak::WordOrCharacter
-                    },
+                    canum_res::ImageFontPreRenderedText::default(),
+                    canum_res::ImageFontText::default()
+                        .text(format!("{} ({}G)", short_title, item.price))
+                        .font(fonts.normal.clone()),
                     TextBounds {
                         width: Some(ITEM_RECT_SIZE.x),
                         height: None
                     },
-                    TextFont {
-                        font: fonts.title.clone(),
-                        font_smoothing: bevy::text::FontSmoothing::None,
-                        font_size: 14.0,
-                        ..default()
-                    },
-                    TextColor::WHITE,
                 ),
                 (
                     Transform::from_translation(Vec3::new(displace, 0.0, 1.0)),
@@ -280,14 +260,10 @@ fn enter_shop(
                     MeshMaterial2d(drawing.fill_back.clone()),
                     Visibility::Hidden,
                     children![(
-                        Text2d::new(desc),
-                        TextFont {
-                            font: fonts.desc.clone(),
-                            font_smoothing: bevy::text::FontSmoothing::None,
-                            font_size: 14.0,
-                            ..default()
-                        },
-                        TextColor::WHITE,
+                        canum_res::ImageFontPreRenderedText::default(),
+                        canum_res::ImageFontText::default()
+                            .text(desc)
+                            .font(fonts.normal.clone())
                     )]
                 ),
                 (
@@ -473,18 +449,21 @@ fn quit_shop(
 }
 
 #[derive(Component)]
-#[require(Text2d, TextLayout, TextColor::WHITE, TextFont)]
 pub struct ShopIndicator;
 
 fn init_shop_indicator(
-    mut q_indicator: Query<(&mut Text2d, &mut TextFont), Added<ShopIndicator>>,
-    fonts: Res<ShopFonts>,
+    mut commands: Commands,
+    mut q_indicator: Query<Entity, Added<ShopIndicator>>,
+    fonts: Res<canum_res::PixelFonts>,
     lang: Res<Lang>,
 ) {
-    for (mut text, mut font) in q_indicator.iter_mut() {
-        font.font = fonts.desc.clone();
-        font.font_smoothing = bevy::text::FontSmoothing::None;
-        font.font_size = 30.0;
-        text.0 = lang.get("Ui_ShopIndicator_Keyboard").to_owned();
+    for entity in q_indicator.iter_mut() {
+        commands.entity(entity).insert((
+            canum_res::ImageFontPreRenderedText::default(),
+            canum_res::ImageFontText::default()
+                .text(lang.get("Ui_ShopIndicator_Keyboard").to_owned())
+                .font_height(14.0)
+                .font(fonts.normal.clone()),
+        ));
     }
 }
