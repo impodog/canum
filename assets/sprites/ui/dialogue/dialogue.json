@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "Ui_Dialogue_Background": [{ "path": "background.png", "size": [250, 30] }]
+  }
+}

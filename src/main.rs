@@ -43,5 +43,29 @@ fn main() {
                 }
             },
         )
+        .add_systems(
+            Update,
+            |mut commands: Commands,
+             q_bottom: Query<Entity, With<canum_ui::BottomCenter>>,
+             key: Res<ButtonInput<KeyCode>>| {
+                if key.just_pressed(KeyCode::KeyQ) {
+                    let Ok(bottom) = q_bottom.single() else {
+                        return;
+                    };
+                    commands.spawn((
+                        ChildOf(bottom),
+                        canum_ui::dialogue::Dialogue {
+                            sections: vec![canum_ui::dialogue::DialogueSection {
+                                title: "Dialogue Text Title Here".to_owned(),
+                                icon_image: "Empty".to_owned(),
+                                text: vec!["If you see this, I probably, no, definitely forgot to remove this test code".to_owned()],
+                            }],
+                            background: "Ui_Dialogue_Background".to_owned(),
+                            index: 0,
+                        },
+                    ));
+                }
+            },
+        )
         .run();
 }

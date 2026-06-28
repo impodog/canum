@@ -10,6 +10,7 @@ pub mod image;
 pub use image::{Animation, AnimationComplete};
 
 pub mod bar;
+pub mod dialogue;
 pub mod equip;
 pub mod health;
 pub mod lobby;
@@ -30,6 +31,7 @@ impl Plugin for CanumUiPlugin {
             lobby::LobbyPlugin,
             equip::EquipPlugin,
             shop::ShopPlugin,
+            dialogue::DialoguePlugin,
         ));
     }
 }

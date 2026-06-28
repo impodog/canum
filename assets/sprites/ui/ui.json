@@ -4,6 +4,7 @@
     "collectibles/collectibles.json",
     "charms/charms.json",
     "weapons/weapons.json",
-    "achievements/achievements.json"
+    "achievements/achievements.json",
+    "dialogue/dialogue.json"
   ]
 }

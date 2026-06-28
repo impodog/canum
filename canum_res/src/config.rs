@@ -44,6 +44,9 @@ pub struct Client {
     pub update_freq: f32,
     #[serde(skip)]
     pub update_duration: f32,
+    pub text_roll_speed: f32,
+    #[serde(skip)]
+    pub text_roll_interval: Duration,
 }
 impl Default for Client {
     fn default() -> Self {
@@ -52,6 +55,8 @@ impl Default for Client {
             frame_duration: Duration::from_secs_f32(1.0 / 100.0),
             update_freq: 64.0,
             update_duration: 1.0 / 64.0,
+            text_roll_speed: 25.0,
+            text_roll_interval: Duration::from_secs_f32(1.0 / 25.0),
         }
     }
 }
@@ -106,6 +111,8 @@ pub static CONFIG: LazyLock<Config> =
             config.client.frame_duration =
                 std::time::Duration::from_secs_f32(1.0 / config.client.framerate as f32);
             config.client.update_duration = 1.0 / config.client.update_freq;
+            config.client.text_roll_interval =
+                Duration::from_secs_f32(1.0 / config.client.text_roll_speed);
             AssetsConfig::load(&mut config.assets, config.assets_path.clone());
             Values::load(&mut config.values, config.values_path.clone());
             config

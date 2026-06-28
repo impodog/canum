@@ -11,6 +11,7 @@
     "Ui_Achievement_Special": {
       "path": "achievement_special.wav",
       "volume": 0.0
-    }
+    },
+    "Ui_TextNext": { "path": "text_next.wav", "volume": 5.0 }
   }
 }
