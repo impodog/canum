@@ -6,4 +6,7 @@
 *.rxrc
 *.ase
 *.aseprite
+*.pal
+exclude-*
 user.ron
+Cargo.lock

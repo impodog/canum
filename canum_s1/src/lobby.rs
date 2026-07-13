@@ -1,4 +1,5 @@
 use canum_play::prelude::*;
+use canum_play::setup::lobby::get_marks;
 
 pub(super) struct LobbyPlugin;
 
@@ -52,19 +53,6 @@ fn handle_lobby_select(
     save: Res<Save>,
     time: Res<Time>,
 ) {
-    fn marks(save: &Save, name: &str) -> Vec<String> {
-        save.progress
-            .boss_progress
-            .get(name)
-            .map(|boss_progress| {
-                boss_progress
-                    .tasks
-                    .iter()
-                    .map(|task| format!("Mark_{task}"))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default()
-    }
     if q_panel.single().is_ok() {
         return;
     }
@@ -81,7 +69,7 @@ fn handle_lobby_select(
                     canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Apple_UiName").to_owned(),
                         fight_name: "Apple".to_owned(),
-                        marks: marks(&save, "Apple"),
+                        marks: get_marks(&save, "Apple"),
                         enter_color: Color::linear_rgb(1.0, 0.5, 0.5),
                     },
                     time,
@@ -96,7 +84,7 @@ fn handle_lobby_select(
                     canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Turf_UiName").to_owned(),
                         fight_name: "Turf".to_owned(),
-                        marks: marks(&save, "Turf"),
+                        marks: get_marks(&save, "Turf"),
                         enter_color: Color::linear_rgb(0.5, 1.0, 0.5),
                     },
                     time,
@@ -111,7 +99,7 @@ fn handle_lobby_select(
                     canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Ant_UiName").to_owned(),
                         fight_name: "Ant".to_owned(),
-                        marks: marks(&save, "Ant"),
+                        marks: get_marks(&save, "Ant"),
                         enter_color: Color::linear_rgb(0.2, 0.2, 0.2),
                     },
                     time,
@@ -126,8 +114,23 @@ fn handle_lobby_select(
                     canum_ui::lobby::boss::BossPanel {
                         name: lang.get("Runway_UiName").to_owned(),
                         fight_name: "Runway".to_owned(),
-                        marks: marks(&save, "Runway"),
+                        marks: get_marks(&save, "Runway"),
                         enter_color: Color::linear_rgb(0.5, 1.0, 0.5),
+                    },
+                    time,
+                ),
+            ));
+        }
+        4 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::lobby::boss::boss_panel(
+                    fonts,
+                    canum_ui::lobby::boss::BossPanel {
+                        name: lang.get("Wcat_UiName").to_owned(),
+                        fight_name: "Wcat".to_owned(),
+                        marks: get_marks(&save, "Wcat"),
+                        enter_color: Color::linear_rgb(1.0, 1.0, 1.0),
                     },
                     time,
                 ),

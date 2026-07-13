@@ -222,3 +222,18 @@ fn change_window_title(
             .to_owned();
     }
 }
+
+/// Clone marks of this boss from the save.
+pub fn get_marks(save: &Save, name: &str) -> Vec<String> {
+    save.progress
+        .boss_progress
+        .get(name)
+        .map(|boss_progress| {
+            boss_progress
+                .tasks
+                .iter()
+                .map(|task| format!("Mark_{task}"))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
+}

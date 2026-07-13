@@ -1,0 +1,12 @@
+{
+  "text": {
+    "en": {
+      "Wcat1": "Wcat_Dialogue_Icon:Cat:Putting some test text here...</br>The next page is extra fun!"
+    }
+  },
+  "dialogue": {
+    "Wcat_Before": {
+      "sections": ["Wcat1"]
+    }
+  }
+}

@@ -4,8 +4,8 @@
     "lobby/lobby.json",
     "turf/turf.json",
     "ant/ant.json",
-    "charms/charms.json",
     "shop/shop.json",
-    "runway/runway.json"
+    "runway/runway.json",
+    "wcat/wcat.json"
   ]
 }

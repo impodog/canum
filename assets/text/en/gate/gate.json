@@ -1,4 +1,5 @@
 {
+  "include": ["wcat.json"],
   "text": {
     "en": {
       "Gate_WindowTitle": "Garden",
@@ -22,6 +23,11 @@
       "Runway_UiName": "Forest Trails",
       "Runway_WindowTitle": "Forest Fun Time",
       "Runway_Victory_WindowTitle": "I wonder how that lion does.",
+
+      "Wcat_BossTitle": "+Watchcat",
+      "Wcat_UiName": "Watchcat",
+      "Wcat_WindowTitle": "Feline Guardian",
+      "Wcat_Victory_WindowTitle": "Stage 1 complete!",
 
       "Charm_S1A_SharpLeaf_ShopDesc": "Damage up.",
       "Charm_S1B_RedHeart_ShopDesc": "One extra health."

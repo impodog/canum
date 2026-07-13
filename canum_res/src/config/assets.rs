@@ -45,6 +45,17 @@ const fn return_1_0() -> f32 {
 #[derive(Deserialize, Debug, Clone, Default, Deref, DerefMut)]
 pub struct LanguageConfig(pub HashMap<String, String>);
 
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct DialogueDetails {
+    /// These are names to the corresponding dialogue section texts in `LanguageConfig` of each language.
+    pub sections: Vec<String>,
+    #[serde(default = "background_default")]
+    pub background: String,
+}
+fn background_default() -> String {
+    "Ui_Dialogue_Background".to_owned()
+}
+
 /// Configuration for assets in the game.
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct AssetsConfig {
@@ -63,6 +74,9 @@ pub struct AssetsConfig {
     /// Map from language to text.
     #[serde(default)]
     pub text: HashMap<String, LanguageConfig>,
+    /// Map from aliases to dialogue config.
+    #[serde(default)]
+    pub dialogue: HashMap<String, DialogueDetails>,
 }
 
 impl AssetsConfig {
@@ -112,6 +126,7 @@ impl AssetsConfig {
         for (language, text) in config.text {
             base.text.entry(language).or_default().0.extend(text.0);
         }
+        base.dialogue.extend(config.dialogue);
         for sub_path in config.include {
             let sub_path = base_path.join(&sub_path);
             AssetsConfig::load(base, sub_path);

@@ -3,6 +3,7 @@ pub mod apple;
 pub mod lobby;
 pub mod runway;
 pub mod turf;
+pub mod wcat;
 
 use canum_play::prelude::*;
 
@@ -16,6 +17,7 @@ impl Plugin for CanumS1Plugin {
             turf::TurfPlugin,
             ant::AntPlugin,
             runway::RunwayPlugin,
+            wcat::WcatPlugin,
         ));
     }
 }
