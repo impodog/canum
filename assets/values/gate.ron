@@ -4,20 +4,26 @@
       gains: { "Completed": 1, "NoHits": 1 },
     ),
     "Turf": (
-      gains: { "Completed": 1, "NoHits": 2 },
+      gains: { "Completed": 2, "NoHits": 1 },
     ),
     "Ant": (
       gains: { "Completed": 1, "NoHits": 1 }
     ),
     "Runway": (
-      gains: { "Completed": 1, "NoHits": 2 }
+      gains: { "Completed": 2, "NoHits": 1 }
     ),
+    "Wcat": (
+      gains: { "Completed": 3, "NoHits": 3 }
+    )
   },
   stage: {
     "Gate": (
-      unlock_prereqs: ["Apple", "Turf", "Ant"],
+      complete_prereqs: ["Wcat"],
       full_size: (4800.0, 450.0),
-      locked_size: (3200.0, 450.0),
+      locks: [(
+        prereqs: ["Apple", "Ant"],
+        position: 3200.0
+      )]
     )
   },
   shop: {

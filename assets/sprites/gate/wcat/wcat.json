@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Wcat_Dialogue_Icon": [{"path": "wcat_icon.png"}]
+    "Wcat_Dialogue_Icon": [{"path": "wcat_icon.png"}],
+    "Wcat_Back": [{"path": "wcat_back.png", "size": [400, 225]}]
   }
 }

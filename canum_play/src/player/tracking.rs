@@ -44,13 +44,13 @@ fn update_stage(
     mut save: ResMut<Save>,
 ) {
     for (stage, details) in CONFIG.values.stage.iter() {
-        if !details.unlock_prereqs.contains(&fight.get().0) {
+        if !details.complete_prereqs.contains(&fight.get().0) {
             continue;
         }
         if save.progress.completed_stages.contains(stage) {
             continue;
         }
-        let completed = details.unlock_prereqs.iter().all(|boss| {
+        let completed = details.complete_prereqs.iter().all(|boss| {
             save.progress
                 .boss_progress
                 .get(boss)

@@ -32,10 +32,16 @@ impl BossDetails {
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
+pub struct StageLock {
+    pub prereqs: HashSet<String>,
+    pub position: f32,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
 pub struct StageDetails {
-    pub unlock_prereqs: HashSet<String>,
+    pub locks: Vec<StageLock>,
+    pub complete_prereqs: HashSet<String>,
     pub full_size: Vec2,
-    pub locked_size: Vec2,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
