@@ -1,31 +1,33 @@
+use canum_fx::wait_then_trigger;
+
 use super::*;
 
 pub(super) struct EntryPlugin;
 
 impl Plugin for EntryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(WCAT_STATE.clone()), (spawn_wcat_and_dialogue,));
+        app.add_systems(OnEnter(WCAT_STATE.clone()), (spawn_wcat,));
         app.world_mut()
             .register_component_hooks::<WcatDialogue>()
             .on_remove(|mut world, _context| {
                 world.commands().trigger(WcatStart);
             });
+        app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {
+            commands.spawn((SessionOnly, Observer::new(spawn_dialogue)));
+            commands.spawn((SessionOnly, Observer::new(WcatStartTrigger::observer)));
+        });
     }
 }
 
 #[derive(Event, Default)]
 pub struct WcatStart;
 
+wait_then_trigger!(WcatStartTrigger, WcatStart, 0.2);
+
 #[derive(Component, Default)]
 struct WcatDialogue;
 
-fn spawn_wcat_and_dialogue(
-    mut commands: Commands,
-    mut q_player: Query<&mut Transform, With<player::Player>>,
-    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
-    lang: Res<Lang>,
-    mut save: ResMut<Save>,
-) {
+fn spawn_wcat(mut commands: Commands, mut q_player: Query<&mut Transform, With<player::Player>>) {
     commands.spawn((WcatBoss,));
     commands.spawn((
         SessionOnly,
@@ -39,6 +41,16 @@ fn spawn_wcat_and_dialogue(
     };
     player_transform.translation.x -= 200.0;
 
+    commands.spawn(WcatStartTrigger);
+}
+
+fn spawn_dialogue(
+    _event: On<WcatStart>,
+    mut commands: Commands,
+    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+    lang: Res<Lang>,
+    mut save: ResMut<Save>,
+) {
     if save.progress.first_time("Wcat_Before") {
         let Ok(bottom_center) = q_bottom_center.single() else {
             return;

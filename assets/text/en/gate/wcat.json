@@ -1,7 +1,7 @@
 {
   "text": {
     "en": {
-      "Wcat1": "Wcat_Dialogue_Icon:Cat:Putting some test text here...</br>The next page is extra fun!"
+      "Wcat1": "Wcat_Dialogue_Icon:Cat:Putting some test text here... Also, do we need to manually insert linebreaks?\nLike this?</br>The next page is extra fun!"
     }
   },
   "dialogue": {

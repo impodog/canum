@@ -56,3 +56,19 @@ fn update_wait(
         }
     });
 }
+
+/// Creates a type that when spawn, wait for a interval and triggers a specific event(using Default::default()).
+/// You must also add its observer `Self::observer`
+#[macro_export]
+macro_rules! wait_then_trigger {
+    ($name: ident, $type: ty, $interval: expr) => {
+        #[derive(Component, Default)]
+        #[require($crate::util::WaitInterval::new(Duration::from_secs_f32($interval)))]
+        struct $name;
+        impl $name {
+            fn observer(_event: On<$crate::util::WaitComplete>, mut commands: Commands) {
+                commands.trigger(<$type>::default());
+            }
+        }
+    };
+}

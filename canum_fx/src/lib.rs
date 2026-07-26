@@ -2,6 +2,7 @@ mod prelude;
 
 pub mod math;
 pub mod splash;
+pub mod text;
 pub mod transition;
 pub mod util;
 
@@ -15,6 +16,7 @@ impl Plugin for CanumFxPlugin {
             transition::TransitionPlugin,
             splash::SplashPlugin,
             util::UtilPlugin,
+            text::TextPlugin,
         ));
     }
 }

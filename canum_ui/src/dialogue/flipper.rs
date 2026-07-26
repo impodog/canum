@@ -17,11 +17,16 @@ impl Plugin for FlipperPlugin {
                             ),
                             ..default()
                         },
-                        ImageNode::default(),
-                        canum_res::ImageFontText::default()
-                            .font(font)
-                            .font_height(14.0),
+                        canum_fx::text::MultilineText::new(
+                            canum_res::ImageFontText::default()
+                                .font(font)
+                                .font_height(14.0),
+                        ),
                     ));
+                    if let Some(mut node) = world.get_mut::<Node>(entity) {
+                        node.flex_direction = FlexDirection::Column;
+                        node.align_items = AlignItems::Start;
+                    }
                 },
             );
         app.add_systems(FixedPreUpdate, handle_keyboard);
@@ -53,12 +58,13 @@ struct FlipperCursor {
 }
 
 fn roll_text(
-    mut q_flipper: Query<(&Flipper, &mut FlipperCursor, &mut canum_res::ImageFontText)>,
+    commands: ParallelCommands,
+    mut q_flipper: Query<(Entity, &Flipper, &mut FlipperCursor)>,
     time: Res<Time>,
 ) {
     q_flipper
         .par_iter_mut()
-        .for_each(|(flipper, mut cursor, mut text)| {
+        .for_each(|(entity, flipper, mut cursor)| {
             if cursor.page_completed >= flipper.text.len() {
                 return;
             }
@@ -71,22 +77,22 @@ fn roll_text(
                     .next()
                     .unwrap();
                 cursor.cursor += ch.len_utf8();
-                text.text.push(ch);
+                commands.command_scope(|mut commands| {
+                    commands.trigger(canum_fx::text::MultilineTextAppend {
+                        entity,
+                        append: String::from(ch),
+                    });
+                })
             }
         });
 }
 
 fn handle_input(
     event: On<FlipperInput>,
-    mut q_flipper: Query<(
-        &Flipper,
-        &mut FlipperCursor,
-        &mut canum_res::ImageFontText,
-        &ChildOf,
-    )>,
+    mut q_flipper: Query<(Entity, &Flipper, &mut FlipperCursor, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let Ok((flipper, mut cursor, mut text, parent)) = q_flipper.get_mut(event.entity) else {
+    let Ok((entity, flipper, mut cursor, parent)) = q_flipper.get_mut(event.entity) else {
         return;
     };
     if cursor.page_completed >= flipper.text.len() {
@@ -100,13 +106,17 @@ fn handle_input(
         FlipperInputKind::NextPage => {
             if cursor.page == cursor.page_completed {
                 if cursor.cursor < target_text.len() {
-                    text.text = target_text.clone();
+                    commands.trigger(canum_fx::text::MultilineTextClear { entity });
+                    commands.trigger(canum_fx::text::MultilineTextAppend {
+                        entity,
+                        append: target_text.clone(),
+                    });
                     cursor.cursor = target_text.len();
                 } else {
                     cursor.cursor = 0;
                     cursor.page += 1;
                     cursor.page_completed += 1;
-                    text.text.clear();
+                    commands.trigger(canum_fx::text::MultilineTextClear { entity });
                     commands.spawn(canum_res::sound::Sound::new("Ui_TextNext"));
                     if cursor.page_completed == flipper.text.len() {
                         commands.trigger(FlipperComplete { entity: parent.0 });
@@ -114,17 +124,27 @@ fn handle_input(
                 }
             } else {
                 cursor.page += 1;
+                commands.trigger(canum_fx::text::MultilineTextClear { entity });
                 if cursor.page == cursor.page_completed {
-                    text.text = flipper.text[cursor.page][..cursor.cursor].to_owned();
+                    commands.trigger(canum_fx::text::MultilineTextAppend {
+                        entity,
+                        append: flipper.text[cursor.page][..cursor.cursor].to_owned(),
+                    });
                 } else {
-                    text.text = flipper.text[cursor.page].to_owned();
+                    commands.trigger(canum_fx::text::MultilineTextAppend {
+                        entity,
+                        append: flipper.text[cursor.page].to_owned(),
+                    });
                 }
             }
         }
         FlipperInputKind::PrevPage => {
             if cursor.page > 0 {
                 cursor.page -= 1;
-                text.text = flipper.text[cursor.page].to_owned();
+                commands.trigger(canum_fx::text::MultilineTextAppend {
+                    entity,
+                    append: flipper.text[cursor.page].to_owned(),
+                });
             }
         }
     }

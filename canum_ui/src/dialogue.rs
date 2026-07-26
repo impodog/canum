@@ -33,6 +33,7 @@ impl Dialogue {
     /// Returns default value if config does not exist.
     pub fn from_config(name: &'static str, lang: impl AsRef<canum_save::Lang>) -> Self {
         let Some(config) = CONFIG.assets.dialogue.get(name) else {
+            warn!("Undefined dialogue {name}");
             return default();
         };
         let lang = lang.as_ref();
@@ -103,7 +104,8 @@ fn init_dialogue(
                 position_type: PositionType::Absolute,
                 max_width: px(DIALOGUE_SIZE.x),
                 top: px(TITLE_SIZE + 3.0),
-                left: px(ICON_SIZE + 3.0),
+                // This makes room for a square icon space.
+                left: px(DIALOGUE_SIZE.y + 9.0),
                 ..default()
             },
             flipper::Flipper::default(),
@@ -115,7 +117,8 @@ fn init_dialogue(
                 position_type: PositionType::Absolute,
                 width: px(ICON_SIZE),
                 height: px(ICON_SIZE),
-                top: px(TITLE_SIZE),
+                left: px((DIALOGUE_SIZE.y - ICON_SIZE) * 0.5),
+                top: px((DIALOGUE_SIZE.y - ICON_SIZE) * 0.5),
                 ..default()
             },
             Animation::new(first_image, vec2(ICON_SIZE, ICON_SIZE)),
