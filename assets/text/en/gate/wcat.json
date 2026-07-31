@@ -1,12 +1,24 @@
 {
   "text": {
     "en": {
-      "Wcat1": "Wcat_Dialogue_Icon:Cat:Putting some test text here... Also, do we need to manually insert linebreaks?\nLike this?</br>The next page is extra fun!"
+      "Wcat1": [
+        "Wcat_Dialogue_Icon:Cat:",
+        "Good morning. I'm the guardian of this house.\nWould you please step away?"
+      ],
+      "Wcat2": [
+        "<PLAYER>:<PLAYER>:",
+        "..."
+      ],
+      "Wcat3": [
+        "Wcat_Dialogue_Icon:Cat:",
+        "We didn't have to fight.</br>",
+        "But since this house is in your path,\nI'll perform my duties."
+      ]
     }
   },
   "dialogue": {
-    "Wcat_Before": {
-      "sections": ["Wcat1"]
+    "Wcat_Prefight": {
+      "sections": ["Wcat1", "Wcat2", "Wcat3"]
     }
   }
 }

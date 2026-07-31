@@ -16,7 +16,8 @@ impl Plugin for SetupPlugin {
         ));
         app.init_resource::<CurrentSession>()
             .init_resource::<FightTime>()
-            .init_resource::<PostStartSessionSynchronizer>();
+            .init_resource::<PostStartSessionSynchronizer>()
+            .init_resource::<InitializationComplete>();
         app.add_message::<StartSession>();
         app.register_required_components::<canum_res::background::Background, crate::SessionOnly>();
         app.register_required_components::<canum_res::sound::Music, crate::SessionOnly>();
@@ -133,6 +134,9 @@ fn setup_session(
         return;
     };
 
+    info!("Entering fight: {}", event.fight);
+    commands.insert_resource(InitializationComplete::default());
+
     let Ok(mut camera_transform) = q_camera.single_mut() else {
         return;
     };
@@ -228,11 +232,6 @@ fn setup_session(
         Rect::from_center_half_size(Vec2::ZERO, CONFIG.display.screen_size),
     ));
 
-    commands.trigger(StartSessionFirst {
-        fight: event.fight.clone(),
-        player_entity: player,
-    });
-
     commands.insert_resource(FightTime::default());
 
     game_state.set(GameState::Play);
@@ -240,6 +239,11 @@ fn setup_session(
     fight.set(Fight(event.fight.clone()));
 
     commands.insert_resource(PostStartSessionSynchronizer::default());
+
+    commands.trigger(StartSessionFirst {
+        fight: event.fight.clone(),
+        player_entity: player,
+    });
 }
 
 #[derive(Resource, Default)]
@@ -249,13 +253,29 @@ struct PostStartSessionSynchronizer {
     action_sent: bool,
     last_sent: bool,
 }
+/// The universal marker for all setup completed in any fight. This takes about 5 frames.
+/// Use it with the system generator: `in_stable_state`.
+#[derive(Resource, Default, Deref)]
+pub struct InitializationComplete(bool);
+
+pub fn in_stable_state<S: States>(
+    target_state: S,
+) -> impl Fn(Res<InitializationComplete>, Res<State<S>>) -> bool + Clone + Sync {
+    move |init_complete: Res<InitializationComplete>, state: Res<State<S>>| -> bool {
+        init_complete.0 && *state.get() == target_state
+    }
+}
 
 fn send_delayed_start_session_events(
     mut commands: Commands,
     mut synchronizer: ResMut<PostStartSessionSynchronizer>,
+    mut init_completed: ResMut<InitializationComplete>,
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     fight: Res<State<Fight>>,
 ) {
+    if init_completed.0 {
+        return;
+    }
     let Some(primary_player) = primary_player else {
         return;
     };
@@ -285,6 +305,8 @@ fn send_delayed_start_session_events(
             });
             synchronizer.last_sent = true;
         }
+    } else {
+        init_completed.0 = true;
     }
 }
 

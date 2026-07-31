@@ -6,7 +6,7 @@ impl Plugin for FlipperPlugin {
     fn build(&self, app: &mut App) {
         app.world_mut()
             .register_component_hooks::<Flipper>()
-            .on_add(
+            .on_insert(
                 |mut world, canum_play::prelude::HookContext { entity, .. }| {
                     let font = world.resource::<canum_res::PixelFonts>().normal.clone();
                     world.commands().entity(entity).insert((

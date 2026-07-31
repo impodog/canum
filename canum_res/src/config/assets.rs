@@ -43,7 +43,7 @@ const fn return_1_0() -> f32 {
 }
 
 #[derive(Deserialize, Debug, Clone, Default, Deref, DerefMut)]
-pub struct LanguageConfig(pub HashMap<String, String>);
+pub struct LanguageConfig(pub HashMap<String, super::util::StringList>);
 
 #[derive(Deserialize, Debug, Clone, Default)]
 pub struct DialogueDetails {

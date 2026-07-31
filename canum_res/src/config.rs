@@ -4,6 +4,8 @@ pub use assets::*;
 mod values;
 pub use values::*;
 
+pub mod util;
+
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, sync::LazyLock, time::Duration};

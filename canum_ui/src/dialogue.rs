@@ -39,8 +39,8 @@ impl Dialogue {
         let lang = lang.as_ref();
         let mut sections = Vec::new();
         for section in config.sections.iter() {
-            let value = lang.get(section);
-            let (image, value) = value.split_once(':').unwrap_or(("Empty", value));
+            let value = lang.get_special(section);
+            let (image, value) = value.split_once(':').unwrap_or(("Empty", &value));
             let (title, value) = value.split_once(':').unwrap_or(("", value));
             sections.push(DialogueSection {
                 title: title.to_owned(),

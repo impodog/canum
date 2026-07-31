@@ -45,11 +45,11 @@ fn update_player_status(
             crate::setup::cutscene::CutsceneWait,
             canum_res::sound::Sound::new("Death"),
         ));
-        commands.insert_resource(crate::setup::cutscene::CutsceneNext {
-            event: crate::setup::StartSession {
+        commands.insert_resource(crate::setup::cutscene::CutsceneNext::new(
+            crate::setup::StartSession {
                 fight: "LobbySelect".to_owned(),
             },
-        });
+        ));
     }
     next_state.set(crate::setup::GameState::Cutscene);
 }

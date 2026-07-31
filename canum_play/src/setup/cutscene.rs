@@ -16,6 +16,13 @@ impl Plugin for CutscenePlugin {
 #[derive(Resource, Debug, Clone)]
 pub struct CutsceneNext {
     pub event: crate::setup::StartSession,
+    /// Only when dirty, the cutscene transition event is sent, and the dirty flag will be set to false.
+    dirty: bool,
+}
+impl CutsceneNext {
+    pub fn new(event: crate::setup::StartSession) -> Self {
+        Self { event, dirty: true }
+    }
 }
 
 /// Instructs the cutscene state to wait for all these entities to despawn, then the next session may load.
@@ -24,13 +31,15 @@ pub struct CutsceneWait;
 
 fn wait_for_cutscene(
     mut commands: Commands,
-    cutscene_next: Option<Res<CutsceneNext>>,
+    cutscene_next: Option<ResMut<CutsceneNext>>,
     q_wait: Query<(), With<CutsceneWait>>,
 ) {
-    if let Some(cutscene_next) = cutscene_next
+    if let Some(mut cutscene_next) = cutscene_next
         && q_wait.iter().next().is_none()
+        && cutscene_next.dirty
     {
         commands.trigger(cutscene_next.event.clone());
+        cutscene_next.dirty = false;
     }
 }
 
@@ -72,11 +81,9 @@ fn init_pure_color_cutscene(
             .entity(entity)
             .insert(pure_color.transition.clone())
             .observe(unleash_cutscene_pure_color_transition);
-        commands.insert_resource(CutsceneNext {
-            event: setup::StartSession {
-                fight: pure_color.fight.clone(),
-            },
-        });
+        commands.insert_resource(CutsceneNext::new(setup::StartSession {
+            fight: pure_color.fight.clone(),
+        }));
         game_state.set(setup::GameState::Cutscene);
         has_cutscene = true;
     }

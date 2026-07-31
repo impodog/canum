@@ -13,7 +13,7 @@ pub mod setup;
 
 use bevy::prelude::*;
 
-pub use setup::SessionOnly;
+pub use setup::{SessionOnly, in_stable_state};
 
 pub struct CanumPlayPlugin;
 

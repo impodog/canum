@@ -2,6 +2,19 @@ use bevy::prelude::*;
 
 fn main() {
     let run_path = std::path::Path::new(".").canonicalize().unwrap();
+    for arg in std::env::args() {
+        match arg.trim() {
+            "--no-save" => {
+                // Here uses println! because logger is not initialized yet.
+                println!("Save data will not be written when running.");
+                canum_save::NO_SAVE.get_or_init(|| true);
+            }
+            "--no-run" => {
+                return;
+            }
+            _ => {}
+        }
+    }
     App::new()
         .add_plugins((
             DefaultPlugins
