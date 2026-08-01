@@ -48,7 +48,7 @@ impl Plugin for AntPlugin {
     health::ContactDamage { value: 80, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.6),
     movements::AutoFlip::FLIP_RIGHT,
-    enemy::health::EnemyHealth::new(3000),
+    enemy::health::EnemyHealth::new(3500),
     enemy::health::DamageSound::new("Ant_Damage"),
     player::victory::DefeatToWin::default(),
     defeat::AntDefeat,

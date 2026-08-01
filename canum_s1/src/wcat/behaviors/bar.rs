@@ -15,7 +15,7 @@ impl Plugin for BarPlugin {
     Animation::new("Wcat_Bar", vec2(200.0, 30.0)),
     Collider::rectangle(200.0, 30.0),
     RigidBody::Dynamic,
-    Mass(4.0)
+    Mass(3.5)
 )]
 pub struct CentralBar;
 

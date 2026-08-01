@@ -8,7 +8,7 @@ impl Plugin for LobbyPlugin {
             .init_resource::<LobbyName>();
         app.add_observer(select_lobby).add_observer(enter_lobby);
         app.add_systems(
-            FixedLast,
+            FixedPostUpdate,
             camera_follow_player.run_if(in_stable_state(PlayState::Lobby)),
         );
         app.add_systems(

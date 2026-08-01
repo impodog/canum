@@ -54,7 +54,7 @@ pub(super) fn change_ant_stage(
     let Ok(health) = q_health.get(event.entity) else {
         return;
     };
-    let new_stage = if health.value >= 2700 {
+    let new_stage = if health.value >= 3000 {
         1
     } else if health.value >= 2000 {
         2

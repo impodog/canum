@@ -22,6 +22,14 @@ impl Plugin for BehaviorPlugin {
         );
         app.add_systems(FixedPostUpdate, start_behavior);
         app.add_observer(end_behavior);
+        app.world_mut()
+            .register_component_hooks::<BehaviorManager>()
+            .on_add(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .entity(entity)
+                    .observe(intervene_behavior_manager);
+            });
     }
 }
 
@@ -40,6 +48,25 @@ pub struct BehaveEnd {
     pub cooldown: Duration,
     /// The enemy no longer triggers behavior that takes this resource in a cooldown duration.
     pub occupies: Vec<(String, Duration)>,
+}
+/// Event to force a behavior to end before the next frame. This is used for staggering and such.
+///
+/// This auto propagates in Use 1, but not in Use 2.
+///
+/// ### Use 1
+///
+/// For children behaviors, you need to implement intervention event response logic for each behavior, if necessary.
+///
+/// ### Use 2
+///
+/// External code may call this on the behavior manager to intervene all running behaviors. This
+/// also disables the behavior manager. When used like this, `target` is unnecessary.
+#[derive(EntityEvent, Debug, Clone)]
+#[entity_event(auto_propagate)]
+pub struct BehaveIntervene {
+    pub entity: Entity,
+    /// The target entity(boss) that trigger this behavior.
+    pub target: Entity,
 }
 
 /// Utility for creating `BehaveEnd::occupies`. This handles empty vectors correctly.
@@ -85,12 +112,15 @@ impl BehaviorManager {
 #[derive(Component, Debug)]
 struct BehaviorManagerInfo {
     occupied: BTreeMap<String, Timer>,
+    /// All running behaviors.
+    running: BTreeSet<Entity>,
     cooldown: Timer,
 }
 impl Default for BehaviorManagerInfo {
     fn default() -> Self {
         Self {
             occupied: Default::default(),
+            running: Default::default(),
             cooldown: Timer::from_seconds(1.0, TimerMode::Once),
         }
     }
@@ -142,10 +172,11 @@ fn start_behavior(
                     continue;
                 };
                 // Filter behaviors whose required resources are occupied.
-                if behavior
-                    .occupies
-                    .iter()
-                    .any(|resource| info.occupied.contains_key(resource))
+                if info.running.contains(&child)
+                    || behavior
+                        .occupies
+                        .iter()
+                        .any(|resource| info.occupied.contains_key(resource))
                 {
                     continue;
                 }
@@ -169,6 +200,7 @@ fn start_behavior(
                     Timer::from_seconds(99999.0, TimerMode::Once),
                 );
             }
+            info.running.insert(*entity);
             if let Some(cooldown) = behavior.cooldown {
                 info.cooldown = Timer::new(cooldown, TimerMode::Once);
             }
@@ -210,8 +242,32 @@ fn end_behavior(
         info.occupied
             .insert(resource.clone(), Timer::new(*duration, TimerMode::Once));
     }
+    info.running.remove(&event.entity);
     let new_duration = info.cooldown.duration() + event.cooldown;
     info.cooldown.set_duration(new_duration);
+}
+
+fn intervene_behavior_manager(
+    mut event: On<BehaveIntervene>,
+    mut q_manager: Query<
+        (&mut BehaviorManager, &mut BehaviorManagerInfo, &ChildOf),
+        With<Behavior>,
+    >,
+    mut commands: Commands,
+) {
+    let Ok((mut manager, info, parent)) = q_manager.get_mut(event.entity) else {
+        return;
+    };
+    // Only disables propagation for behavior managers.
+    event.propagate(false);
+    let target = manager.target.unwrap_or(parent.0);
+    for child in info.running.iter() {
+        commands.trigger(BehaveIntervene {
+            entity: *child,
+            target,
+        });
+    }
+    manager.disabled = true;
 }
 
 /// A single boss behavior, describing effects while it is between start and end.

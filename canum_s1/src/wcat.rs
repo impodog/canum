@@ -26,6 +26,7 @@ impl Plugin for WcatPlugin {
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.5),
     enemy::health::EnemyHealth::new(5000),
+    enemy::health::DamageSound::new("Wcat_Damage"),
     player::victory::DefeatToWin::default(),
 )]
 pub struct WcatBoss;

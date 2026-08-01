@@ -1,3 +1,4 @@
+use bevy::sprite::Anchor;
 use bevy::text::TextBounds;
 
 use super::*;
@@ -110,6 +111,15 @@ pub fn reposition_rects(rects: &mut [Rect], bound: Rect) {
         if total_overlap_area < 0.1 {
             break;
         }
+    }
+
+    fn align_vec(vec: &mut Vec2) {
+        vec.x = vec.x.round();
+        vec.y = vec.y.round();
+    }
+    for rect in rects {
+        align_vec(&mut rect.min);
+        align_vec(&mut rect.max);
     }
 }
 
@@ -228,6 +238,7 @@ fn enter_shop(
         let short_title = lang.get(&format!("{name}_Short"));
         let desc = lang.get(&format!("{name}_ShopDesc"));
         let displace = rect.center().x.signum() * -ITEM_RECT_SIZE.x;
+        let item_text = format!("{} ({}G)", short_title, item.price);
         commands.spawn((
             Transform::from_translation(Vec3::new(center.x, center.y, 15.37)),
             ShopItem {
@@ -243,11 +254,12 @@ fn enter_shop(
                     Animation::new(name.clone(), vec2(32.0, 32.0))
                 ),
                 (
-                    Transform::from_translation(Vec3::new(0.0, -16.0, 0.0)),
+                    Transform::from_translation(vec3(-ITEM_RECT_SIZE.x * 0.5 + 3.0, 0.0, 0.0)),
                     canum_res::ImageFontPreRenderedText::default(),
                     canum_res::ImageFontText::default()
-                        .text(format!("{} ({}G)", short_title, item.price))
+                        .text(item_text)
                         .font(fonts.normal.clone()),
+                    Anchor::TOP_LEFT,
                     TextBounds {
                         width: Some(ITEM_RECT_SIZE.x),
                         height: None
@@ -260,10 +272,16 @@ fn enter_shop(
                     MeshMaterial2d(drawing.fill_back.clone()),
                     Visibility::Hidden,
                     children![(
+                        Transform::from_translation(Vec3::new(
+                            -ITEM_RECT_SIZE.x * 0.5 + 3.0,
+                            0.0,
+                            0.1
+                        )),
                         canum_res::ImageFontPreRenderedText::default(),
                         canum_res::ImageFontText::default()
                             .text(desc)
-                            .font(fonts.normal.clone())
+                            .font(fonts.normal.clone()),
+                        Anchor::TOP_LEFT,
                     )]
                 ),
                 (

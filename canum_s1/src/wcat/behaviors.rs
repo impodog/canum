@@ -23,5 +23,9 @@ fn initialize_behaviors(
     let Ok(wcat) = q_wcat.single() else {
         return;
     };
-    commands.entity(wcat).insert(phase1::WcatPhase1);
+    commands.spawn((
+        ChildOf(wcat),
+        phase1::WcatPhase1,
+        children![phase1::HighLunge::default()],
+    ));
 }
