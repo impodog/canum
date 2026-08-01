@@ -22,6 +22,10 @@ fi
 # Derive output filename by replacing the extension with .ogg
 OUTPUT_FILE="${INPUT_FILE%.*}.ogg"
 
+if [[ "$INPUT_FILE" == "$OUTPUT_FILE" ]] then
+    OUTPUT_FILE="$2"
+fi
+
 echo "🎵 Converting: $INPUT_FILE -> $OUTPUT_FILE"
 echo "   Format : OGG (Vorbis)"
 echo "   Bitrate: 48 kbps"

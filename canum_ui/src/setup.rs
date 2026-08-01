@@ -27,6 +27,9 @@ pub struct BottomCenter;
 #[derive(Component, Default)]
 pub struct BottomRight;
 
+#[derive(Component, Default)]
+pub struct TopCenter;
+
 fn setup_ui(mut commands: Commands) {
     let root = commands
         .spawn((
@@ -60,6 +63,19 @@ fn setup_ui(mut commands: Commands) {
             right: px(10.0),
             top: px(3.0),
             flex_direction: FlexDirection::Column,
+            ..default()
+        },
+    ));
+    commands.spawn((
+        ChildOf(root),
+        ChildSessionOnly,
+        TopCenter,
+        Node {
+            position_type: PositionType::Absolute,
+            justify_content: JustifyContent::Center,
+            margin: UiRect::horizontal(Val::Auto),
+            top: px(40.0),
+            padding: UiRect::top(px(0)),
             ..default()
         },
     ));

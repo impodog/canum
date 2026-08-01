@@ -22,7 +22,8 @@
       full_size: (4800.0, 450.0),
       locks: [(
         prereqs: ["Apple", "Ant"],
-        position: 3200.0
+        position: 3200.0,
+        notify_text: Some("Gate_WcatCheckpoint")
       )]
     )
   },

@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+mod behaviors;
 mod entry;
 
 pub(super) struct WcatPlugin;
@@ -8,7 +9,7 @@ static WCAT_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Wcat"
 
 impl Plugin for WcatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((entry::EntryPlugin,));
+        app.add_plugins((entry::EntryPlugin, behaviors::BehaviorsPlugin));
     }
 }
 

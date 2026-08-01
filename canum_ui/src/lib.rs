@@ -1,7 +1,7 @@
 mod prelude;
 mod setup;
 
-pub use setup::{BottomCenter, BottomLeft, BottomRight, Center, TopLeft, TopRight};
+pub use setup::{BottomCenter, BottomLeft, BottomRight, Center, TopCenter, TopLeft, TopRight};
 
 pub mod text;
 pub use text::Fonts;

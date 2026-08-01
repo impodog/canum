@@ -108,11 +108,7 @@ fn filed_play_effect(
             let Ok(target_transform) = q_transform.get(*contacted) else {
                 return;
             };
-            let translation = global_transform.translation() - target_transform.translation();
-            let rotation = global_transform.rotation().to_euler(EulerRot::XYZ).2
-                - target_transform.rotation().to_euler(EulerRot::XYZ).2;
-            let transform = Transform::from_translation(translation)
-                .with_rotation(Quat::from_rotation_z(rotation));
+            let transform = global_transform.reparented_to(target_transform);
             commands.command_scope(|mut commands| {
                 commands.spawn((
                     ChildOf(*contacted),

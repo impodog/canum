@@ -10,6 +10,7 @@ impl Plugin for EntryPlugin {
         app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {
             commands.spawn((SessionOnly, Observer::new(spawn_dialogue)));
             commands.spawn((SessionOnly, Observer::new(on_dialogue_complete)));
+            commands.spawn((SessionOnly, Observer::new(spawn_music)));
         });
     }
 }
@@ -20,7 +21,7 @@ wait_then_trigger!(WcatStartTrigger, WcatStart, 0.2);
 
 #[derive(Event, Default)]
 pub struct WcatFightStart;
-wait_then_trigger!(WcatFightStartTrigger, WcatFightStart, 1000.2);
+wait_then_trigger!(WcatFightStartTrigger, WcatFightStart, 1.0);
 
 #[derive(Component, Default)]
 struct WcatDialogue;
@@ -81,11 +82,14 @@ fn on_dialogue_complete(
         canum_ui::text::popup_title(
             fonts.title.clone(),
             lang.get("Wcat_BossTitle"),
-            Duration::from_secs_f32(1.5),
+            Duration::from_secs_f32(1.0),
         ),
     ));
-    commands.spawn((Music, Sound::new("Wcat_Music")));
     commands
         .spawn(WcatFightStartTrigger)
         .observe(WcatFightStartTrigger::observer);
+}
+
+fn spawn_music(_event: On<WcatFightStart>, mut commands: Commands) {
+    commands.spawn((Music, Sound::new("Wcat_Bgm")));
 }

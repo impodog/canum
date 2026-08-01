@@ -30,7 +30,9 @@
       "Wcat_Victory_WindowTitle": "Stage 1 complete!",
 
       "Charm_S1A_SharpLeaf_ShopDesc": "Damage up.",
-      "Charm_S1B_RedHeart_ShopDesc": "One extra health."
+      "Charm_S1B_RedHeart_ShopDesc": "One extra health.",
+
+      "Gate_WcatCheckpoint": "Defeat Apple and Ant so that this gate will open!"
     }
   }
 }

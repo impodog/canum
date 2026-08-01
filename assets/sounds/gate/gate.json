@@ -3,6 +3,7 @@
     "apple/apple.json",
     "turf/turf.json",
     "ant/ant.json",
-    "runway/runway.json"
+    "runway/runway.json",
+    "wcat/wcat.json"
   ]
 }

@@ -35,6 +35,8 @@ impl BossDetails {
 pub struct StageLock {
     pub prereqs: HashSet<String>,
     pub position: f32,
+    /// The handle to the text that displays on top when the player approaches.
+    pub notify_text: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
