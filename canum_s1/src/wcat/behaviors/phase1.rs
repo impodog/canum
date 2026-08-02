@@ -6,9 +6,10 @@ impl Plugin for Phase1Plugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {});
         app.add_systems(OnExit(WCAT_STATE.clone()), |mut commands: Commands| {});
+
         app.add_systems(
             FixedPostUpdate,
-            (high_lunge_wait, high_lunge_end)
+            (high_lunge_wait, high_lunge_end, high_lunge_update_shadow)
                 .chain()
                 .run_if(in_state(WCAT_STATE.clone())),
         );
@@ -21,6 +22,20 @@ impl Plugin for Phase1Plugin {
                     .observe(high_lunge_start)
                     .observe(high_lunge_intervene);
             });
+
+        app.add_systems(
+            FixedPostUpdate,
+            plain_lunge_wait.run_if(in_state(WCAT_STATE.clone())),
+        );
+        app.world_mut()
+            .register_component_hooks::<PlainLunge>()
+            .on_insert(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .entity(entity)
+                    .observe(plain_lunge_start)
+                    .observe(plain_lunge_intervene);
+            });
     }
 }
 
@@ -29,7 +44,7 @@ impl Plugin for Phase1Plugin {
 pub struct WcatPhase1;
 
 #[derive(Component, Debug, Clone)]
-#[require(Behavior::new("Wcat_HighLunge", 1.0, ["Animation", "Velocity"]), BaseFartherBetter::new(0.0, 200.0))]
+#[require(Behavior::new("Wcat_HighLunge", 0.4, ["Animation", "Velocity", "HighLunge"]), BaseFartherBetter::new(60.0, 200.0))]
 pub struct HighLunge {
     pub jump_acceleration: f32,
     /// Time per 100 units.
@@ -50,13 +65,20 @@ impl Default for HighLunge {
 }
 
 #[derive(Component, Debug)]
-#[require(movements::PartialVelocity::unlinked())]
+#[require(movements::PartialVelocity::unlinked(), Transform, Visibility)]
 struct HighLungeTimers {
     waiting: Timer,
     parameters: HighLunge,
     jumping: Timer,
     source: Entity,
+    /// The velocity that the shadow uses.
+    ground_velocity: Vec2,
 }
+
+/// Marker for Wcat shadow when jumping.
+#[derive(Component, Default)]
+#[require(canum_fx::visual::Shadow(32.0))]
+struct HighLungeShadow;
 
 fn high_lunge_start(
     event: On<BehaveStart>,
@@ -78,7 +100,9 @@ fn high_lunge_start(
             jumping: Timer::from_seconds(parameters.min_time, TimerMode::Once),
             parameters: parameters.clone(),
             source: event.entity,
+            ground_velocity: default(),
         },
+        children![(HighLungeShadow, Visibility::Hidden)],
     ));
 }
 
@@ -109,6 +133,7 @@ fn high_lunge_wait(
             };
             animation.replace("Wcat_HighLunge_Jump", true, None);
             commands.entity(parent.0).insert(ColliderDisabled);
+
             let Ok((player_transform, linear_velocity)) = q_player.get(primary_player.0) else {
                 continue;
             };
@@ -131,6 +156,8 @@ fn high_lunge_wait(
             );
             timers.jumping.set_duration(Duration::from_secs_f32(time));
 
+            timers.ground_velocity = diff * time.recip();
+
             **partial_velocity = velocity;
         }
     }
@@ -152,9 +179,31 @@ fn high_lunge_end(
             commands.entity(entity).despawn();
             commands.trigger(BehaveEnd {
                 entity: timers.source,
-                cooldown: Duration::from_secs_f32(rand_normal(1.5, 0.5).clamp(0.5, 2.0)),
-                occupies: occupies![],
+                cooldown: Duration::from_secs_f32(rand_normal(2.0, 0.5).clamp(1.5, 2.5)),
+                occupies: occupies![("HighLunge", 7.5)],
             })
+        }
+    }
+}
+
+fn high_lunge_update_shadow(
+    mut q_shadow: Query<(&mut Visibility, &mut Transform, &ChildOf), With<HighLungeShadow>>,
+    q_parent: Query<(&HighLungeTimers, &movements::PartialVelocity)>,
+    time: Res<Time>,
+) {
+    for (mut visibility, mut transform, parent) in q_shadow.iter_mut() {
+        let Ok((timers, partial_velocity)) = q_parent.get(parent.0) else {
+            return;
+        };
+        if timers.waiting.just_finished() {
+            *visibility = Visibility::Inherited;
+        } else if *visibility != Visibility::Hidden {
+            *visibility = Visibility::Hidden;
+        }
+        if timers.waiting.is_finished() {
+            let displacement = (timers.ground_velocity - **partial_velocity) * time.delta_secs();
+            transform.translation.x += displacement.x;
+            transform.translation.y += displacement.y;
         }
     }
 }
@@ -169,6 +218,141 @@ fn high_lunge_intervene(
         return;
     };
     commands.entity(event.target).remove::<ColliderDisabled>();
+    for child in children.iter() {
+        if q_high_lunge.get(child).is_ok() {
+            commands.entity(child).despawn();
+        }
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+#[require(Behavior::new("Wcat_PlainLunge", 1.0, ["Animation", "Velocity"]), BaseByDistance::new(160.0, 40.0))]
+pub struct PlainLunge {
+    pub time: f32,
+    pub min_time: f32,
+}
+impl Default for PlainLunge {
+    fn default() -> Self {
+        Self {
+            time: 0.25,
+            min_time: 0.3,
+        }
+    }
+}
+
+#[derive(Component)]
+#[require(movements::PartialVelocity::unlinked())]
+struct PlainLungeTimers {
+    waiting: Timer,
+    parameters: PlainLunge,
+    source: Entity,
+}
+
+fn plain_lunge_start(
+    event: On<BehaveStart>,
+    q_plain_lunge: Query<&PlainLunge>,
+    mut q_wcat: Query<&mut Animation>,
+    mut commands: Commands,
+) {
+    let Ok(mut animation) = q_wcat.get_mut(event.target) else {
+        return;
+    };
+    let Ok(parameters) = q_plain_lunge.get(event.entity) else {
+        return;
+    };
+    animation.replace("Wcat_PlainLunge_Prepare", true, None);
+    commands.spawn((
+        ChildOf(event.target),
+        PlainLungeTimers {
+            waiting: Timer::from_seconds(rand_normal(1.5, 0.3).clamp(1.0, 2.0), TimerMode::Once),
+            parameters: parameters.clone(),
+            source: event.entity,
+        },
+    ));
+}
+
+fn plain_lunge_wait(
+    mut q_wcat: Query<(&GlobalTransform, &mut Animation)>,
+    mut q_timers: Query<(Entity, &ChildOf, &mut PlainLungeTimers)>,
+    mut commands: Commands,
+    time: Res<Time>,
+    q_player: Query<(&GlobalTransform, &LinearVelocity)>,
+    primary_player: Option<Res<canum_play::player::PrimaryPlayer>>,
+) {
+    let Some(primary_player) = primary_player else {
+        return;
+    };
+    for (entity, parent, mut timers) in q_timers.iter_mut() {
+        if timers.waiting.is_finished() {
+            // do nothing
+        } else if timers.waiting.tick(time.delta()).just_finished() {
+            let Ok((wcat_transform, mut animation)) = q_wcat.get_mut(parent.0) else {
+                return;
+            };
+            animation.replace("Wcat_PlainLunge_Jump", true, None);
+
+            let Ok((player_transform, linear_velocity)) = q_player.get(primary_player.0) else {
+                continue;
+            };
+            let wcat_position = wcat_transform.translation().xy();
+            let player_position = player_transform.translation().xy();
+            let target_position =
+                player_position + **linear_velocity * rand_normal(0.5, 0.25).clamp(0.0, 1.0);
+            let displace = target_position - wcat_position;
+
+            let time = (displace.length() / 100.0 * timers.parameters.time)
+                .max(timers.parameters.min_time);
+
+            commands.entity(entity).observe(plain_lunge_end).insert(
+                enemy::movements::Displacement {
+                    curve: |x| {
+                        const ACCELERATE_LENGTH: f32 = 0.1;
+                        if x < ACCELERATE_LENGTH {
+                            CircularInCurve.sample(x / ACCELERATE_LENGTH).unwrap()
+                                * ACCELERATE_LENGTH
+                        } else if x > 1.0 - ACCELERATE_LENGTH {
+                            1.0 - CircularInCurve
+                                .sample((1.0 - x) / ACCELERATE_LENGTH)
+                                .unwrap()
+                                * ACCELERATE_LENGTH
+                        } else {
+                            x
+                        }
+                    },
+                    displace,
+                    duration: Duration::from_secs_f32(time),
+                    notify: Some(entity),
+                },
+            );
+        }
+    }
+}
+
+fn plain_lunge_end(
+    event: On<enemy::movements::DisplacementComplete>,
+    mut commands: Commands,
+    q_timers: Query<&PlainLungeTimers>,
+) {
+    let Ok(timers) = q_timers.get(event.entity) else {
+        return;
+    };
+    commands.trigger(BehaveEnd {
+        entity: timers.source,
+        cooldown: Duration::from_secs_f32(rand::random_range(0.5..1.5)),
+        occupies: occupies![],
+    });
+    commands.entity(event.entity).despawn();
+}
+
+fn plain_lunge_intervene(
+    event: On<BehaveIntervene>,
+    mut commands: Commands,
+    q_children: Query<&Children>,
+    q_high_lunge: Query<(), With<PlainLungeTimers>>,
+) {
+    let Ok(children) = q_children.get(event.target) else {
+        return;
+    };
     for child in children.iter() {
         if q_high_lunge.get(child).is_ok() {
             commands.entity(child).despawn();

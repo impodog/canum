@@ -10,7 +10,7 @@ impl Plugin for MovementsPlugin {
     fn build(&self, app: &mut App) {
         app.world_mut()
             .register_component_hooks::<Displacement>()
-            .on_add(|mut world, HookContext { entity, .. }| {
+            .on_insert(|mut world, HookContext { entity, .. }| {
                 let start_time = world.get_resource::<Time>().unwrap().elapsed();
                 world
                     .commands()
@@ -22,6 +22,8 @@ impl Plugin for MovementsPlugin {
 }
 
 /// Calls for the parent to move in speed linked to a curve, with a fixed displacement.
+///
+/// WARNING: This entity self-destructs after completion (except when notifying itself), so don't put anything important here!
 #[derive(Component, Debug, Clone)]
 #[require(PartialVelocity::unlinked())]
 pub struct Displacement {
@@ -75,7 +77,13 @@ fn work_displacement(
             let ratio = ratio.clamp(0.0, 1.0);
             if ratio >= 1.0 {
                 commands.command_scope(|mut commands| {
-                    commands.entity(entity).despawn();
+                    // When notifying itself, don't self-destruct.
+                    if displacement
+                        .notify
+                        .is_none_or(|notify_entity| notify_entity != entity)
+                    {
+                        commands.entity(entity).despawn();
+                    }
                     if let Some(notify_entity) = displacement.notify {
                         commands.trigger(DisplacementComplete {
                             entity: notify_entity,

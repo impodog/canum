@@ -5,6 +5,7 @@ pub mod splash;
 pub mod text;
 pub mod transition;
 pub mod util;
+pub mod visual;
 
 use prelude::*;
 
@@ -17,6 +18,7 @@ impl Plugin for CanumFxPlugin {
             splash::SplashPlugin,
             util::UtilPlugin,
             text::TextPlugin,
+            visual::VisualPlugin,
         ));
     }
 }

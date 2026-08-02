@@ -119,7 +119,7 @@ fn reset_damage_sound_continuous(
             && let Some(child) = continuous.child
         {
             commands.command_scope(|mut commands| {
-                commands.entity(child).despawn();
+                commands.entity(child).try_despawn();
             });
             continuous.child = None;
         }

@@ -3,6 +3,7 @@
     "testing/testing.json",
     "player/player.json",
     "gate/gate.json",
-    "ui/ui.json"
+    "ui/ui.json",
+    "common/common.json"
   ]
 }

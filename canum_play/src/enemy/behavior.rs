@@ -21,7 +21,8 @@ impl Plugin for BehaviorPlugin {
             (base_by_distance, base_farther_better, multiplier_by_speed),
         );
         app.add_systems(FixedPostUpdate, start_behavior);
-        app.add_observer(end_behavior);
+        app.add_observer(end_behavior)
+            .add_observer(intervene_behavior);
         app.world_mut()
             .register_component_hooks::<BehaviorManager>()
             .on_add(|mut world, HookContext { entity, .. }| {
@@ -247,6 +248,20 @@ fn end_behavior(
     info.cooldown.set_duration(new_duration);
 }
 
+fn intervene_behavior(
+    event: On<BehaveIntervene>,
+    q_behavior: Query<(), With<Behavior>>,
+    mut commands: Commands,
+) {
+    if q_behavior.get(event.entity).is_ok() {
+        commands.trigger(BehaveEnd {
+            entity: event.entity,
+            cooldown: Default::default(),
+            occupies: vec![],
+        });
+    }
+}
+
 fn intervene_behavior_manager(
     mut event: On<BehaveIntervene>,
     mut q_manager: Query<
@@ -255,7 +270,7 @@ fn intervene_behavior_manager(
     >,
     mut commands: Commands,
 ) {
-    let Ok((mut manager, info, parent)) = q_manager.get_mut(event.entity) else {
+    let Ok((mut manager, mut info, parent)) = q_manager.get_mut(event.entity) else {
         return;
     };
     // Only disables propagation for behavior managers.
@@ -268,6 +283,8 @@ fn intervene_behavior_manager(
         });
     }
     manager.disabled = true;
+    info.occupied.clear();
+    info.cooldown = Default::default();
 }
 
 /// A single boss behavior, describing effects while it is between start and end.

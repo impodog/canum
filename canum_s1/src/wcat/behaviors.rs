@@ -26,6 +26,6 @@ fn initialize_behaviors(
     commands.spawn((
         ChildOf(wcat),
         phase1::WcatPhase1,
-        children![phase1::HighLunge::default()],
+        children![phase1::HighLunge::default(), phase1::PlainLunge::default()],
     ));
 }

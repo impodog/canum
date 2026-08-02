@@ -1,0 +1,5 @@
+{
+  "sprites": {
+    "Shadow": [{"path": "shadow.png", "size": [32, 16]}]
+  }
+}
