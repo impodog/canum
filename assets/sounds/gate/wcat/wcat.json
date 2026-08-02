@@ -2,6 +2,6 @@
   "sounds": {
     "Wcat_Bgm": {"path": "wcat_bgm.ogg", "volume": -5.0},
     "Wcat_Damage": {"path": "wcat_damage.wav", "volume": 0.0},
-    "Wcat_Bump": {"path": "wcat_bump.wav", "volume": 0.0}
+    "Wcat_Bump": {"path": "wcat_bump.wav", "volume": 5.0}
   }
 }

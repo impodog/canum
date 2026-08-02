@@ -14,7 +14,7 @@ impl Plugin for PlayerPlugin {
         app.add_observer(respond_player_move);
         app.add_systems(FixedPreUpdate, init_player_acc);
         app.add_systems(FixedPostUpdate, (decay_player_acc, rotate_player).chain());
-        app.add_systems(FixedFirst, randomize_player);
+        app.add_systems(FixedFirst, (randomize_player, move_player_back));
         app.add_plugins((
             attack::PlayerAttackPlugin,
             health::PlayerHealthPlugin,
@@ -233,4 +233,25 @@ fn randomize_player(
             random_player.0 = *player;
         }
     }
+}
+
+fn move_player_back(
+    mut q_player: Query<(&mut Transform, &GlobalTransform), With<Player>>,
+    bounds: Res<projectile::ProjectileBounds>,
+) {
+    q_player
+        .par_iter_mut()
+        .for_each(|(mut transform, global_transform)| {
+            let position = global_transform.translation();
+            if position.x < bounds.min.x {
+                transform.translation.x += 100.0;
+            } else if position.x > bounds.max.x {
+                transform.translation.x -= 100.0;
+            }
+            if position.y < bounds.min.y {
+                transform.translation.x += 100.0;
+            } else if position.y > bounds.max.y {
+                transform.translation.y -= 100.0;
+            }
+        });
 }

@@ -18,15 +18,21 @@ impl Plugin for WcatPlugin {
     Animation::new("Wcat_Static", Vec2::new(100.0, 100.0)),
     Transform::from_translation(Vec3::new(200.0, 0.0, 14.37)),
     RigidBody::Dynamic,
-    Collider::rectangle(50.0, 30.0),
+    Collider::rectangle(44.0, 25.0),
     Mass(4.0),
     LockedAxes::ROTATION_LOCKED,
     Restitution::new(0.6),
     health::Friendly(false),
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.5),
+    movements::AutoFlip::FLIP_LEFT,
     enemy::health::EnemyHealth::new(5000),
     enemy::health::DamageSound::new("Wcat_Damage"),
     player::victory::DefeatToWin::default(),
+    StaggerTimes,
 )]
 pub struct WcatBoss;
+
+/// The cat will get smarted if staggered too many times.
+#[derive(Component, Default, Debug)]
+pub struct StaggerTimes(pub i32);

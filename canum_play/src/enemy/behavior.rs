@@ -18,7 +18,12 @@ impl Plugin for BehaviorPlugin {
         );
         app.add_systems(
             FixedUpdate,
-            (base_by_distance, base_farther_better, multiplier_by_speed),
+            (
+                base_by_distance,
+                base_farther_better,
+                multiplier_manual,
+                multiplier_by_speed,
+            ),
         );
         app.add_systems(FixedPostUpdate, start_behavior);
         app.add_observer(end_behavior)
@@ -68,6 +73,16 @@ pub struct BehaveIntervene {
     pub entity: Entity,
     /// The target entity(boss) that trigger this behavior.
     pub target: Entity,
+}
+
+impl BehaveIntervene {
+    pub fn new_for_manager(entity: Entity) -> Self {
+        Self {
+            entity,
+            // This is unnecessary
+            target: entity,
+        }
+    }
 }
 
 /// Utility for creating `BehaveEnd::occupies`. This handles empty vectors correctly.
@@ -264,10 +279,7 @@ fn intervene_behavior(
 
 fn intervene_behavior_manager(
     mut event: On<BehaveIntervene>,
-    mut q_manager: Query<
-        (&mut BehaviorManager, &mut BehaviorManagerInfo, &ChildOf),
-        With<Behavior>,
-    >,
+    mut q_manager: Query<(&mut BehaviorManager, &mut BehaviorManagerInfo, &ChildOf)>,
     mut commands: Commands,
 ) {
     let Ok((mut manager, mut info, parent)) = q_manager.get_mut(event.entity) else {
@@ -435,6 +447,22 @@ fn base_farther_better(
             } else {
                 weight.base = 0.0;
             }
+        });
+}
+
+/// Add a manual multiplier to the behavior weight.
+#[derive(Component, Debug)]
+pub struct MultiplierManual(pub f32);
+impl Default for MultiplierManual {
+    fn default() -> Self {
+        Self(1.0)
+    }
+}
+fn multiplier_manual(mut q_behavior: Query<(&mut Weight, &MultiplierManual)>) {
+    q_behavior
+        .par_iter_mut()
+        .for_each(|(mut weight, modifier)| {
+            weight.multiplier *= modifier.0;
         });
 }
 

@@ -27,7 +27,12 @@ wait_then_trigger!(WcatFightStartTrigger, WcatFightStart, 1.0);
 struct WcatDialogue;
 
 fn spawn_wcat(mut commands: Commands, mut q_player: Query<&mut Transform, With<player::Player>>) {
-    commands.spawn((WcatBoss,));
+    let wcat = commands.spawn((WcatBoss,)).id();
+    commands.spawn((
+        ChildOf(wcat),
+        enemy::health::EnemySensor,
+        Collider::rectangle(50.0, 30.0),
+    ));
     commands.spawn((
         SessionOnly,
         canum_res::background::Background::new(CONFIG.display.screen_size),

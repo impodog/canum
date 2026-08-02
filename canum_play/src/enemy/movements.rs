@@ -25,7 +25,7 @@ impl Plugin for MovementsPlugin {
 ///
 /// WARNING: This entity self-destructs after completion (except when notifying itself), so don't put anything important here!
 #[derive(Component, Debug, Clone)]
-#[require(PartialVelocity::unlinked())]
+#[require(PartialVelocity::unlinked(), DisplacementPercentage)]
 pub struct Displacement {
     /// The curve must be derivable for (0.0, 1.0), while 0.0 maps to 0.0, 1.0 maps to 1.0.
     pub curve: fn(f32) -> f32,
@@ -44,6 +44,9 @@ impl Default for Displacement {
     }
 }
 
+#[derive(Component, Debug, Clone, Copy, Deref, DerefMut, Default)]
+pub struct DisplacementPercentage(pub f32);
+
 #[derive(Component, Debug, Clone)]
 struct DisplacementInfo {
     start_time: Duration,
@@ -60,6 +63,7 @@ fn work_displacement(
         Entity,
         &Displacement,
         &DisplacementInfo,
+        &mut DisplacementPercentage,
         &mut PartialVelocity,
     )>,
     time: Res<Time>,
@@ -69,9 +73,8 @@ fn work_displacement(
         let ans = (curve(next) - curve(value)) / (next - value);
         if ans.is_finite() { ans } else { 0.0 }
     }
-    q_displacement
-        .par_iter_mut()
-        .for_each(|(entity, displacement, info, mut partial_velocity)| {
+    q_displacement.par_iter_mut().for_each(
+        |(entity, displacement, info, mut percentage, mut partial_velocity)| {
             let ratio = (time.elapsed_secs() - info.start_time.as_secs_f32())
                 / displacement.duration.as_secs_f32();
             let ratio = ratio.clamp(0.0, 1.0);
@@ -96,7 +99,9 @@ fn work_displacement(
                 / displacement.duration.as_secs_f32()
                 * displacement.displace;
             **partial_velocity = new_velocity;
-        });
+            **percentage = ratio;
+        },
+    );
 }
 
 /// Adds fixed rotation around this entity.

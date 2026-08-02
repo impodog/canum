@@ -11,11 +11,15 @@ impl Plugin for BarPlugin {
 }
 
 #[derive(Component, Default)]
+pub struct CanStaggerWcat;
+
+#[derive(Component, Default)]
 #[require(
-    Animation::new("Wcat_Bar", vec2(200.0, 30.0)),
-    Collider::rectangle(200.0, 30.0),
+    Animation::new("Wcat_Bar", vec2(160.0, 24.0)),
+    Collider::rectangle(160.0, 24.0),
     RigidBody::Dynamic,
-    Mass(3.5)
+    Mass(3.5),
+    CanStaggerWcat
 )]
 pub struct CentralBar;
 
