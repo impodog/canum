@@ -1,3 +1,5 @@
+use bevy::transform::commands;
+
 use super::*;
 use std::sync::{Arc, Mutex};
 
@@ -40,6 +42,24 @@ impl Plugin for Phase1Plugin {
                     .entity(entity)
                     .observe(plain_lunge_start)
                     .observe(plain_lunge_intervene);
+            });
+
+        app.add_systems(
+            FixedPostUpdate,
+            wander_around_end.run_if(in_state(WCAT_STATE.clone())),
+        );
+        app.add_systems(
+            FixedUpdate,
+            wander_around_change_multiplier.run_if(in_state(WCAT_STATE.clone())),
+        );
+        app.world_mut()
+            .register_component_hooks::<WanderAround>()
+            .on_insert(|mut world, HookContext { entity, .. }| {
+                world
+                    .commands()
+                    .entity(entity)
+                    .observe(wander_around_start)
+                    .observe(wander_around_intervene);
             });
     }
 }
@@ -189,7 +209,7 @@ fn high_lunge_end(
             commands.trigger(BehaveEnd {
                 entity: timers.source,
                 cooldown: Duration::from_secs_f32(rand_normal(2.0, 0.5).clamp(1.5, 2.5)),
-                occupies: occupies![("HighLunge", rand::random_range(5.5..7.0))],
+                occupies: occupies![("HighLunge", rand::random_range(6.0..7.0))],
             })
         }
     }
@@ -250,7 +270,7 @@ impl Default for PlainLunge {
 }
 
 fn plain_lunge_change_multiplier(
-    mut q_plain_lunge: Query<(Entity, &mut MultiplierManual, &GlobalTransform)>,
+    mut q_plain_lunge: Query<(Entity, &mut MultiplierManual, &GlobalTransform), With<PlainLunge>>,
     q_parent: Query<&ChildOf>,
     q_stagger_times: Query<&StaggerTimes>,
     q_transform: Query<&GlobalTransform>,
@@ -391,7 +411,7 @@ fn plain_lunge_end(
     }
     commands.trigger(BehaveEnd {
         entity: timers.source,
-        cooldown: Duration::from_secs_f32(rand::random_range(0.5..1.5)),
+        cooldown: Duration::from_secs_f32(rand::random_range(1.0..2.0)),
         occupies: occupies![],
     });
     commands.entity(event.entity).despawn();
@@ -499,6 +519,123 @@ fn stagger_recovery(
                 animation.replace("Wcat_Static", false, None);
             }
             commands.entity(entity).remove::<StaggerRecovery>();
+        }
+    }
+}
+
+#[derive(Component, Default, Clone)]
+#[require(Behavior::new("Wcat_WanderAround", 1.0, ["WanderAround"]), MultiplierManual, MultiplierWhenResourceOccupied::new([("Velocity", 0.5)]))]
+pub struct WanderAround;
+
+#[derive(Component)]
+#[require(movements::PartialVelocity::unlinked())]
+pub struct WanderTimer {
+    pub timer: Timer,
+    pub source: Entity,
+}
+
+fn wander_around_start(
+    event: On<BehaveStart>,
+    mut commands: Commands,
+    q_transform: Query<&GlobalTransform>,
+) {
+    let Ok(transform) = q_transform.get(event.target) else {
+        return;
+    };
+    let direction = transform.translation().xy().normalize_or(vec2(1.0, 0.0));
+    let direction = direction.rotate(Vec2::from_angle(rand_normal(
+        0.0,
+        std::f32::consts::FRAC_PI_3,
+    )));
+    commands.spawn((
+        ChildOf(event.target),
+        WanderTimer {
+            timer: Timer::from_seconds(rand_normal(0.8, 0.3).clamp(0.2, 1.0), TimerMode::Once),
+            source: event.entity,
+        },
+        movements::PartialVelocity {
+            velocity: direction * 70.0,
+            linked: None,
+        },
+    ));
+}
+
+#[allow(clippy::collapsible_if)]
+fn wander_around_end(
+    mut q_wander: Query<(Entity, &ChildOf, &mut WanderTimer)>,
+    mut q_animation: Query<&mut Animation>,
+    q_children: Query<&Children>,
+    q_manager: Query<(&BehaviorManager, &BehaviorManagerInfo)>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for (entity, parent, mut timer) in q_wander.iter_mut() {
+        if timer.timer.tick(time.delta()).just_finished() {
+            if let Ok((manager, manager_info)) = q_children.get(parent.0).and_then(|children| {
+                children
+                    .iter()
+                    .find_map(|child| {
+                        let result = q_manager.get(child);
+                        if result.is_ok() { Some(result) } else { None }
+                    })
+                    .unwrap_or(Result::Err(
+                        // Just placeholder; Never used.
+                        bevy::ecs::query::QueryEntityError::AliasedMutability(entity),
+                    ))
+            }) {
+                if !manager_info.occupied().contains_key("Animation") && !manager.disabled {
+                    let Ok(mut animation) = q_animation.get_mut(parent.0) else {
+                        return;
+                    };
+                    animation.replace("Wcat_Static", false, None);
+                }
+            }
+            commands.trigger(BehaveEnd {
+                entity: timer.source,
+                cooldown: Duration::default(),
+                occupies: occupies![("WanderAround", 0.2)],
+            });
+            commands.entity(entity).despawn();
+        } else {
+            let Ok(mut animation) = q_animation.get_mut(parent.0) else {
+                return;
+            };
+            if animation.name == "Wcat_Static" {
+                animation.replace("Wcat_Walk", false, None);
+            }
+        }
+    }
+}
+
+fn wander_around_intervene(
+    event: On<BehaveIntervene>,
+    q_children: Query<&Children>,
+    q_wander: Query<(), With<WanderAround>>,
+    mut commands: Commands,
+) {
+    let Ok(children) = q_children.get(event.target) else {
+        return;
+    };
+    for child in children.iter() {
+        if q_wander.get(child).is_ok() {
+            commands.entity(child).despawn();
+        }
+    }
+}
+
+fn wander_around_change_multiplier(
+    mut q_wander_around: Query<(&mut MultiplierManual, &GlobalTransform), With<WanderAround>>,
+) {
+    for (mut multiplier, transform) in q_wander_around.iter_mut() {
+        // The cat will want to go away from the bar in the middle.
+        let position = transform.translation().xy();
+        let distance = position.length();
+        if distance <= 100.0 {
+            multiplier.0 = 2.0;
+        } else if distance <= 135.0 {
+            multiplier.0 = 1.5;
+        } else if distance <= 200.0 {
+            multiplier.0 = 1.2;
         }
     }
 }

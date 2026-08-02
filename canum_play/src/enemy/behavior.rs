@@ -23,6 +23,7 @@ impl Plugin for BehaviorPlugin {
                 base_farther_better,
                 multiplier_manual,
                 multiplier_by_speed,
+                multiplier_when_resource_occupied,
             ),
         );
         app.add_systems(FixedPostUpdate, start_behavior);
@@ -125,8 +126,9 @@ impl BehaviorManager {
     }
 }
 
+/// Stores runtime information of the manager. External code may only access read-only.
 #[derive(Component, Debug)]
-struct BehaviorManagerInfo {
+pub struct BehaviorManagerInfo {
     occupied: BTreeMap<String, Timer>,
     /// All running behaviors.
     running: BTreeSet<Entity>,
@@ -139,6 +141,11 @@ impl Default for BehaviorManagerInfo {
             running: Default::default(),
             cooldown: Timer::from_seconds(1.0, TimerMode::Once),
         }
+    }
+}
+impl BehaviorManagerInfo {
+    pub fn occupied(&self) -> &BTreeMap<String, Timer> {
+        &self.occupied
     }
 }
 
@@ -502,5 +509,34 @@ fn multiplier_by_speed(
             let result =
                 (speed + modifier.speed_unit).log(modifier.log_base) - modifier.speed_unit_log;
             weight.multiplier *= result;
+        });
+}
+
+/// Applies the corresponding multipliers when the resources are occupied.
+#[derive(Component, Debug, Default, Clone)]
+pub struct MultiplierWhenResourceOccupied(pub Vec<(String, f32)>);
+impl MultiplierWhenResourceOccupied {
+    pub fn new<S>(iter: impl IntoIterator<Item = (S, f32)>) -> Self
+    where
+        S: Into<String>,
+    {
+        Self(iter.into_iter().map(|(s, w)| (s.into(), w)).collect())
+    }
+}
+fn multiplier_when_resource_occupied(
+    mut q_behavior: Query<(&ChildOf, &mut Weight, &MultiplierWhenResourceOccupied)>,
+    q_manager_info: Query<&BehaviorManagerInfo>,
+) {
+    q_behavior
+        .par_iter_mut()
+        .for_each(|(parent, mut weight, modifier)| {
+            let Ok(info) = q_manager_info.get(parent.0) else {
+                return;
+            };
+            for (resource, multiplier) in modifier.0.iter() {
+                if info.occupied.contains_key(resource) {
+                    weight.multiplier *= *multiplier;
+                }
+            }
         });
 }
