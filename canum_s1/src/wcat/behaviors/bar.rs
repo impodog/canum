@@ -15,6 +15,7 @@ pub struct CanStaggerWcat;
 
 #[derive(Component, Default)]
 #[require(
+    SessionOnly,
     Animation::new("Wcat_Bar", vec2(160.0, 24.0)),
     Collider::rectangle(160.0, 24.0),
     RigidBody::Dynamic,

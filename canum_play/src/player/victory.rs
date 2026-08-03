@@ -14,7 +14,7 @@ impl Plugin for VictoryPlugin {
                 let defeat_to_win = world.get::<DefeatToWin>(entity).unwrap();
                 let state = world.resource::<State<crate::setup::GameState>>();
                 if defeat_to_win.defeated && *state.get() == crate::setup::GameState::Play {
-                    world.commands().trigger(PlayerWin);
+                    world.commands().trigger(PlayerWin::default());
                 }
             });
         app.add_systems(
@@ -31,29 +31,38 @@ pub struct DefeatToWin {
 }
 
 /// Global event that the player defeated the boss.
-#[derive(Event)]
-pub struct PlayerWin;
+#[derive(Event, Default)]
+pub struct PlayerWin {
+    // For manual cutscenes instead of the default one.
+    pub skip_cutscene: bool,
+}
 
 fn update_player_status(
-    _event: On<PlayerWin>,
+    event: On<PlayerWin>,
     mut commands: Commands,
     q_player: Query<Entity, With<crate::player::Player>>,
     mut next_state: ResMut<NextState<crate::setup::GameState>>,
     state: Res<State<crate::setup::GameState>>,
+    fight: Res<State<setup::Fight>>,
 ) {
     if *state.get() == crate::setup::GameState::Cutscene {
         return;
     }
+    commands.trigger(UpdateTasks {
+        fight: fight.get().0.clone(),
+    });
     for entity in q_player.iter() {
         commands
             .entity(entity)
             .remove::<Collider>()
             .remove::<RigidBody>();
-        commands.spawn((
-            ChildOf(entity),
-            crate::setup::cutscene::CutsceneWait,
-            canum_res::sound::Sound::new("Victory"),
-        ));
+        if !event.skip_cutscene {
+            commands.spawn((
+                ChildOf(entity),
+                crate::setup::cutscene::CutsceneWait,
+                canum_res::sound::Sound::new("Victory"),
+            ));
+        }
         commands.insert_resource(crate::setup::cutscene::CutsceneNext::new(
             crate::setup::StartSession {
                 fight: "Victory".to_owned(),
@@ -64,21 +73,31 @@ fn update_player_status(
 }
 
 #[derive(Event, Default, Debug, Clone, Deref, DerefMut)]
-pub struct CompletedTasks(pub BTreeSet<String>);
+pub struct CompletedTasks {
+    #[deref]
+    pub tasks: BTreeSet<String>,
+    // This is used for in-between states to update the correct tasks of the original fight.
+    pub fight: String,
+}
+
+/// Calls for related code to update task of this fight name. Automatically called for normal victory states.
+#[derive(Event, Debug, Clone)]
+pub struct UpdateTasks {
+    pub fight: String,
+}
 
 fn update_tasks(
-    _event: On<PlayerWin>,
+    event: On<UpdateTasks>,
     mut commands: Commands,
     mut save: ResMut<Save>,
     mut window_title: ResMut<canum_res::window::WindowTitle>,
-    fight: Res<State<crate::setup::Fight>>,
     any_hits: Res<super::tracking::AnyHits>,
     lang: Res<Lang>,
 ) {
     let progress = save
         .progress
         .boss_progress
-        .entry(fight.get().0.clone())
+        .entry(event.fight.clone())
         .or_default();
     let previous_tasks = progress.tasks.clone();
 
@@ -95,9 +114,12 @@ fn update_tasks(
         .difference(&previous_tasks)
         .cloned()
         .collect::<BTreeSet<_>>();
-    commands.trigger(CompletedTasks(completed_tasks));
+    commands.trigger(CompletedTasks {
+        tasks: completed_tasks,
+        fight: event.fight.clone(),
+    });
     window_title.0 = lang
-        .get(&format!("{}_Victory_WindowTitle", fight.get().0))
+        .get_or_empty(&format!("{}_Victory_WindowTitle", event.fight))
         .to_owned();
 }
 

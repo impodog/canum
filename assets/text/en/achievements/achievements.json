@@ -1,5 +1,5 @@
 {
-  "include": ["simple.json"],
+  "include": ["simple.json", "advancement.json"],
   "text": {
     "en": {
       "Achievement_Complete_Progress": "Achievement Complete!",

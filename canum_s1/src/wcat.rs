@@ -1,15 +1,22 @@
 use crate::prelude::*;
 
-mod behaviors;
-mod entry;
+pub mod behaviors;
+pub mod defeat;
+pub mod entry;
 
 pub(super) struct WcatPlugin;
 
 static WCAT_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Wcat".to_owned()));
+static GET_DASH_STATE: LazyLock<setup::Fight> =
+    LazyLock::new(|| setup::Fight("_GetDash".to_owned()));
 
 impl Plugin for WcatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((entry::EntryPlugin, behaviors::BehaviorsPlugin));
+        app.add_plugins((
+            entry::EntryPlugin,
+            behaviors::BehaviorsPlugin,
+            defeat::DefeatPlugin,
+        ));
         app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {
             commands.spawn((SessionOnly, Observer::new(spawn_wcat_health_bar)));
         });
@@ -38,6 +45,7 @@ impl Plugin for WcatPlugin {
     enemy::health::DamageSound::new("Wcat_Damage"),
     player::victory::DefeatToWin::default(),
     StaggerTimes,
+    defeat::WcatDefeat
 )]
 pub struct WcatBoss;
 

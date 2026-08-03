@@ -1,16 +1,86 @@
 {
   "include": ["bar/bar.json"],
   "sprites": {
-    "Wcat_Dialogue_Icon": [{"path": "wcat_icon.png"}],
-    "Wcat_Back": [{"path": "wcat_back.png", "size": [400, 225]}],
-    "Wcat_Static": [{"path": "wcat_static.png", "size": [50, 50], "count": 2, "interval": 600}],
-    "Wcat_Staggered": [{"path": "wcat_staggered.png", "size": [50, 50], "count": 3, "interval": 350}],
-    "Wcat_HighLunge_Prepare": [{"path": "wcat_high_lunge_prepare.png", "size": [50, 50], "count": 2, "interval": 200}],
-    "Wcat_HighLunge_Jump": [{"path": "wcat_high_lunge_jump.png", "size": [50, 50], "count": 2, "interval": 125}],
-    "Wcat_PlainLunge_Jump": [{"path": "wcat_plain_lunge_jump.png", "size": [50, 50], "count": 2, "interval": 150}],
-    "Wcat_PlainLunge_Prepare": [{"path": "wcat_plain_lunge_prepare.png", "size": [50, 50], "count": 2, "interval": 400}],
-    "Wcat_Walk": [{"path": "wcat_walk.png", "size": [50, 50], "count": 2, "interval": 200}],
-    "Wcat_Smash": [{"path": "wcat_smash.png", "size": [50, 50]}],
-    "Wcat_Shockwave": [{"path": "wcat_shockwave.png", "size": [50, 50], "count": 5, "interval": 150}]
+    "Wcat_Dialogue_Icon": [{ "path": "wcat_icon.png" }],
+    "Wcat_Back": [{ "path": "wcat_back.png", "size": [400, 225] }],
+    "Wcat_Static": [
+      {
+        "path": "wcat_static.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 600
+      }
+    ],
+    "Wcat_Staggered": [
+      {
+        "path": "wcat_staggered.png",
+        "size": [50, 50],
+        "count": 3,
+        "interval": 350
+      }
+    ],
+    "Wcat_HighLunge_Prepare": [
+      {
+        "path": "wcat_high_lunge_prepare.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 200
+      }
+    ],
+    "Wcat_HighLunge_Jump": [
+      {
+        "path": "wcat_high_lunge_jump.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 125
+      }
+    ],
+    "Wcat_PlainLunge_Jump": [
+      {
+        "path": "wcat_plain_lunge_jump.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 150
+      }
+    ],
+    "Wcat_PlainLunge_Prepare": [
+      {
+        "path": "wcat_plain_lunge_prepare.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 400
+      }
+    ],
+    "Wcat_Walk": [
+      { "path": "wcat_walk.png", "size": [50, 50], "count": 2, "interval": 200 }
+    ],
+    "Wcat_Smash": [{ "path": "wcat_smash.png", "size": [50, 50] }],
+    "Wcat_Shockwave": [
+      {
+        "path": "wcat_shockwave.png",
+        "size": [50, 50],
+        "count": 5,
+        "interval": 150
+      }
+    ],
+    "Wcat_Hair": [
+      { "path": "wcat_hair.png", "offset": [0, 0] },
+      { "path": "wcat_hair.png", "offset": [32, 0] },
+      { "path": "wcat_hair.png", "offset": [64, 0] }
+    ],
+    "Wcat_Rotate": [
+      {
+        "path": "wcat_rotate.png",
+        "size": [50, 50],
+        "count": 2,
+        "interval": 200
+      }
+    ],
+    "Wcat_Defeat": [
+      {
+        "path": "wcat_defeat.png",
+        "size": [50, 50]
+      }
+    ]
   }
 }

@@ -10,9 +10,18 @@ impl Plugin for Phase2Plugin {
         );
         app.add_systems(
             FixedPostUpdate,
-            (high_lunge_smash_accelerate, high_lunge_update_shadow_phase2)
+            (
+                high_lunge_smash_accelerate,
+                high_lunge_update_shadow_phase2,
+                rotate_work,
+            )
                 .run_if(in_state(WCAT_STATE.clone())),
         );
+        app.world_mut()
+            .register_component_hooks::<Rotate>()
+            .on_insert(|mut world, HookContext { entity, .. }| {
+                world.commands().entity(entity).observe(rotate_start);
+            });
     }
 }
 
@@ -47,7 +56,11 @@ fn enter_phase_2(
                     (
                         phase1::WanderAround,
                         // Now it fights for Velocity
-                        Behavior::new("Wcat_WanderAround", 1.0, ["WanderAround", "Velocity"])
+                        Behavior::new(
+                            "Wcat_WanderAround",
+                            1.0,
+                            ["WanderAround", "Animation", "Velocity"]
+                        )
                     ),
                     (
                         phase1::HighLunge {
@@ -59,6 +72,7 @@ fn enter_phase_2(
                         },
                         Behavior::new("Wcat_HighLunge", 1.0, ["Animation", "Velocity"])
                     ),
+                    Rotate::default(),
                 ],
             ));
         }
@@ -79,15 +93,15 @@ pub struct SmashTimers {
 impl Default for SmashTimers {
     fn default() -> Self {
         Self {
-            waiting: Timer::from_seconds(0.1, TimerMode::Once),
+            waiting: Timer::from_seconds(0.15, TimerMode::Once),
             timer: Timer::from_seconds(SMASH_TIME, TimerMode::Once),
-            additional: Timer::from_seconds(1.0, TimerMode::Once),
+            additional: Timer::from_seconds(rand_normal(1.0, 0.25).max(1.0), TimerMode::Once),
         }
     }
 }
 
 const SMASH_TIME: f32 = 0.7;
-const SMASH_ACCELERATION: f32 = 400.0;
+const SMASH_ACCELERATION: f32 = 1000.0;
 
 fn high_lunge_smash(
     event: On<HighLungeSmash>,
@@ -190,6 +204,106 @@ fn high_lunge_update_shadow_phase2(
             let displacement = -**partial_velocity * time.delta_secs();
             transform.translation.x += displacement.x;
             transform.translation.y += displacement.y;
+        }
+    }
+}
+
+#[derive(Component)]
+#[require(Behavior::new("Wcat_Rotate", 0.8, ["Animation", "Rotate"]))]
+pub struct Rotate {
+    pub waiting: Timer,
+    pub timer: Timer,
+    pub interval: Timer,
+}
+impl Default for Rotate {
+    fn default() -> Self {
+        Self {
+            waiting: Timer::from_seconds(0.4, TimerMode::Once),
+            timer: Default::default(),
+            interval: Timer::from_seconds(0.05, TimerMode::Repeating),
+        }
+    }
+}
+
+#[derive(Component, Default)]
+#[require(
+    Animation::new("Wcat_Hair", Vec2::new(32.0, 32.0)),
+    enemy::attack::EnemyProjectile,
+    Collider::rectangle(25.0, 5.0),
+    Mass(0.2)
+)]
+struct WcatHair;
+
+fn rotate_start(
+    event: On<BehaveStart>,
+    mut q_animation: Query<&mut Animation>,
+    mut q_rotate: Query<&mut Rotate>,
+    mut commands: Commands,
+) {
+    let Ok(mut animation) = q_animation.get_mut(event.target) else {
+        return;
+    };
+    animation.replace("Wcat_Rotate", false, None);
+    let Ok(mut rotate) = q_rotate.get_mut(event.entity) else {
+        return;
+    };
+    rotate.waiting.reset();
+    rotate.timer = Timer::from_seconds(3.0, TimerMode::Once);
+    commands.spawn(Sound::new("Wcat_Rotate"));
+}
+
+fn rotate_work(
+    mut q_rotate: Query<(Entity, &mut Rotate, &GlobalTransform, &ChildOf)>,
+    mut commands: Commands,
+    mut q_animation: Query<&mut Animation>,
+    q_transform: Query<&GlobalTransform>,
+    player: Option<Res<player::RandomPlayer>>,
+    time: Res<Time>,
+) {
+    let Some(player) = player else {
+        return;
+    };
+    let Ok(player_transform) = q_transform.get(player.0) else {
+        return;
+    };
+    let player_position = player_transform.translation().xy();
+    for (entity, mut rotate, transform, parent) in q_rotate.iter_mut() {
+        if rotate.timer.duration().is_zero() {
+            continue;
+        }
+        if !rotate.waiting.tick(time.delta()).is_finished() {
+            continue;
+        }
+        if rotate.interval.tick(time.delta()).just_finished() {
+            let angle = if rand::random_bool(0.3) {
+                rand::random_range(0.0..std::f32::consts::PI * 2.0)
+            } else {
+                let position = transform.translation().xy();
+                let start_angle = (player_position - position).to_angle();
+                rand_normal(start_angle, 0.6)
+            };
+            let mut transform = Transform::from_translation(transform.translation());
+            transform.translation.z += 0.1;
+            transform.rotation = Quat::from_rotation_z(angle);
+            commands.spawn((
+                WcatHair,
+                transform,
+                LinearVelocity(Vec2::from_angle(angle) * 380.0),
+            ));
+        }
+        if rotate.timer.tick(time.delta()).just_finished() {
+            // Set time to zero
+            rotate.timer = Timer::default();
+
+            commands.trigger(BehaveEnd {
+                entity,
+                cooldown: Duration::from_secs_f32(rand_normal(1.7, 0.3)),
+                occupies: occupies![("Rotate", rand::random_range(5.0..7.0))],
+            });
+            let Ok(mut animation) = q_animation.get_mut(parent.0) else {
+                return;
+            };
+            animation.replace("Wcat_Static", false, None);
         }
     }
 }

@@ -19,17 +19,16 @@ fn update_any_hits(_event: On<super::health::ActuallyHit>, mut any_hits: ResMut<
     any_hits.0 = true;
 }
 
-fn init_tracking(_event: On<crate::setup::StartSessionFirst>, mut commands: Commands) {
-    commands.insert_resource(AnyHits::default());
+fn init_tracking(event: On<crate::setup::StartSessionFirst>, mut commands: Commands) {
+    // States starting with '_' are special in-between states.
+    if !event.fight.starts_with('_') {
+        commands.insert_resource(AnyHits::default());
+    }
 }
 
-fn gain_coins(
-    event: On<super::victory::CompletedTasks>,
-    fight: Res<State<crate::setup::Fight>>,
-    mut save: ResMut<Save>,
-) {
+fn gain_coins(event: On<super::victory::CompletedTasks>, mut save: ResMut<Save>) {
     info!("Completed: {:?}", event);
-    if let Some(details) = CONFIG.values.boss.get(&fight.get().0) {
+    if let Some(details) = CONFIG.values.boss.get(&event.fight) {
         for task in event.iter() {
             if let Some(coins) = details.gains.get(task) {
                 save.progress.coins += *coins;
@@ -38,13 +37,9 @@ fn gain_coins(
     }
 }
 
-fn update_stage(
-    _event: On<super::victory::CompletedTasks>,
-    fight: Res<State<crate::setup::Fight>>,
-    mut save: ResMut<Save>,
-) {
+fn update_stage(event: On<super::victory::CompletedTasks>, mut save: ResMut<Save>) {
     for (stage, details) in CONFIG.values.stage.iter() {
-        if !details.complete_prereqs.contains(&fight.get().0) {
+        if !details.complete_prereqs.contains(&event.fight) {
             continue;
         }
         if save.progress.completed_stages.contains(stage) {
