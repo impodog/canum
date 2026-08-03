@@ -1,15 +1,9 @@
-use bevy::transform::commands;
-
 use super::*;
-use std::sync::{Arc, Mutex};
 
 pub(super) struct Phase1Plugin;
 
 impl Plugin for Phase1Plugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {});
-        app.add_systems(OnExit(WCAT_STATE.clone()), |mut commands: Commands| {});
-
         app.add_systems(
             FixedPostUpdate,
             (high_lunge_wait, high_lunge_end, high_lunge_update_shadow)
@@ -61,6 +55,11 @@ impl Plugin for Phase1Plugin {
                     .observe(wander_around_start)
                     .observe(wander_around_intervene);
             });
+        app.world_mut()
+            .register_component_hooks::<PassTime>()
+            .on_insert(|mut world, HookContext { entity, .. }| {
+                world.commands().entity(entity).observe(pass_time);
+            });
     }
 }
 
@@ -69,7 +68,7 @@ impl Plugin for Phase1Plugin {
 pub struct WcatPhase1;
 
 #[derive(Component, Debug, Clone)]
-#[require(Behavior::new("Wcat_HighLunge", 0.4, ["Animation", "Velocity", "HighLunge"]), BaseFartherBetter::new(60.0, 200.0))]
+#[require(Behavior::new("Wcat_HighLunge", 0.5, ["Animation", "Velocity", "HighLunge"]), BaseFartherBetter::new(0.0, 200.0))]
 pub struct HighLunge {
     pub jump_acceleration: f32,
     /// Time per 100 units.
@@ -77,6 +76,8 @@ pub struct HighLunge {
     pub min_time: f32,
     /// How strong the cat will predict the player's movement by velocity.
     pub predict_strength: f32,
+    /// Used for phase2, where the cat jumps high in the air to do body slam
+    pub high_lunge_y_shift: f32,
 }
 impl Default for HighLunge {
     fn default() -> Self {
@@ -85,17 +86,18 @@ impl Default for HighLunge {
             time: 0.3,
             min_time: 0.4,
             predict_strength: 0.25,
+            high_lunge_y_shift: 0.0,
         }
     }
 }
 
 #[derive(Component, Debug)]
 #[require(movements::PartialVelocity::unlinked(), Transform, Visibility)]
-struct HighLungeTimers {
+pub(super) struct HighLungeTimers {
     waiting: Timer,
     parameters: HighLunge,
     jumping: Timer,
-    source: Entity,
+    pub(super) source: Entity,
     /// The velocity that the shadow uses.
     ground_velocity: Vec2,
 }
@@ -171,17 +173,19 @@ fn high_lunge_wait(
                         timers.parameters.predict_strength * 0.5,
                     )
                     .clamp(0.0, timers.parameters.predict_strength);
-            let diff = target_position - wcat_position;
 
-            let time =
-                (diff.length() / 100.0 * timers.parameters.time).max(timers.parameters.min_time);
+            let ground_diff = target_position - wcat_position;
+            let time = (ground_diff.length() / 100.0 * timers.parameters.time)
+                .max(timers.parameters.min_time);
+            timers.ground_velocity = ground_diff * time.recip();
+
+            let diff = ground_diff + vec2(0.0, timers.parameters.high_lunge_y_shift);
+
             let velocity = Vec2::new(
                 diff.x / time,
                 diff.y / time - 0.5 * timers.parameters.jump_acceleration * time,
             );
             timers.jumping.set_duration(Duration::from_secs_f32(time));
-
-            timers.ground_velocity = diff * time.recip();
 
             **partial_velocity = velocity;
         }
@@ -189,12 +193,12 @@ fn high_lunge_wait(
 }
 
 fn high_lunge_end(
-    q_timers: Query<(Entity, &ChildOf, &HighLungeTimers)>,
+    q_timers: Query<(Entity, &ChildOf, &HighLungeTimers, &Children), Without<phase2::SmashTimers>>,
     q_collider_disabled: Query<(), With<ColliderDisabled>>,
     mut q_animation: Query<&mut Animation>,
     mut commands: Commands,
 ) {
-    for (entity, parent, timers) in q_timers.iter() {
+    for (entity, parent, timers, children) in q_timers.iter() {
         if timers.jumping.elapsed_secs() >= timers.jumping.duration().as_secs_f32() * 0.9
             && q_collider_disabled.get(parent.0).is_ok()
         {
@@ -205,12 +209,24 @@ fn high_lunge_end(
                 animation.replace("Wcat_Static", false, None);
             }
             commands.entity(parent.0).try_remove::<ColliderDisabled>();
-            commands.entity(entity).despawn();
-            commands.trigger(BehaveEnd {
-                entity: timers.source,
-                cooldown: Duration::from_secs_f32(rand_normal(2.0, 0.5).clamp(1.5, 2.5)),
-                occupies: occupies![("HighLunge", rand::random_range(6.0..7.0))],
-            })
+            // If in phase 1
+            if timers.parameters.high_lunge_y_shift == 0.0 {
+                commands.entity(entity).despawn();
+                commands.trigger(BehaveEnd {
+                    entity: timers.source,
+                    cooldown: Duration::from_secs_f32(rand_normal(2.0, 0.5).clamp(1.5, 2.5)),
+                    occupies: occupies![("HighLunge", rand::random_range(4.0..6.0))],
+                });
+            } else {
+                for child in children.iter() {
+                    // Keep the shadow, but not moving
+                    commands
+                        .entity(child)
+                        .try_remove::<HighLungeShadow>()
+                        .insert(phase2::HighLungeShadowPhase2);
+                }
+                commands.trigger(phase2::HighLungeSmash { entity });
+            }
         }
     }
 }
@@ -263,7 +279,7 @@ pub struct PlainLunge {
 impl Default for PlainLunge {
     fn default() -> Self {
         Self {
-            time: 0.25,
+            time: 0.2,
             min_time: 0.3,
         }
     }
@@ -289,7 +305,7 @@ fn plain_lunge_change_multiplier(
             // The farther Wcat and player's connecting line is to the center point, the bigger the multiplier is.
             let distance =
                 (direction.x * source_position.x - direction.y * source_position.y).abs();
-            multiplier.0 = CubicInCurve.sample(distance / 110.0).unwrap_or(1.0);
+            multiplier.0 = QuadraticInCurve.sample(distance / 110.0).unwrap_or(1.0);
         } else {
             multiplier.0 = 0.0;
         }
@@ -411,7 +427,7 @@ fn plain_lunge_end(
     }
     commands.trigger(BehaveEnd {
         entity: timers.source,
-        cooldown: Duration::from_secs_f32(rand::random_range(1.0..2.0)),
+        cooldown: Duration::from_secs_f32(rand::random_range(1.0..1.5)),
         occupies: occupies![],
     });
     commands.entity(event.entity).despawn();
@@ -440,7 +456,7 @@ pub struct StaggerRecovery {
 impl Default for StaggerRecovery {
     fn default() -> Self {
         Self {
-            timer: Timer::from_seconds(rand::random_range(4.5..6.0), TimerMode::Once),
+            timer: Timer::from_seconds(rand::random_range(4.0..5.0), TimerMode::Once),
         }
     }
 }
@@ -638,4 +654,17 @@ fn wander_around_change_multiplier(
             multiplier.0 = 1.2;
         }
     }
+}
+
+/// Counters wcat doing too many lunges.
+#[derive(Component, Default)]
+#[require(Behavior::new("Wcat_PassTime", 0.2, ["Animation", "Velocity"]))]
+pub struct PassTime;
+
+fn pass_time(event: On<BehaveStart>, mut commands: Commands) {
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(0.5),
+        occupies: occupies![],
+    });
 }

@@ -9,6 +9,8 @@
     "Wcat_HighLunge_Jump": [{"path": "wcat_high_lunge_jump.png", "size": [50, 50], "count": 2, "interval": 125}],
     "Wcat_PlainLunge_Jump": [{"path": "wcat_plain_lunge_jump.png", "size": [50, 50], "count": 2, "interval": 150}],
     "Wcat_PlainLunge_Prepare": [{"path": "wcat_plain_lunge_prepare.png", "size": [50, 50], "count": 2, "interval": 400}],
-    "Wcat_Walk": [{"path": "wcat_walk.png", "size": [50, 50], "count": 2, "interval": 200}]
+    "Wcat_Walk": [{"path": "wcat_walk.png", "size": [50, 50], "count": 2, "interval": 200}],
+    "Wcat_Smash": [{"path": "wcat_smash.png", "size": [50, 50]}],
+    "Wcat_Shockwave": [{"path": "wcat_shockwave.png", "size": [50, 50], "count": 5, "interval": 150}]
   }
 }

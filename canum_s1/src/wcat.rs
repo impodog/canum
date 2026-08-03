@@ -10,6 +10,13 @@ static WCAT_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Wcat"
 impl Plugin for WcatPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((entry::EntryPlugin, behaviors::BehaviorsPlugin));
+        app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {
+            commands.spawn((SessionOnly, Observer::new(spawn_wcat_health_bar)));
+        });
+        app.add_systems(
+            FixedPostUpdate,
+            update_wcat_health_bar.run_if(in_state(WCAT_STATE.clone())),
+        );
     }
 }
 
@@ -22,6 +29,7 @@ impl Plugin for WcatPlugin {
     Mass(4.0),
     LockedAxes::ROTATION_LOCKED,
     Restitution::new(0.6),
+    player::MoveMeBack,
     health::Friendly(false),
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.5),
@@ -36,3 +44,40 @@ pub struct WcatBoss;
 /// The cat will get smarted if staggered too many times.
 #[derive(Component, Default, Debug)]
 pub struct StaggerTimes(pub i32);
+
+fn spawn_wcat_health_bar(
+    _event: On<entry::WcatFightStart>,
+    save: Res<Save>,
+    mut commands: Commands,
+    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+) {
+    let Ok(bottom_center) = q_bottom_center.single() else {
+        return;
+    };
+    if save.progress.selected_effects.contains("ShowHealth") {
+        commands.spawn((
+            ChildOf(bottom_center),
+            canum_ui::bar::health_bar(
+                Color::Srgba(Srgba::hex("#0eff52").unwrap()),
+                Color::Srgba(Srgba::hex("#ffa72b").unwrap()),
+                canum_ui::bar::HealthBar {
+                    total: 5000.0,
+                    current: 5000.0,
+                },
+            ),
+        ));
+    }
+}
+
+fn update_wcat_health_bar(
+    q_health: Query<&enemy::health::EnemyHealth>,
+    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
+) {
+    let Ok(health) = q_health.single() else {
+        return;
+    };
+    let Ok(mut bar) = q_bar.single_mut() else {
+        return;
+    };
+    bar.current = health.value as f32;
+}

@@ -1,0 +1,5 @@
+Here's a friendly reminder for myself, if you encounter anything hard to fix in Bevy, check:
+
+1. Is there ECS misuse? e.g. The entity is auto-despawned by a long-forgotten code.
+
+2. Is there duplicating events/transitions or overwrites, instead of the value isn't changing?

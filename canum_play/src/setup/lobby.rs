@@ -79,6 +79,10 @@ fn enter_lobby(
             return;
         }
     };
+    commands.insert_resource(player::ScreenBounds(Rect::from_corners(
+        vec2(0.0, 0.0),
+        lobby_size,
+    )));
     commands.insert_resource(LobbyName(event.fight.clone()));
 
     let extend_boundary: Vec2 = Vec2::new(

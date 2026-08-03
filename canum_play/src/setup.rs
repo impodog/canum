@@ -187,6 +187,10 @@ fn setup_session(
             0.0,
         )),
     ));
+    commands.insert_resource(player::ScreenBounds(Rect::from_center_size(
+        vec2(0.0, 0.0),
+        CONFIG.display.screen_size,
+    )));
 
     // Spawn player and its weapons, health
     // Update: weapons are now handled in `canum_addons` crate.
