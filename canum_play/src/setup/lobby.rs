@@ -53,7 +53,7 @@ fn select_lobby(event: On<StartSessionFirst>, mut commands: Commands, save: Res<
 fn enter_lobby(
     event: On<StartSessionFirst>,
     mut commands: Commands,
-    save: Res<Save>,
+    mut save: ResMut<Save>,
     mut q_player: Query<&mut Transform, With<crate::player::Player>>,
     mut q_boundary: Query<Entity, With<Boundaries>>,
     mut play_state: ResMut<NextState<super::PlayState>>,
@@ -62,23 +62,21 @@ fn enter_lobby(
         Transform::from_translation(Vec3::new(lobby_size.x * 0.5, lobby_size.y * 0.5, -24.37))
     }
 
-    let mut lobby_size = match event.fight.as_str() {
-        "Gate" => {
-            let Some(stage_details) = CONFIG.values.stage.get(event.fight.as_str()) else {
-                return;
-            };
-            commands.spawn((
-                SessionOnly,
-                Animation::new(format!("{}_Lobby", event.fight), stage_details.full_size)
-                    .with_color(Color::WHITE.with_alpha(0.8)),
-                lobby_displacement(stage_details.full_size),
-            ));
-            stage_details.full_size
-        }
-        _ => {
-            return;
-        }
+    let Some(stage_details) = CONFIG.values.stage.get(event.fight.as_str()) else {
+        // If the current state is not a lobby as configured in CONFIG, this function exits
+        return;
     };
+
+    let mut lobby_size = {
+        commands.spawn((
+            SessionOnly,
+            Animation::new(format!("{}_Lobby", event.fight), stage_details.full_size)
+                .with_color(Color::WHITE.with_alpha(0.8)),
+            lobby_displacement(stage_details.full_size),
+        ));
+        stage_details.full_size
+    };
+
     commands.insert_resource(player::ScreenBounds(Rect::from_corners(
         vec2(0.0, 0.0),
         lobby_size,
@@ -157,6 +155,12 @@ fn enter_lobby(
     commands.insert_resource(LobbySize(lobby_size));
 
     play_state.set(super::PlayState::Lobby);
+
+    if save.progress.first_time(&event.fight) {
+        save.progress.lobby_position = vec2(400.0, 225.0);
+    } else if save.progress.current_lobby != event.fight {
+        save.progress.lobby_position = stage_details.return_to_position;
+    }
     for mut transform in q_player.iter_mut() {
         transform.translation.x = save.progress.lobby_position.x;
         transform.translation.y = save.progress.lobby_position.y;

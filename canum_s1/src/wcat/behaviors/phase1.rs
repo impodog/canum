@@ -123,7 +123,7 @@ fn high_lunge_start(
     commands.spawn((
         ChildOf(event.target),
         HighLungeTimers {
-            waiting: Timer::from_seconds(rand_normal(2.0, 1.0).clamp(1.0, 3.0), TimerMode::Once),
+            waiting: Timer::from_seconds(rand_normal(1.5, 1.0).clamp(1.0, 2.0), TimerMode::Once),
             jumping: Timer::from_seconds(parameters.min_time, TimerMode::Once),
             parameters: parameters.clone(),
             source: event.entity,
@@ -383,7 +383,7 @@ fn plain_lunge_wait(
             let player_position = player_transform.translation().xy();
             let target_position =
                 player_position + **linear_velocity * rand_normal(0.25, 0.1).clamp(0.0, 0.5);
-            let displace = target_position - wcat_position;
+            let displace = (target_position - wcat_position) * 1.1;
 
             let time = (displace.length() / 100.0 * timers.parameters.time)
                 .max(timers.parameters.min_time);
@@ -427,7 +427,7 @@ fn plain_lunge_end(
     }
     commands.trigger(BehaveEnd {
         entity: timers.source,
-        cooldown: Duration::from_secs_f32(rand::random_range(1.0..1.5)),
+        cooldown: Duration::from_secs_f32(rand::random_range(0.5..1.0)),
         occupies: occupies![],
     });
     commands.entity(event.entity).despawn();
@@ -658,13 +658,13 @@ fn wander_around_change_multiplier(
 
 /// Counters wcat doing too many lunges.
 #[derive(Component, Default)]
-#[require(Behavior::new("Wcat_PassTime", 0.2, ["Animation", "Velocity"]))]
+#[require(Behavior::new("Wcat_PassTime", 0.2, ["Animation", "Velocity", "PassTime"]))]
 pub struct PassTime;
 
 fn pass_time(event: On<BehaveStart>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(0.5),
-        occupies: occupies![],
+        cooldown: Duration::from_secs_f32(0.1),
+        occupies: occupies![("PassTime", 2.0)],
     });
 }

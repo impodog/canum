@@ -37,7 +37,7 @@ fn main() {
             canum_fx::CanumFxPlugin,
             canum_addons::CanumAddonsPlugin,
         ))
-        .add_plugins((canum_s1::CanumS1Plugin,))
+        .add_plugins((canum_s1::CanumS1Plugin, canum_s2::CanumS2Plugin))
         .insert_resource(Time::<Fixed>::from_hz(
             canum_res::config::CONFIG.client.update_freq as f64,
         ))

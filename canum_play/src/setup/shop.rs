@@ -467,6 +467,7 @@ fn quit_shop(
 }
 
 #[derive(Component)]
+#[require(SessionOnly)]
 pub struct ShopIndicator;
 
 fn init_shop_indicator(

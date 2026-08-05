@@ -1,0 +1,13 @@
+{
+  "include": [],
+  "text": {
+    "en": {
+      "House_WindowTitle": "Indoors",
+
+      "Laser_BossTitle": "+Laser\nFor Ignition",
+      "Laser_UiName": "Laser Pen",
+      "Laser_WindowTitle": "Hot Spots!",
+      "Laser_Victory_WindowTitle": "Did you know laser is a short name?"
+    }
+  }
+}

@@ -2,8 +2,9 @@
   "include": [
     "testing/testing.json",
     "player/player.json",
-    "gate/gate.json",
     "ui/ui.json",
-    "common/common.json"
+    "common/common.json",
+    "gate/gate.json",
+    "house/house.json"
   ]
 }

@@ -1,0 +1,15 @@
+[package]
+name = "canum_s2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+avian2d = "0.6.1"
+bevy = { version = "0.18.1", default-features = false }
+canum_fx = { path = "../canum_fx" }
+canum_play = { path = "../canum_play" }
+canum_res = { path = "../canum_res" }
+canum_save = { path = "../canum_save" }
+canum_ui = { path = "../canum_ui" }
+rand = "0.10.1"
+rand_distr = "0.6.0"

@@ -100,8 +100,8 @@ impl Default for SmashTimers {
     }
 }
 
-const SMASH_TIME: f32 = 0.7;
-const SMASH_ACCELERATION: f32 = 1000.0;
+const SMASH_TIME: f32 = 0.6;
+const SMASH_ACCELERATION: f32 = 1100.0;
 
 fn high_lunge_smash(
     event: On<HighLungeSmash>,
@@ -149,8 +149,8 @@ fn high_lunge_smash_accelerate(
                     commands.entity(entity).despawn();
                     commands.trigger(BehaveEnd {
                         entity: high_lunge_timers.source,
-                        cooldown: Duration::from_secs_f32(rand_normal(2.0, 0.3).clamp(1.5, 2.5)),
-                        occupies: occupies![("HighLunge", rand::random_range(4.0..5.5))],
+                        cooldown: Duration::from_secs_f32(rand_normal(1.5, 0.3).clamp(1.0, 2.0)),
+                        occupies: occupies![("HighLunge", rand::random_range(2.0..3.0))],
                     });
                     let Ok(mut animation) = q_animation.get_mut(parent.0) else {
                         return;
@@ -162,12 +162,14 @@ fn high_lunge_smash_accelerate(
                 if timers.timer.tick(time.delta()).just_finished() {
                     partial_velocity.y = 0.0;
                     commands.spawn(Sound::new("Wcat_Smash"));
+                    commands.trigger(canum_fx::visual::ShakeCamera(0.4));
                     commands.spawn((
                         ChildOf(entity),
-                        Animation::new("Wcat_Shockwave", vec2(150.0, 150.0)).once(),
+                        Animation::new("Wcat_Shockwave", vec2(175.0, 175.0)).once(),
                         Transform::from_translation(vec3(0.0, -10.0, -0.1)),
                         RigidBody::Kinematic,
-                        Collider::circle(70.0),
+                        Collider::circle(85.0),
+                        projectile::NoCollideBoundary,
                         health::Friendly::UNFRIENDLY,
                         health::ContactDamage {
                             value: 200,
@@ -209,7 +211,7 @@ fn high_lunge_update_shadow_phase2(
 }
 
 #[derive(Component)]
-#[require(Behavior::new("Wcat_Rotate", 0.8, ["Animation", "Rotate"]))]
+#[require(Behavior::new("Wcat_Rotate", 0.7, ["Animation", "Rotate"]))]
 pub struct Rotate {
     pub waiting: Timer,
     pub timer: Timer,
@@ -218,7 +220,7 @@ pub struct Rotate {
 impl Default for Rotate {
     fn default() -> Self {
         Self {
-            waiting: Timer::from_seconds(0.4, TimerMode::Once),
+            waiting: Timer::from_seconds(0.6, TimerMode::Once),
             timer: Default::default(),
             interval: Timer::from_seconds(0.05, TimerMode::Repeating),
         }
@@ -297,8 +299,8 @@ fn rotate_work(
 
             commands.trigger(BehaveEnd {
                 entity,
-                cooldown: Duration::from_secs_f32(rand_normal(1.7, 0.3)),
-                occupies: occupies![("Rotate", rand::random_range(5.0..7.0))],
+                cooldown: Duration::from_secs_f32(rand_normal(1.5, 0.3)),
+                occupies: occupies![("Rotate", rand::random_range(4.0..6.0))],
             });
             let Ok(mut animation) = q_animation.get_mut(parent.0) else {
                 return;

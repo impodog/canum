@@ -1,9 +1,10 @@
 {
   "include": [
-    "gate/gate.json",
     "charms/charms.json",
     "weapons/weapons.json",
     "ui/ui.json",
-    "achievements/achievements.json"
+    "achievements/achievements.json",
+    "gate/gate.json",
+    "house/house.json"
   ]
 }

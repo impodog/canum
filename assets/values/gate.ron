@@ -24,6 +24,10 @@
         prereqs: ["Apple", "Ant"],
         position: 3200.0,
         notify_text: Some("Gate_WcatCheckpoint")
+      ), (
+        prereqs: ["Apple", "Ant", "Wcat"],
+        position: 4000.0,
+        notify_text: Some("Gate_NextStageCheckpoint")
       )]
     )
   },

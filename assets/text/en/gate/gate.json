@@ -32,7 +32,8 @@
       "Charm_S1A_SharpLeaf_ShopDesc": "Damage up.",
       "Charm_S1B_RedHeart_ShopDesc": "One extra health.",
 
-      "Gate_WcatCheckpoint": "Defeat Apple and Ant so that this gate will open!"
+      "Gate_WcatCheckpoint": "Defeat Apple and Ant so that this gate will open!",
+      "Gate_NextStageCheckpoint": "Defeat Watchcat to enter the next stage!"
     }
   }
 }

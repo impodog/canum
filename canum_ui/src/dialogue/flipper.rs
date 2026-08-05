@@ -26,6 +26,7 @@ impl Plugin for FlipperPlugin {
                     if let Some(mut node) = world.get_mut::<Node>(entity) {
                         node.flex_direction = FlexDirection::Column;
                         node.align_items = AlignItems::Start;
+                        node.column_gap = px(1.0);
                     }
                 },
             );
