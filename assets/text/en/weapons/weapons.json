@@ -3,7 +3,11 @@
     "en": {
       "Weapon_A_Filed_Title": "Filed Bullets",
       "Weapon_A_Filed_Desc": "Rapidly fires in a straight ray in front of Player.\n\nDeals average damage.",
-      "Weapon_A_Filed_Short": "Filed Bullets"
+      "Weapon_A_Filed_Short": "Filed Bullets",
+
+      "Weapon_B_Spread_Title": "Spread Gun",
+      "Weapon_B_Spread_Desc": "Fires three bullets in an angle, which expands by speed.\n\nDeals high damage, if all can hit.",
+      "Weapon_B_Spread_Short": "Spread Gun"
     }
   }
 }

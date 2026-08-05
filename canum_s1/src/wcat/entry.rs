@@ -31,7 +31,7 @@ fn spawn_wcat(mut commands: Commands, mut q_player: Query<&mut Transform, With<p
     commands.spawn((
         ChildOf(wcat),
         enemy::health::EnemySensor,
-        Collider::rectangle(50.0, 30.0),
+        Collider::rectangle(60.0, 35.0),
     ));
     commands.spawn((
         SessionOnly,

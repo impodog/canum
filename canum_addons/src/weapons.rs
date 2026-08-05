@@ -1,4 +1,5 @@
 mod filed;
+mod spread;
 
 use crate::prelude::*;
 use canum_play::player::attack::*;
@@ -8,7 +9,7 @@ pub(super) struct WeaponsPlugin;
 
 impl Plugin for WeaponsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((filed::FiledPlugin,));
+        app.add_plugins((filed::FiledPlugin, spread::SpreadPlugin));
         app.add_observer(init_weapon_values)
             .add_observer(apply_weapon_effects)
             .add_observer(spawn_weapons);
@@ -73,6 +74,13 @@ fn spawn_weapons(
                 filed.damage = filed.damage.mul(total_damage_multiplier);
                 weapons.push(Some(
                     commands.spawn((ChildOf(event.player_entity), filed)).id(),
+                ));
+            }
+            "B_Spread" => {
+                let mut spread = spread::Spread::default();
+                spread.damage = spread.damage.mul(total_damage_multiplier);
+                weapons.push(Some(
+                    commands.spawn((ChildOf(event.player_entity), spread)).id(),
                 ));
             }
             _ => {

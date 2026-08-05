@@ -159,7 +159,11 @@ fn enter_lobby(
     if save.progress.first_time(&event.fight) {
         save.progress.lobby_position = vec2(400.0, 225.0);
     } else if save.progress.current_lobby != event.fight {
-        save.progress.lobby_position = stage_details.return_to_position;
+        save.progress.lobby_position = if save.progress.completed_stages.contains(&event.fight) {
+            stage_details.return_to_position
+        } else {
+            vec2(400.0, 225.0)
+        };
     }
     for mut transform in q_player.iter_mut() {
         transform.translation.x = save.progress.lobby_position.x;

@@ -1,0 +1,10 @@
+{
+  "sprites": {
+    "Spread": [{
+      "path": "spread.png", "count": 2, "size": [6, 8], "interval": 125
+    }],
+    "Spread_Splash": [{
+      "path": "spread_splash.png", "count": 5, "interval": 40
+    }]
+  }
+}

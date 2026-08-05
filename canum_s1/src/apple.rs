@@ -52,10 +52,15 @@ impl Plugin for ApplePlugin {
 pub struct AppleBoss;
 
 fn spawn_apple(_event: On<background::AppleTreeBackgroundChanged>, mut commands: Commands) {
-    commands.spawn((AppleBoss,));
+    let apple = commands.spawn((AppleBoss,)).id();
     commands.spawn((
         canum_res::sound::Music,
         canum_res::sound::Sound::new("Apple_Bgm"),
+    ));
+    commands.spawn((
+        ChildOf(apple),
+        enemy::health::EnemySensor,
+        Collider::rectangle(50.0, 50.0),
     ));
 }
 

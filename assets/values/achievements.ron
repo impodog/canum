@@ -1,5 +1,8 @@
 (
   achievement: {
-    "Fail3": (kind: Progress)
+    // Simple
+    "Fail3": (kind: Progress),
+    // Advancement
+    "Stage1Complete": (kind: Progress)
   }
 )

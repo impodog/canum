@@ -9,8 +9,9 @@ impl Plugin for FiledPlugin {
     }
 }
 
+// NOTE: The visibility here is for the WeaponSoundCue child, which emits a warning if without.
 #[derive(Component, Debug)]
-#[require(FiledTimer, Transform)]
+#[require(FiledTimer, Transform, Visibility)]
 pub struct Filed {
     pub interval: f32,
     pub damage: math::ApproxFloat,
@@ -87,7 +88,7 @@ fn filed_shoot(
             },
             transform,
             Animation::new("Filed", filed.size),
-            Collider::capsule(filed.size.x, filed.size.y + 1.0),
+            Collider::rectangle(filed.size.x, filed.size.y),
             Mass(0.25),
             LinearVelocity(direction * filed.speed),
         ));

@@ -40,7 +40,7 @@ fn main() {
         .add_plugins((canum_s1::CanumS1Plugin, canum_s2::CanumS2Plugin))
         .insert_resource(Time::<Fixed>::from_hz(
             canum_res::config::CONFIG.client.update_freq as f64,
-        ))
+        )).insert_resource(ClearColor(Color::BLACK))
         .insert_resource(avian2d::prelude::Gravity::ZERO)
         .add_systems(Startup, |mut commands: Commands| {
             commands.spawn(BackgroundColor(Color::linear_rgb(0.05, 0.05, 0.05)));

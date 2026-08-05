@@ -1,3 +1,4 @@
+mod advancement;
 mod simple;
 
 use crate::prelude::*;
@@ -9,7 +10,7 @@ impl Plugin for AchievementsPlugin {
         app.add_observer(get_achievement)
             .add_observer(show_achievement);
         app.add_systems(FixedPreUpdate, fade_achievement);
-        app.add_plugins((simple::SimpleAchievementPlugin,));
+        app.add_plugins((simple::SimplePlugin, advancement::AdvancementPlugin));
     }
 }
 

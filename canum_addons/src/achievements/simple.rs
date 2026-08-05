@@ -1,8 +1,8 @@
 use super::*;
 
-pub(super) struct SimpleAchievementPlugin;
+pub(super) struct SimplePlugin;
 
-impl Plugin for SimpleAchievementPlugin {
+impl Plugin for SimplePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(fail3);
     }

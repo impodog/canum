@@ -36,6 +36,7 @@
       items: [
         (price: 3, item: Charm("S1A_SharpLeaf")),
         (price: 3, item: Charm("S1B_RedHeart")),
+        (price: 5, item: Weapon("B_Spread")),
       ],
       background: "Gate_Shop",
     )

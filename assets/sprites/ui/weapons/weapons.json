@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Weapon_A_Filed": [{ "path": "weapons1.png", "offset": [0, 0] }]
+    "Weapon_A_Filed": [{ "path": "weapons1.png", "offset": [0, 0] }],
+    "Weapon_B_Spread": [{"path": "weapons1.png", "offset": [32, 0]}]
   }
 }
