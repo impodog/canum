@@ -6,6 +6,7 @@ pub mod text;
 pub mod transition;
 pub mod util;
 pub mod visual;
+pub mod weapon;
 
 use prelude::*;
 
@@ -19,6 +20,7 @@ impl Plugin for CanumFxPlugin {
             util::UtilPlugin,
             text::TextPlugin,
             visual::VisualPlugin,
+            weapon::WeaponPlugin,
         ));
     }
 }

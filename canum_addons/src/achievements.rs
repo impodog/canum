@@ -49,7 +49,7 @@ fn get_achievement(
 const MAX_TRANSPARENCY: f32 = 1.0;
 const MIN_TRANSPARENCY: f32 = 0.0;
 const FADE_TIME: f32 = 0.5;
-const HOLD_OPAQUE_TIME: f32 = 2.0;
+const HOLD_OPAQUE_TIME: f32 = 4.0;
 
 #[derive(Event, Debug, Clone)]
 struct ShowAchievement {

@@ -1,5 +1,5 @@
 {
-  "include": ["simple/simple.json"],
+  "include": ["simple/simple.json", "advancement/advancement.json"],
   "sprites": {
     "Achievement_Background_Progress": [
       { "path": "background.png", "size": [100, 75], "offset": [0, 0] }
