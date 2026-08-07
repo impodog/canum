@@ -41,6 +41,7 @@ impl Default for RemoveOutOfBounds {
     crate::SessionOnly,
     RemoveOutOfBounds,
     Transform,
+    Visibility,
     RigidBody::Dynamic,
     Collider,
     NoCollideBoundary,

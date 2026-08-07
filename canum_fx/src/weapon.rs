@@ -17,15 +17,19 @@ impl Plugin for WeaponPlugin {
                     return;
                 };
                 let root = root.clone();
-                world.commands().spawn((
-                    ChildOf(entity),
-                    LaserNode {
-                        prev: entity,
-                        next: None,
-                    },
-                    root.collider,
-                    root.terminal,
-                ));
+                let spawn = world
+                    .commands()
+                    .spawn((
+                        ChildOf(entity),
+                        LaserNode {
+                            prev: entity,
+                            next: None,
+                        },
+                        root.collider,
+                        root.terminal,
+                    ))
+                    .id();
+                world.commands().trigger(LaserSpawn { entity, spawn });
             });
         app.add_systems(FixedPreUpdate, laser_work);
     }
@@ -33,6 +37,13 @@ impl Plugin for WeaponPlugin {
 
 /// Creates laser like shooting effects and sends touch events.
 /// This shoots to the right if not rotated.
+///
+/// You can update laser node with each `LaserSpawn` event.
+/// You can apply effects(that is to say, damage is not managed here) with each `LaserTouch` event.
+/// Both events are sent to the central entity.
+///
+/// ### Warning
+/// The first node's event is trigger right after inserting `LaserLike`. So if you want to observe that make sure to spawn the observer BEFORE adding `LaserLike`.
 #[derive(Component, Debug, Clone, Default)]
 #[require(Transform, Visibility, LaserMarker)]
 pub struct LaserLike {
@@ -45,7 +56,15 @@ pub struct LaserLike {
     pub length: f32,
 }
 
-#[derive(EntityEvent)]
+#[derive(EntityEvent, Debug)]
+pub struct LaserSpawn {
+    /// This is the parent `LaserLike` entity.
+    pub entity: Entity,
+    /// The new spawn laser node entity.
+    pub spawn: Entity,
+}
+
+#[derive(EntityEvent, Debug)]
 pub struct LaserTouch {
     /// This is the parent `LaserLike` entity.
     pub entity: Entity,
@@ -95,13 +114,13 @@ fn laser_work(
             for other in collisions.entities_colliding_with(entity) {
                 if !q_laser_marker.get(other).is_ok() {
                     any_colliding = true;
-                }
-                commands.command_scope(|mut commands| {
-                    commands.trigger(LaserTouch {
-                        entity: parent.0,
-                        target: other,
+                    commands.command_scope(|mut commands| {
+                        commands.trigger(LaserTouch {
+                            entity: parent.0,
+                            target: other,
+                        });
                     });
-                });
+                }
             }
             if any_colliding && let Some(next) = node.next {
                 commands.command_scope(|mut commands| {
@@ -114,7 +133,7 @@ fn laser_work(
                 let mut new_transform = *transform;
                 new_transform.translation.x += root.length;
                 let next_node = commands.command_scope(|mut commands| {
-                    commands
+                    let next_node = commands
                         .spawn((
                             ChildOf(parent.0),
                             LaserNode {
@@ -125,7 +144,12 @@ fn laser_work(
                             root.collider.clone(),
                             root.terminal.clone(),
                         ))
-                        .id()
+                        .id();
+                    commands.trigger(LaserSpawn {
+                        entity: parent.0,
+                        spawn: next_node,
+                    });
+                    next_node
                 });
                 *animation = root.middle.clone();
                 node.next = Some(next_node);

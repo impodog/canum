@@ -51,7 +51,7 @@ impl EnemyHealth {
 
 /// Marks a collider to propagate its taken damage to the parent enemy entity, but not interact with the player.
 #[derive(Component, Default)]
-#[require(Collider, Transform, Friendly(false), Sensor)]
+#[require(Collider, Transform, Visibility, Friendly(false), Sensor)]
 pub struct EnemySensor;
 
 fn sensor_propagate_damage(event: On<Damage>, q_parent: Query<&ChildOf>, mut commands: Commands) {

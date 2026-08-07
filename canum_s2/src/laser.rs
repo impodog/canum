@@ -1,3 +1,7 @@
+mod behaviors;
+mod defeat;
+mod entry;
+
 use crate::*;
 
 static LASER_STATE: LazyLock<setup::Fight> = LazyLock::new(|| setup::Fight("Laser".to_owned()));
@@ -6,7 +10,11 @@ pub(super) struct LaserPlugin;
 
 impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LASER_STATE.clone()), test_laser);
+        app.add_plugins((
+            behaviors::BehaviorsPlugin,
+            entry::EntryPlugin,
+            defeat::DefeatPlugin,
+        ));
     }
 }
 
@@ -18,6 +26,7 @@ impl Plugin for LaserPlugin {
     RigidBody::Dynamic,
     Collider::rectangle(50.0, 20.0),
     Mass(6.0),
+    LockedAxes::TRANSLATION_LOCKED,
     Restitution::new(0.2),
     health::Friendly(false),
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_BOSS },
@@ -26,12 +35,3 @@ impl Plugin for LaserPlugin {
     player::victory::DefeatToWin::default(),
 )]
 pub struct LaserBoss;
-
-fn test_laser(mut commands: Commands) {
-    commands.spawn(canum_fx::weapon::LaserLike {
-        middle: default(),
-        terminal: default(),
-        collider: Collider::rectangle(10.0, 10.0),
-        length: 10.0,
-    });
-}
