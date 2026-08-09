@@ -47,7 +47,15 @@ impl Default for RemoveOutOfBounds {
     NoCollideBoundary,
     crate::health::Friendly
 )]
-pub struct Projectile;
+pub struct Projectile {
+    pub no_dispose: bool,
+}
+impl Projectile {
+    pub fn no_dispose(mut self) -> Self {
+        self.no_dispose = true;
+        self
+    }
+}
 
 fn remove_out_of_bound(
     commands: ParallelCommands,
@@ -76,7 +84,7 @@ fn dispose_after_collision(
     mut commands: Commands,
     mut queue: ResMut<DisposeQueue>,
     collisions: Collisions,
-    q_projectile: Query<Entity, With<Projectile>>,
+    q_projectile: Query<(Entity, &Projectile)>,
 ) {
     for entity in queue.drain(..) {
         if let Ok(mut commands) = commands.get_entity(entity) {
@@ -84,8 +92,8 @@ fn dispose_after_collision(
         }
     }
     let queue = Mutex::new(queue);
-    q_projectile.par_iter().for_each(|entity| {
-        if collisions.collisions_with(entity).next().is_some() {
+    q_projectile.par_iter().for_each(|(entity, projectile)| {
+        if !projectile.no_dispose && collisions.collisions_with(entity).next().is_some() {
             queue.lock().unwrap().push(entity);
         }
     });

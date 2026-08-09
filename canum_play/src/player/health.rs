@@ -10,6 +10,7 @@ impl Plugin for PlayerHealthPlugin {
             .on_add(|mut world, HookContext { entity, .. }| {
                 world.commands().entity(entity).observe(integer_take_damage);
             });
+        app.add_systems(FixedFirst, refresh_integer_health);
     }
 }
 
@@ -26,6 +27,8 @@ pub struct IntegerHealth {
     pub count: i32,
     pub invinc_order: u8,
     pub invinc_time: f32,
+    /// Prevents multiple hits.
+    pub frame_taken_damage: bool,
 }
 impl Default for IntegerHealth {
     fn default() -> Self {
@@ -33,6 +36,7 @@ impl Default for IntegerHealth {
             count: 6,
             invinc_order: consts::order::HEALTH_INVINC,
             invinc_time: 1.0,
+            frame_taken_damage: false,
         }
     }
 }
@@ -46,6 +50,10 @@ fn integer_take_damage(
     if damage <= 0 {
         return Ok(());
     }
+    if health.frame_taken_damage {
+        return Ok(());
+    }
+    health.frame_taken_damage = true;
     health.count = health.count.saturating_sub(1);
     commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
     commands.trigger(ActuallyHit {
@@ -69,4 +77,10 @@ fn integer_take_damage(
     }
 
     Ok(())
+}
+
+fn refresh_integer_health(mut q_health: Query<&mut IntegerHealth>) {
+    for mut health in q_health.iter_mut() {
+        health.frame_taken_damage = false;
+    }
 }

@@ -31,7 +31,10 @@ impl Plugin for LaserPlugin {
     health::Friendly(false),
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.75),
+    movements::AngularSpeedDecay,
     enemy::health::EnemyHealth::new(4000),
     player::victory::DefeatToWin::default(),
 )]
 pub struct LaserBoss;
+
+fn laser_friction(q_laser: Query<&mut AngularVelocity, With<LaserBoss>>) {}

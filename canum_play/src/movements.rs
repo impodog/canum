@@ -22,6 +22,7 @@ impl Plugin for MovementsPlugin {
             )
                 .chain(),
         );
+        app.add_systems(FixedLast, angular_speed_decay);
         app.add_systems(FixedLast, auto_flip);
     }
 }
@@ -187,6 +188,15 @@ impl Default for SpeedDecay {
     }
 }
 
+/// Uses a simple implementation to decrease angular velocity.
+#[derive(Component, Debug, Clone)]
+pub struct AngularSpeedDecay(pub f32);
+impl Default for AngularSpeedDecay {
+    fn default() -> Self {
+        Self(0.4)
+    }
+}
+
 /// Makes up part of the actual `LinearVelocity`, and this part is unaffected by `SpeedDecay`.
 #[derive(Component, Debug, Clone, Default, Deref, DerefMut)]
 #[require(LinearVelocity, PrevForcedVelocity)]
@@ -306,6 +316,14 @@ fn speed_decay(mut q_velocity: Query<(&SpeedDecay, &mut LinearVelocity, &ForcedV
         .for_each(|(decay, mut linear_velocity, forced)| {
             let amount = (linear_velocity.0 - forced.velocity) * decay.0;
             linear_velocity.0 -= amount;
+        });
+}
+fn angular_speed_decay(mut q_angular_velocity: Query<(&AngularSpeedDecay, &mut AngularVelocity)>) {
+    q_angular_velocity
+        .par_iter_mut()
+        .for_each(|(decay, mut angular_velocity)| {
+            let amount = angular_velocity.0 * decay.0;
+            angular_velocity.0 -= amount;
         });
 }
 

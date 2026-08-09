@@ -1,0 +1,7 @@
+{
+  "sounds": {
+    "Laser_Bgm": { "path": "laser_bgm.ogg", "volume": -5.0, "loop_point": 0.0 },
+    "Laser_ScreenAttack": { "path": "laser_screen_attack.wav", "volume": 0.0 },
+    "Laser_Shoot": { "path": "laser_shoot.wav", "volume": -5.0, "loop_point": 0.0 }
+  }
+}

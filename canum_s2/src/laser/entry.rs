@@ -18,8 +18,12 @@ fn spawn_laser(mut commands: Commands) {
     commands.spawn((
         ChildOf(laser),
         behaviors::LaserBehaviors,
-        children![behaviors::ShootAndRotate::default()],
+        children![
+            behaviors::ShootAndRotate::default(),
+            behaviors::ScreenAttack::default()
+        ],
     ));
+    commands.spawn((SessionOnly, Music, Sound::new("Laser_Bgm")));
 }
 
 fn move_player(mut q_player: Query<&mut Transform, With<player::Player>>) {
