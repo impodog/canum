@@ -9,6 +9,13 @@ impl Plugin for EntryPlugin {
 }
 
 fn spawn_laser(mut commands: Commands) {
+    commands.spawn((
+        SessionOnly,
+        canum_res::background::Background::new(CONFIG.display.screen_size),
+        Animation::new("Laser_Back", CONFIG.display.screen_size)
+            .with_color(Color::default().with_alpha(0.5)),
+    ));
+
     let laser = commands.spawn((LaserBoss,)).id();
     commands.spawn((
         ChildOf(laser),

@@ -1,6 +1,6 @@
 {
   "sprites": {
-    "Laser_Prepare": [{"path": "laser_pen.png", "offset": [32, 0], "count": 4, "interval": 75}],
+    "Laser_Prepare": [{"path": "laser_pen.png", "offset": [32, 0], "count": 4, "interval": 100}],
     "Laser_Static": [{"path": "laser_pen.png", "offset": [0, 0]}],
     "Laser_AttackMiddle": [
       {"path": "laser_attack.png", "size": [10, 32], "offset": [0, 0]},
@@ -12,6 +12,8 @@
       {"path": "laser_screen.png", "size": [20, 16], "offset": [0, 0]},
       {"path": "laser_screen.png", "size": [20, 16], "offset": [20, 0]},
       {"path": "laser_screen.png", "size": [20, 16], "offset": [40, 0]}
-    ]
+    ],
+    "Laser_Defeat": [{"path": "laser_pen.png", "offset": [160, 0], "count": 4, "interval": 500}],
+    "Laser_Back": [{"path": "laser_background.png", "size": [400, 225]}]
   }
 }

@@ -1,5 +1,8 @@
 (
   boss: {
+    "Laser": (
+      gains: { "Completed": 2, "NoHits": 2 },
+    ),
   },
   stage: {
     "House": (

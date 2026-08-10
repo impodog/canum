@@ -106,7 +106,7 @@ fn laser_work(
             };
             if !q_laser_marker.get(node.prev).is_ok() {
                 commands.command_scope(|mut commands| {
-                    commands.entity(entity).despawn();
+                    commands.entity(entity).try_despawn();
                 });
                 return;
             }
@@ -164,5 +164,5 @@ fn laser_destroy(event: On<LaserDestroy>, mut commands: Commands, q_laser: Query
     if let Some(next) = node.next {
         commands.trigger(LaserDestroy(next));
     }
-    commands.entity(event.0).despawn();
+    commands.entity(event.0).try_despawn();
 }

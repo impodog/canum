@@ -56,7 +56,7 @@ impl Plugin for BehaviorsPlugin {
 pub struct LaserBehaviors;
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Laser_ShootAndRotate", 0.8, ["Animation", "Rotation", "ShootAndRotate"]))]
+#[require(Behavior::new("Laser_ShootAndRotate", 100.8, ["Animation", "Rotation", "ShootAndRotate"]))]
 pub struct ShootAndRotate {
     target: Option<Entity>,
     timer: Timer,
@@ -97,7 +97,7 @@ fn shoot_and_rotate_begin(
     commands
         .spawn((
             ChildOf(event.entity),
-            Transform::from_translation(vec3(20.0, 0.0, 0.0)),
+            Transform::from_translation(vec3(30.0, 0.0, 0.0)),
         ))
         .observe(laser_shoot_spawn)
         .insert(canum_fx::weapon::LaserLike {
@@ -122,13 +122,8 @@ fn laser_shoot_spawn(event: On<canum_fx::weapon::LaserSpawn>, mut commands: Comm
 }
 
 fn shoot_and_rotate_track_player(
-    mut q_timer: Query<(
-        Entity,
-        &mut ShootAndRotate,
-        &mut Transform,
-        &GlobalTransform,
-    )>,
-    mut q_animation: Query<&mut Animation>,
+    mut q_timer: Query<(Entity, &mut ShootAndRotate, &GlobalTransform)>,
+    mut q_laser: Query<(&mut Rotation, &mut Animation), With<LaserBoss>>,
     q_global_transform: Query<&GlobalTransform>,
     player: Option<Res<player::PrimaryPlayer>>,
     time: Res<Time>,
@@ -141,34 +136,39 @@ fn shoot_and_rotate_track_player(
         return;
     };
     let player_position = player_transform.translation().xy();
-    for (entity, mut timer, mut transform, global_transform) in q_timer.iter_mut() {
+    for (entity, mut timer, global_transform) in q_timer.iter_mut() {
         if timer.timer.is_finished() {
             continue;
         }
+        let Some(target) = timer.target else {
+            continue;
+        };
+        let Ok((mut rotation, mut animation)) = q_laser.get_mut(target) else {
+            continue;
+        };
         if timer.timer.tick(time.delta()).just_finished() {
             commands.trigger(BehaveEnd {
                 entity,
                 cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.2)),
                 occupies: occupies![("ShootAndRotate", 6.0)],
             });
-            let Some(target) = timer.target else {
-                continue;
-            };
-            let Ok(mut animation) = q_animation.get_mut(target) else {
-                continue;
-            };
             animation.replace("Laser_Static", false, None);
             commands.entity(entity).despawn_children();
             continue;
         }
         let position = global_transform.translation().xy();
         let diff = player_position - position;
+        let min_angular_velocity = (108.0 * diff.length_recip() * 2.0).clamp(2.0, 10.0);
         let angle = diff.to_angle();
         let angle_diff =
             normalize_angle_signed(angle - global_transform.rotation().to_euler(EulerRot::XYZ).2);
         let velocity = angle_diff * 2.2;
-        let velocity = velocity.signum() * velocity.abs().clamp(1.8, 3.2);
-        transform.rotate_z(velocity * time.delta_secs());
+        let velocity = velocity.signum()
+            * velocity
+                .abs()
+                .clamp(min_angular_velocity, min_angular_velocity + 1.2);
+        // FIXME Why no rotation???
+        *rotation = rotation.add_angle_fast(velocity * time.delta_secs());
     }
 }
 
@@ -292,6 +292,8 @@ fn screen_attack_play_rotation(
             / 1e-6
     }
 
+    let delta_secs = time.delta_secs();
+
     for (entity, mut timers) in q_screen_attack.iter_mut() {
         let Some(target) = timers.target else {
             continue;
@@ -300,17 +302,19 @@ fn screen_attack_play_rotation(
             return;
         };
         if !timers.start_timer.is_finished() {
-            *rotation =
-                rotation.add_angle_fast(derivative(timers.start_timer.fraction()) * START_ROTATION);
+            *rotation = rotation.add_angle_fast(
+                derivative(timers.start_timer.fraction()) * START_ROTATION * delta_secs,
+            );
             timers.start_timer.tick(time.delta());
         } else {
-            *rotation =
-                rotation.add_angle_fast(derivative(timers.rotate_timer.fraction()) * MAIN_ROTATION);
+            *rotation = rotation.add_angle_fast(
+                derivative(timers.rotate_timer.fraction()) * MAIN_ROTATION * delta_secs,
+            );
             if timers.rotate_timer.tick(time.delta()).just_finished() {
                 commands.spawn(Sound::new("Laser_ScreenAttack"));
                 commands.trigger(BehaveEnd {
                     entity,
-                    cooldown: Duration::from_secs_f32(2.0),
+                    cooldown: Duration::from_secs_f32(1.5),
                     occupies: occupies![("ScreenAttack", rand_normal(1.0, 1.0).clamp(0.5, 2.0))],
                 });
             }
@@ -350,7 +354,7 @@ fn screen_attack_choose_behavior(
         }
         2 => {
             let sgn = rand_sign();
-            let mut position = -200.0;
+            let mut position = -175.0;
             while position < CONFIG.display.half_virtual_size.0 {
                 commands.trigger(VertiLaser(position * sgn));
                 position += SCREEN_ATTACK_SIZE.y;
@@ -358,7 +362,7 @@ fn screen_attack_choose_behavior(
         }
         3 => {
             let sgn = rand_sign();
-            let mut position = -100.0;
+            let mut position = -90.0;
             while position < CONFIG.display.half_virtual_size.1 {
                 commands.trigger(HorizLaser(position * sgn));
                 position += SCREEN_ATTACK_SIZE.y;
@@ -369,6 +373,7 @@ fn screen_attack_choose_behavior(
             let mut current = begin;
             let mut flag = false;
             let spacing = std::f32::consts::FRAC_PI_8;
+            let mut z = 1.1;
             // For each line of laser by rotation.
             loop {
                 if (current - begin).abs() < 1e-6 {
@@ -383,19 +388,20 @@ fn screen_attack_choose_behavior(
                 while CONFIG.display.screen_rect.contains(position) {
                     commands.spawn((
                         ScreenAttackBase::default(),
-                        Transform::from_translation(vec3(position.x, position.y, 1.1))
+                        Transform::from_translation(vec3(position.x, position.y, z))
                             .with_rotation(Quat::from_rotation_z(current)),
                     ));
                     if position.x != 0.0 {
                         commands.spawn((
                             ScreenAttackBase::default(),
-                            Transform::from_translation(vec3(-position.x, -position.y, 1.1))
+                            Transform::from_translation(vec3(-position.x, -position.y, z))
                                 .with_rotation(Quat::from_rotation_z(current)),
                         ));
                     }
                     position += diff;
                 }
                 current = normalize_angle(current + spacing);
+                z += 0.01;
             }
         }
         6 => {
@@ -403,7 +409,8 @@ fn screen_attack_choose_behavior(
                 return;
             };
             let angle = global_transform.translation().xy().to_angle();
-            for i in -5..=5 {
+            let mut z = 1.1;
+            for i in -6..=6 {
                 let current = i as f32 * 0.1 + angle;
                 // Spawn the array of laser nodes.
                 let mut position = vec2(0.0, 0.0);
@@ -411,18 +418,19 @@ fn screen_attack_choose_behavior(
                 while CONFIG.display.screen_rect.contains(position) {
                     commands.spawn((
                         ScreenAttackBase::default(),
-                        Transform::from_translation(vec3(position.x, position.y, 1.1))
+                        Transform::from_translation(vec3(position.x, position.y, z))
                             .with_rotation(Quat::from_rotation_z(current)),
                     ));
                     if position.x != 0.0 {
                         commands.spawn((
                             ScreenAttackBase::default(),
-                            Transform::from_translation(vec3(-position.x, -position.y, 1.1))
+                            Transform::from_translation(vec3(-position.x, -position.y, z))
                                 .with_rotation(Quat::from_rotation_z(current)),
                         ));
                     }
                     position += diff;
                 }
+                z += 0.01;
             }
         }
         _ => warn!("Undefined layout index {layout_index}"),
