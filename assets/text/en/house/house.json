@@ -7,7 +7,12 @@
       "Laser_BossTitle": "+Laser\nFor Ignition",
       "Laser_UiName": "Laser Pen",
       "Laser_WindowTitle": "Hot Spots!",
-      "Laser_Victory_WindowTitle": "Did you know laser is a short name?"
+      "Laser_Victory_WindowTitle": "Did you know LASER is a short form?",
+
+      "Windy_BossTitle": "+Windy 10 a.m.",
+      "Windy_UiName": "Windy 10 a.m.",
+      "Windy_WindowTitle": "Caution to the wind!",
+      "Windy_Victory_WindowTitle": "Hopefully it's not storm I'm facing..."
     }
   }
 }

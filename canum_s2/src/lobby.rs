@@ -51,6 +51,21 @@ fn handle_lobby_select(
                 ),
             ));
         }
+        1 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::lobby::boss::boss_panel(
+                    fonts,
+                    canum_ui::lobby::boss::BossPanel {
+                        name: lang.get("Windy_UiName").to_owned(),
+                        fight_name: "Windy".to_owned(),
+                        marks: get_marks(&save, "Windy"),
+                        enter_color: Color::linear_rgb(0.6, 0.6, 0.7),
+                    },
+                    time,
+                ),
+            ));
+        }
         _ => {}
     }
 }
