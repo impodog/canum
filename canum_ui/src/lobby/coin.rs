@@ -13,8 +13,8 @@ pub struct CoinNumber;
 
 pub fn coin(fonts: &crate::Fonts, number: i32) -> impl Bundle {
     let text_font = TextFont {
-        font: fonts.title.clone(),
-        font_size: 20.0,
+        font: fonts.title.clone().into(),
+        font_size: FontSize::Px(20.0),
         font_smoothing: FontSmoothing::None,
         ..default()
     };

@@ -9,7 +9,7 @@ members = ["canum_*"]
 
 [dependencies]
 avian2d = {
-  version = "0.6.1",
+  version = "0.7",
   default-features = false,
   features = [
     "default-collider",
@@ -21,7 +21,7 @@ avian2d = {
   ]
 }
 bevy = {
-  version = "0.18.1",
+  version = "0.19",
   default-features = false,
   features = [
     "2d",
@@ -32,7 +32,7 @@ bevy = {
     "wav",
   ]
 }
-bevy_image_font = "0.11.0"
+bevy_image_font = {git = "https://github.com/impodog/bevy_image_font"}
 canum_addons = { path = "canum_addons" }
 canum_fx = { path = "canum_fx" }
 canum_play = { path = "canum_play" }

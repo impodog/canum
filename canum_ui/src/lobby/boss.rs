@@ -61,8 +61,8 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
         },
         Text::new(&panel.name),
         TextFont {
-            font: fonts.title.clone(),
-            font_size: 50.0,
+            font: fonts.title.clone().into(),
+            font_size: FontSize::Px(50.0),
             font_smoothing: FontSmoothing::None,
             ..default()
         },

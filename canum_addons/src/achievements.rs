@@ -136,8 +136,8 @@ fn show_achievement(
                     justify: Justify::Center
                 },
                 TextFont {
-                    font: fonts.desc.clone(),
-                    font_size: 16.0,
+                    font: fonts.desc.clone().into(),
+                    font_size: FontSize::Px(16.0),
                     font_smoothing: bevy::text::FontSmoothing::None,
                     ..default()
                 },

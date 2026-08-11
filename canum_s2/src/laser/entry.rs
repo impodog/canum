@@ -8,7 +8,13 @@ impl Plugin for EntryPlugin {
     }
 }
 
-fn spawn_laser(mut commands: Commands) {
+fn spawn_laser(
+    mut commands: Commands,
+    fonts: Res<canum_ui::Fonts>,
+    lang: Res<Lang>,
+    mut window_title: ResMut<canum_res::window::WindowTitle>,
+    q_bottom_left: Query<Entity, With<canum_ui::BottomLeft>>,
+) {
     commands.spawn((
         SessionOnly,
         canum_res::background::Background::new(CONFIG.display.screen_size),
@@ -31,6 +37,20 @@ fn spawn_laser(mut commands: Commands) {
         ],
     ));
     commands.spawn((SessionOnly, Music, Sound::new("Laser_Bgm")));
+
+    let Ok(bottom_left) = q_bottom_left.single() else {
+        return;
+    };
+    commands.spawn((
+        ChildOf(bottom_left),
+        canum_ui::text::popup_title(
+            fonts.title.clone(),
+            lang.get("Laser_BossTitle"),
+            Duration::from_secs_f32(1.5),
+        ),
+    ));
+
+    window_title.0 = lang.get("Laser_WindowTitle").to_owned();
 }
 
 fn move_player(mut q_player: Query<&mut Transform, With<player::Player>>) {

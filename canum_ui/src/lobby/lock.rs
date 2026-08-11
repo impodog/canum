@@ -34,8 +34,8 @@ fn spawn_top_text(
         LobbyTopText::default(),
         TextColor::WHITE,
         TextFont {
-            font: font.desc.clone(),
-            font_size: 30.0,
+            font: font.desc.clone().into(),
+            font_size: FontSize::Px(30.0),
             ..default()
         },
     ));

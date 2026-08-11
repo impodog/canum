@@ -68,8 +68,8 @@ pub fn popup_title(font: Handle<Font>, content: &str, fade: Duration) -> impl Bu
             Text::new(value),
             TextColor(Color::WHITE.with_alpha(0.0)),
             TextFont {
-                font: font.clone(),
-                font_size: font_size as f32,
+                font: font.clone().into(),
+                font_size: FontSize::Px(font_size as f32),
                 font_smoothing: FontSmoothing::None,
                 ..Default::default()
             },

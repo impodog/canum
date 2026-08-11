@@ -147,8 +147,8 @@ fn spawn_problem(
             (Problem { answer }, format!("{} + {} = ", first, second))
         };
         let font = TextFont {
-            font: fonts.game.clone(),
-            font_size: 50.0,
+            font: fonts.game.clone().into(),
+            font_size: FontSize::Px(50.0),
             font_smoothing: bevy::text::FontSmoothing::None,
             ..default()
         };

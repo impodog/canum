@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18.1", default-features = false }
+bevy = { version = "0.19", default-features = false }
 canum_play = { path = "../canum_play" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }

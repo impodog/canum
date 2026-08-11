@@ -9,6 +9,6 @@ ron = "0.12.1"
 serde = { version = "1.0.228", features = ["derive"] }
 
 [dependencies.bevy]
-version = "0.18.1"
+version = "0.19"
 default-features = false
 features = ["serialize"]

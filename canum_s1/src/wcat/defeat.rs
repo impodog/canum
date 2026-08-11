@@ -94,8 +94,8 @@ fn init_get_dash(
         TextColor::WHITE,
         Transform::from_translation(vec3(0.0, 100.0, 0.0)),
         TextFont {
-            font: fonts.game.clone(),
-            font_size: 35.0,
+            font: fonts.game.clone().into(),
+            font_size: FontSize::Px(35.0),
             font_smoothing: bevy::text::FontSmoothing::None,
             ..default()
         },

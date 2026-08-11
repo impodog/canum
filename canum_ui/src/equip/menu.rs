@@ -126,8 +126,8 @@ pub fn select_menu(kind: String, group: String, fonts: &crate::Fonts) -> impl Bu
                         linebreak: LineBreak::WordBoundary
                     },
                     TextFont {
-                        font: fonts.desc.clone(),
-                        font_size: 25.0,
+                        font: fonts.desc.clone().into(),
+                        font_size: FontSize::Px(25.0),
                         font_smoothing: FontSmoothing::None,
                         ..default()
                     },
@@ -135,8 +135,8 @@ pub fn select_menu(kind: String, group: String, fonts: &crate::Fonts) -> impl Bu
                     children![(
                         TextSpan::new(""),
                         TextFont {
-                            font: fonts.desc.clone(),
-                            font_size: 16.0,
+                            font: fonts.desc.clone().into(),
+                            font_size: FontSize::Px(16.0),
                             font_smoothing: FontSmoothing::None,
                             ..default()
                         },
@@ -286,8 +286,8 @@ fn update_options_display(
                         linebreak: LineBreak::NoWrap
                     },
                     TextFont {
-                        font: fonts.desc.clone(),
-                        font_size: 20.0,
+                        font: fonts.desc.clone().into(),
+                        font_size: FontSize::Px(20.0),
                         font_smoothing: FontSmoothing::None,
                         ..default()
                     },

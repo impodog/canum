@@ -5,17 +5,21 @@ edition = "2024"
 
 [dependencies]
 bevy = {
-  version = "0.18.1",
+  version = "0.19",
   default-features = false,
   features = [
     "bevy_asset",
     "bevy_sprite",
     "bevy_sprite_render",
     "bevy_text",
+    "bevy_ui_render",
+    "bevy_audio",
     "png",
+    "vorbis",
+    "wav",
   ]
 }
-bevy_image_font = "0.11.0"
+bevy_image_font = {git = "https://github.com/impodog/bevy_image_font"}
 log = "0.4.29"
 rand = "0.10.1"
 ron = "0.12.1"

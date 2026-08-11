@@ -66,7 +66,7 @@ fn spawn_ant(_event: On<background::AntSetupTimerComplete>, mut commands: Comman
     commands.spawn((
         ChildOf(ant),
         enemy::health::EnemySensor,
-        Collider::rectangle(32.0, 28.0),
+        Collider::rectangle(60.0, 32.0),
     ));
 }
 
