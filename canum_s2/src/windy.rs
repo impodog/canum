@@ -1,4 +1,6 @@
 mod entry;
+mod obstacles;
+mod wind;
 
 use crate::prelude::*;
 
@@ -8,7 +10,11 @@ pub(super) struct WindyPlugin;
 
 impl Plugin for WindyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((entry::EntryPlugin,));
+        app.add_plugins((
+            entry::EntryPlugin,
+            wind::WindPlugin,
+            obstacles::ObstaclesPlugin,
+        ));
     }
 }
 

@@ -257,7 +257,8 @@ struct PrevForcedVelocity(Vec2);
 
 fn update_forced_velocity(
     commands: ParallelCommands,
-    mut q_forced: Query<(&mut ForcedVelocity, &Children)>,
+    // When children are all despawned, there may be no children, but the velocity needs to be changed to ZERO
+    mut q_forced: Query<(&mut ForcedVelocity, Option<&Children>)>,
     q_partial: Query<Ref<PartialVelocity>>,
     q_ok: Query<()>,
 ) {
@@ -265,23 +266,25 @@ fn update_forced_velocity(
         let mut total = Vec2::ZERO;
         let mut any_changed = false;
         let mut count = 0;
-        for child in children.iter() {
-            let Ok(partial) = q_partial.get(child) else {
-                continue;
-            };
-            if let Some(linked) = partial.linked
-                && q_ok.get(linked).is_err()
-            {
-                commands.command_scope(|mut commands| {
-                    commands.entity(child).despawn();
-                });
-                any_changed = true;
-                continue;
-            }
-            count += 1;
-            total += partial.velocity;
-            if partial.is_changed() {
-                any_changed = true;
+        if let Some(children) = children {
+            for child in children.iter() {
+                let Ok(partial) = q_partial.get(child) else {
+                    continue;
+                };
+                if let Some(linked) = partial.linked
+                    && q_ok.get(linked).is_err()
+                {
+                    commands.command_scope(|mut commands| {
+                        commands.entity(child).despawn();
+                    });
+                    any_changed = true;
+                    continue;
+                }
+                count += 1;
+                total += partial.velocity;
+                if partial.is_changed() {
+                    any_changed = true;
+                }
             }
         }
         if count != forced.partial_count {

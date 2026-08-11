@@ -1,5 +1,6 @@
 {
   "sounds": {
-    "Windy_Bgm": { "path": "windy_bgm.ogg" }
+    "Windy_Bgm": { "path": "windy_bgm.ogg" },
+    "Windy_SpikeOut": { "path": "spike_out.wav", "volume": -10.0 }
   }
 }

@@ -10,3 +10,4 @@
 exclude-*
 user.ron
 Cargo.lock
+/backup

@@ -35,38 +35,52 @@ pub struct BumpAway {
     pub direction: Dir2,
     pub strength: f32,
 }
+impl Default for BumpAway {
+    fn default() -> Self {
+        Self {
+            direction: Dir2::from_xy_unchecked(1.0, 0.0),
+            strength: 20.0,
+        }
+    }
+}
 
 /// Cancels the `CollisionDisabled` marker caused by `BumpAway`.
 #[derive(Component)]
 struct BumpAwayCanceller(Entity);
 
-fn bump_away(q_bump: Query<(&BumpAway, &CollidingEntities)>, commands: ParallelCommands) {
+fn bump_away(
+    q_bump: Query<(&BumpAway, &CollidingEntities, &GlobalTransform)>,
+    commands: ParallelCommands,
+) {
     const DURATION: Duration = Duration::from_millis(100);
-    q_bump.par_iter().for_each(|(bump, colliding)| {
-        for entity in colliding.iter() {
-            let direction = bump
-                .direction
-                .rotate(Vec2::from_angle(rand::random_range(-0.2..0.2)));
-            commands.command_scope(|mut commands| {
-                let canceller = commands
-                    .spawn(BumpAwayCanceller(*entity))
-                    .observe(cancel_bump_away)
-                    .id();
-                commands
-                    .entity(*entity)
-                    .insert(health::DisableOpposingCollision);
-                commands.spawn((
-                    ChildOf(*entity),
-                    crate::enemy::movements::Displacement {
-                        curve: |x| QuarticOutCurve.sample(x).unwrap(),
-                        displace: direction * bump.strength,
-                        duration: DURATION,
-                        notify: Some(canceller),
-                    },
-                ));
-            });
-        }
-    });
+    q_bump
+        .par_iter()
+        .for_each(|(bump, colliding, global_transform)| {
+            for entity in colliding.iter() {
+                let base_angle = global_transform.rotation().to_euler(EulerRot::XYZ).2;
+                let direction = bump
+                    .direction
+                    .rotate(Vec2::from_angle(base_angle + rand::random_range(-0.2..0.2)));
+                commands.command_scope(|mut commands| {
+                    let canceller = commands
+                        .spawn(BumpAwayCanceller(*entity))
+                        .observe(cancel_bump_away)
+                        .id();
+                    commands
+                        .entity(*entity)
+                        .insert(health::DisableOpposingCollision);
+                    commands.spawn((
+                        ChildOf(*entity),
+                        crate::enemy::movements::Displacement {
+                            curve: |x| QuarticOutCurve.sample(x).unwrap(),
+                            displace: direction * bump.strength,
+                            duration: DURATION,
+                            notify: Some(canceller),
+                        },
+                    ));
+                });
+            }
+        });
 }
 
 fn cancel_bump_away(
