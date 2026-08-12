@@ -34,7 +34,7 @@ pub struct WindVelocity {
 impl Default for WindVelocity {
     fn default() -> Self {
         Self {
-            target_velocity: Vec2::new(250.0, 0.0),
+            target_velocity: Vec2::new(225.0, 0.0),
             friction: 0.25,
         }
     }
@@ -67,6 +67,9 @@ fn update_wind_forced_velocity(
                 return;
             };
             let target_velocity = wind_velocity.target_velocity * can_be_blown.0;
+            if partial_velocity.x.signum() != target_velocity.x.signum() {
+                partial_velocity.x = 0.0;
+            }
             let diff = target_velocity - **partial_velocity;
             **partial_velocity +=
                 diff * wind_velocity.friction * can_be_blown.0.abs() * time.delta_secs();

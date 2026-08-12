@@ -63,11 +63,13 @@ fn windy_begin(
         commands.entity(entity).insert(wind::CanBeBlown::default());
     }
     commands.spawn((
+        SessionOnly,
         behaviors::WindyBehaviors,
         children![
             behaviors::SpawnTumbleWeed,
             behaviors::PoleStorm::default(),
-            behaviors::WaveOfSpikes
+            behaviors::WaveOfSpikes,
+            behaviors::TwoPoles::default(),
         ],
     ));
 }

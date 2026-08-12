@@ -71,4 +71,28 @@ macro_rules! wait_then_trigger {
             }
         }
     };
+
+    ($name: ident, $type: ty, $data: ty, $interval: expr) => {
+        impl $type {
+            fn new(value: $data) -> Self {
+                Self(value)
+            }
+        }
+
+        #[derive(Component)]
+        #[require($crate::util::WaitInterval::new(Duration::from_secs_f32($interval)))]
+        struct $name($data);
+        impl $name {
+            fn observer(
+                event: On<$crate::util::WaitComplete>,
+                mut commands: Commands,
+                query: Query<&$name>,
+            ) {
+                let Ok(value) = query.get(event.entity) else {
+                    return;
+                };
+                commands.trigger(<$type>::new(value.0.clone()));
+            }
+        }
+    };
 }

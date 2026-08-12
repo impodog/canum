@@ -77,7 +77,8 @@ pub struct Spike(pub f32);
     enemy::health::EnemyHealth::new(100),
     Collider::circle(Self::RADIUS),
     Animation::new("Windy_TumbleWeed", vec2(Self::RADIUS * 2.0, Self::RADIUS * 2.0)),
-    wind::CanBeBlown
+    wind::CanBeBlown,
+    StageDelete
 )]
 pub struct TumbleWeed;
 
@@ -96,7 +97,7 @@ fn update_tumble_weed_rotation(
 }
 
 #[derive(Component, Default)]
-#[require(Obstacle, wind::CanBeBlown)]
+#[require(Obstacle, StageDelete)]
 pub struct Pole {
     pub face_down: bool,
 }
