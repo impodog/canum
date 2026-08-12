@@ -60,11 +60,15 @@ fn windy_begin(
 ) {
     commands.spawn((Music, Sound::new("Windy_Bgm")));
     for entity in q_player.iter() {
-        commands.entity(entity).insert(wind::CanBeBlown);
+        commands.entity(entity).insert(wind::CanBeBlown::default());
     }
     commands.spawn((
         behaviors::WindyBehaviors,
-        children![behaviors::SpawnTumbleWeed],
+        children![
+            behaviors::SpawnTumbleWeed,
+            behaviors::PoleStorm::default(),
+            behaviors::WaveOfSpikes
+        ],
     ));
 }
 

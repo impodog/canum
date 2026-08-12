@@ -45,18 +45,32 @@ impl Default for WindVelocity {
 #[require(movements::PartialVelocity::unlinked())]
 pub struct WindForcedVelocity;
 
-#[derive(Component, Default)]
-pub struct CanBeBlown;
+/// Defines the blow strength multiplier.
+#[derive(Component)]
+pub struct CanBeBlown(pub f32);
+impl Default for CanBeBlown {
+    fn default() -> Self {
+        Self(1.0)
+    }
+}
 
 fn update_wind_forced_velocity(
     wind_velocity: Res<WindVelocity>,
-    mut q_velocity: Query<&mut movements::PartialVelocity, With<WindForcedVelocity>>,
+    mut q_velocity: Query<(&mut movements::PartialVelocity, &ChildOf), With<WindForcedVelocity>>,
+    q_can_be_blown: Query<&CanBeBlown>,
     time: Res<Time>,
 ) {
-    q_velocity.par_iter_mut().for_each(|mut partial_velocity| {
-        let diff = wind_velocity.target_velocity - **partial_velocity;
-        **partial_velocity += diff * wind_velocity.friction * time.delta_secs();
-    });
+    q_velocity
+        .par_iter_mut()
+        .for_each(|(mut partial_velocity, parent)| {
+            let Ok(can_be_blown) = q_can_be_blown.get(parent.0) else {
+                return;
+            };
+            let target_velocity = wind_velocity.target_velocity * can_be_blown.0;
+            let diff = target_velocity - **partial_velocity;
+            **partial_velocity +=
+                diff * wind_velocity.friction * can_be_blown.0.abs() * time.delta_secs();
+        });
 }
 
 fn add_for_projectiles(
@@ -67,7 +81,7 @@ fn add_for_projectiles(
         commands.command_scope(|mut commands| {
             commands
                 .entity(entity)
-                .insert((CanBeBlown, movements::ForcedVelocity::default()));
+                .insert((CanBeBlown(1.5), movements::ForcedVelocity::default()));
         });
     });
 }

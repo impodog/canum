@@ -28,7 +28,7 @@ impl Plugin for ObstaclesPlugin {
             });
         app.add_systems(
             FixedUpdate,
-            update_tumble_weed_rotation.run_if(in_state(WINDY_STATE.clone())),
+            (update_tumble_weed_rotation, initialize_pole).run_if(in_state(WINDY_STATE.clone())),
         );
     }
 }
@@ -93,4 +93,60 @@ fn update_tumble_weed_rotation(
         .for_each(|(mut angular_velocity, linear_velocity)| {
             **angular_velocity = -linear_velocity.x / TumbleWeed::RADIUS;
         });
+}
+
+#[derive(Component, Default)]
+#[require(Obstacle, wind::CanBeBlown)]
+pub struct Pole {
+    pub face_down: bool,
+}
+impl Pole {
+    pub const SIZE: Vec2 = vec2(16.0, 32.0);
+    pub const HALF_SIZE: Vec2 = vec2(Self::SIZE.x * 0.5, Self::SIZE.y * 0.5);
+}
+
+fn initialize_pole(
+    q_pole: Query<(Entity, &Pole, &GlobalTransform), Added<Pole>>,
+    mut commands: Commands,
+) {
+    for (entity, pole, global_transform) in q_pole.iter() {
+        let sgn: f32 = if pole.face_down { -1.0 } else { 1.0 };
+        let rotation = if pole.face_down {
+            0.0
+        } else {
+            std::f32::consts::PI
+        };
+        let position = global_transform.translation().xy();
+        let mut y = position.y;
+        let mut accum_y = 0.0;
+        while y < CONFIG.display.half_virtual_size.1 + Pole::HALF_SIZE.y
+            && y > -CONFIG.display.half_virtual_size.1 - Pole::HALF_SIZE.y
+        {
+            commands.spawn((
+                ChildOf(entity),
+                Animation::new(
+                    if accum_y == 0.0 {
+                        "Windy_Pole_Top"
+                    } else {
+                        "Windy_Pole_Mid"
+                    },
+                    Pole::SIZE,
+                ),
+                Sprite {
+                    flip_x: !pole.face_down,
+                    ..default()
+                },
+                Transform::from_translation(vec3(0.0, accum_y * sgn, 0.0))
+                    .with_rotation(Quat::from_rotation_z(rotation)),
+            ));
+            y += Pole::SIZE.y * sgn;
+            accum_y += Pole::SIZE.y;
+        }
+        accum_y -= Pole::SIZE.y;
+        commands.entity(entity).insert(Collider::compound(vec![(
+            vec2(0.0, accum_y * 0.5 * sgn),
+            Rotation::radians(0.0),
+            Collider::rectangle(Pole::SIZE.x, Pole::SIZE.y + accum_y),
+        )]));
+    }
 }

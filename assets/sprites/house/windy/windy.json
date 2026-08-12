@@ -1,6 +1,13 @@
 {
   "sprites": {
     "Windy_Spike": [{"path": "windy_spike.png"}],
-    "Windy_TumbleWeed": [{"path": "tumbleweed.png", "size": [48, 48]}]
+    "Windy_TumbleWeed": [{"path": "tumbleweed.png", "size": [48, 48]}],
+    "Windy_Warning": [{"path": "windy_warning.png"}],
+    "Windy_Pole_Top": [{"path": "windy_pole.png", "size": [16, 32]}],
+    "Windy_Pole_Mid": [
+      {"path": "windy_pole.png", "size": [16, 32], "offset": [16, 0]},
+      {"path": "windy_pole.png", "size": [16, 32], "offset": [32, 0]},
+      {"path": "windy_pole.png", "size": [16, 32], "offset": [48, 0]}
+    ]
   }
 }

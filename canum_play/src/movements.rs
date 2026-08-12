@@ -250,6 +250,11 @@ impl PartialVelocity {
             linked: None,
         }
     }
+
+    pub fn with_velocity(mut self, velocity: Vec2) -> Self {
+        self.velocity = velocity;
+        self
+    }
 }
 
 #[derive(Component, Debug, Clone, Default)]
