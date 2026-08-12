@@ -21,6 +21,15 @@ impl Plugin for ObstaclesPlugin {
                 ));
             },
         );
+        app.world_mut()
+            .register_component_hooks::<DestroyableObstacle>()
+            .on_add(|mut world, HookContext { entity, .. }| {
+                world.commands().entity(entity).observe(destroyable_damage);
+            });
+        app.add_systems(
+            FixedUpdate,
+            update_tumble_weed_rotation.run_if(in_state(WINDY_STATE.clone())),
+        );
     }
 }
 
@@ -37,7 +46,51 @@ impl Plugin for ObstaclesPlugin {
 )]
 struct Obstacle;
 
+#[derive(Component, Default)]
+#[require(Obstacle, enemy::health::EnemyHealth)]
+struct DestroyableObstacle;
+
+fn destroyable_damage(
+    event: On<health::Damage>,
+    mut commands: Commands,
+    q_health: Query<&enemy::health::EnemyHealth>,
+) {
+    let Ok(health) = q_health.get(event.entity) else {
+        return;
+    };
+    if health.value <= 0 {
+        commands.entity(event.entity).despawn();
+    }
+}
+
 /// A spike of given side length.
 #[derive(Component, Default)]
 #[require(Obstacle, obstacle::BumpAway {direction: Dir2::from_xy_unchecked(0.0, 1.0), strength: 30.0})]
 pub struct Spike(pub f32);
+
+#[derive(Component, Default)]
+#[require(
+    DestroyableObstacle,
+    RigidBody::Dynamic,
+    Mass(1.0),
+    movements::SpeedDecay(0.05),
+    enemy::health::EnemyHealth::new(100),
+    Collider::circle(Self::RADIUS),
+    Animation::new("Windy_TumbleWeed", vec2(Self::RADIUS * 2.0, Self::RADIUS * 2.0)),
+    wind::CanBeBlown
+)]
+pub struct TumbleWeed;
+
+impl TumbleWeed {
+    pub const RADIUS: f32 = 24.0;
+}
+
+fn update_tumble_weed_rotation(
+    mut q_tumble_weed: Query<(&mut AngularVelocity, &LinearVelocity), With<TumbleWeed>>,
+) {
+    q_tumble_weed
+        .par_iter_mut()
+        .for_each(|(mut angular_velocity, linear_velocity)| {
+            **angular_velocity = -linear_velocity.x / TumbleWeed::RADIUS;
+        });
+}

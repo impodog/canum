@@ -1,3 +1,4 @@
+mod behaviors;
 mod entry;
 mod obstacles;
 mod wind;
@@ -14,6 +15,7 @@ impl Plugin for WindyPlugin {
             entry::EntryPlugin,
             wind::WindPlugin,
             obstacles::ObstaclesPlugin,
+            behaviors::BehaviorsPlugin,
         ));
     }
 }

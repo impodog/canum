@@ -25,6 +25,7 @@ impl Plugin for WindPlugin {
     }
 }
 
+/// Global resources that controls the wind blowing strength.
 #[derive(Resource, Debug)]
 pub struct WindVelocity {
     pub target_velocity: Vec2,
@@ -39,6 +40,7 @@ impl Default for WindVelocity {
     }
 }
 
+/// Auto spawn as children of `CanBeBlown`.
 #[derive(Component, Default)]
 #[require(movements::PartialVelocity::unlinked())]
 pub struct WindForcedVelocity;

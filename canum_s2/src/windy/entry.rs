@@ -62,6 +62,10 @@ fn windy_begin(
     for entity in q_player.iter() {
         commands.entity(entity).insert(wind::CanBeBlown);
     }
+    commands.spawn((
+        behaviors::WindyBehaviors,
+        children![behaviors::SpawnTumbleWeed],
+    ));
 }
 
 const SPIKE_LENGTH: f32 = 32.0;

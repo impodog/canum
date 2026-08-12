@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Windy_Spike": [{"path": "windy_spike.png"}]
+    "Windy_Spike": [{"path": "windy_spike.png"}],
+    "Windy_TumbleWeed": [{"path": "tumbleweed.png", "size": [48, 48]}]
   }
 }
