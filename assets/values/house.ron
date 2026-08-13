@@ -3,6 +3,9 @@
     "Laser": (
       gains: { "Completed": 2, "NoHits": 2 },
     ),
+    "Windy": (
+      gains: { "Completed": 3, "NoHits": 2 },
+    ),
   },
   stage: {
     "House": (

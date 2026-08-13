@@ -161,10 +161,10 @@ fn enter_stage3(
         duration: Duration::from_secs_f32(0.6),
         remove_self: true,
     });
-    wind.target_velocity.x = 360.0 * rand_sign();
+    wind.target_velocity.x = 380.0 * rand_sign();
     wind.friction = 0.3;
     for mut can_be_blown in q_player.iter_mut() {
-        can_be_blown.0 = 0.785;
+        can_be_blown.0 = 0.78;
     }
     stage.0 = 3;
 }
@@ -188,6 +188,6 @@ fn end_all_attack(
     for entity in q_manager.iter() {
         commands.entity(entity).try_despawn();
     }
-    wind.target_velocity.x = 50.0;
+    wind.target_velocity.x = 10.0;
     wind.friction = 1.0;
 }

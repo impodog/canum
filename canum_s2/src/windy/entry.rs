@@ -10,6 +10,9 @@ impl Plugin for EntryPlugin {
             commands.spawn((SessionOnly, Observer::new(windy_begin)));
             commands.spawn((SessionOnly, Observer::new(spawn_wall_of_spikes)));
             commands.spawn((SessionOnly, Observer::new(move_wall_of_spikes)));
+            commands.spawn((SessionOnly, Observer::new(background_start)));
+            commands.spawn((SessionOnly, Observer::new(background_stage3)));
+            commands.spawn((SessionOnly, Observer::new(background_stop)));
         });
     }
 }
@@ -34,6 +37,32 @@ fn init_windy(
         .spawn(WindyBeginTrigger)
         .observe(WindyBeginTrigger::observer);
     window_title.0 = lang.get("Windy_WindowTitle").to_owned();
+
+    commands.spawn((
+        SessionOnly,
+        canum_res::background::Background::new(CONFIG.display.screen_size),
+        Animation::new("Windy_Back_Static", CONFIG.display.screen_size)
+            .with_color(Color::default().with_alpha(0.4)),
+    ));
+}
+
+fn background_start(
+    _event: On<WindyBegin>,
+    mut background: Single<&mut Animation, With<canum_res::background::Background>>,
+) {
+    background.replace("Windy_Back_Blow", false, None);
+}
+fn background_stage3(
+    _event: On<EnterStage3>,
+    mut background: Single<&mut Animation, With<canum_res::background::Background>>,
+) {
+    background.replace("Windy_Back_BlowFast", false, None);
+}
+fn background_stop(
+    _event: On<StopAttacks>,
+    mut background: Single<&mut Animation, With<canum_res::background::Background>>,
+) {
+    background.replace("Windy_Back_Static", false, None);
 }
 
 fn spawn_title(

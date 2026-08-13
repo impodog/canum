@@ -16,11 +16,17 @@ impl Plugin for WindPlugin {
             (update_wind_forced_velocity, add_for_projectiles)
                 .run_if(in_state(WINDY_STATE.clone())),
         );
+        app.add_systems(
+            FixedUpdate,
+            spawn_particles.run_if(in_state(WINDY_STATE.clone())),
+        );
         app.add_systems(OnEnter(WINDY_STATE.clone()), |mut commands: Commands| {
             commands.insert_resource(WindVelocity::default());
+            commands.insert_resource(WindyParticleTimer::default());
         });
         app.add_systems(OnExit(WINDY_STATE.clone()), |mut commands: Commands| {
             commands.remove_resource::<WindVelocity>();
+            commands.remove_resource::<WindyParticleTimer>();
         });
     }
 }
@@ -87,4 +93,62 @@ fn add_for_projectiles(
                 .insert((CanBeBlown(1.5), movements::ForcedVelocity::default()));
         });
     });
+}
+
+#[derive(Component, Default)]
+#[require(
+    SessionOnly,
+    CanBeBlown(3.0),
+    RigidBody::Kinematic,
+    movements::ForcedVelocity,
+    projectile::RemoveOutOfBounds,
+    StageDelete
+)]
+struct WindyParticle;
+
+#[derive(Resource, Deref, DerefMut)]
+struct WindyParticleTimer(Timer);
+impl Default for WindyParticleTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(0.1, TimerMode::Repeating))
+    }
+}
+
+fn spawn_particles(
+    mut commands: Commands,
+    wind: Option<Res<WindVelocity>>,
+    mut timer: ResMut<WindyParticleTimer>,
+    time: Res<Time>,
+    q_player_can_be_blown: Query<(), (With<player::Player>, With<CanBeBlown>)>,
+) {
+    if !timer.tick(time.delta()).just_finished() {
+        return;
+    }
+    if q_player_can_be_blown.iter().next().is_none() {
+        return;
+    }
+    let Some(wind) = wind else {
+        return;
+    };
+    if wind.target_velocity.x.abs() < 50.0 {
+        return;
+    }
+    let sgn = wind.target_velocity.x.signum();
+    let x = CONFIG.display.half_virtual_size.0 + 16.0;
+    commands.spawn((
+        WindyParticle,
+        Animation::new("Windy_Particle", vec2(16.0, 16.0)).with_color(Color::WHITE.with_alpha(0.3)),
+        Transform::from_translation(vec3(
+            x * -sgn,
+            rand::random_range(
+                -CONFIG.display.half_virtual_size.1..CONFIG.display.half_virtual_size.1,
+            ),
+            0.0,
+        )),
+        Sprite {
+            flip_x: sgn.is_sign_positive(),
+            flip_y: rand::random_bool(0.5),
+            ..default()
+        },
+    ));
 }

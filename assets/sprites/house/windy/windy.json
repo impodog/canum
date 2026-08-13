@@ -8,6 +8,14 @@
       {"path": "windy_pole.png", "size": [16, 32], "offset": [16, 0]},
       {"path": "windy_pole.png", "size": [16, 32], "offset": [32, 0]},
       {"path": "windy_pole.png", "size": [16, 32], "offset": [48, 0]}
+    ],
+    "Windy_Back_Static": [{"path": "windy_back.png", "size": [400, 225]}],
+    "Windy_Back_Blow": [{"path": "windy_back.png", "size": [400, 225], "offset": [400, 0], "count": 3, "interval": 300}],
+    "Windy_Back_BlowFast": [{"path": "windy_back.png", "size": [400, 225], "offset": [400, 0], "count": 3, "interval": 200}],
+    "Windy_Particle": [
+      {"path": "windy_particle.png", "size": [16, 16], "offset": [0, 0]},
+      {"path": "windy_particle.png", "size": [16, 16], "offset": [16, 0]},
+      {"path": "windy_particle.png", "size": [16, 16], "offset": [32, 0]}
     ]
   }
 }

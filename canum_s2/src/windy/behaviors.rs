@@ -159,7 +159,7 @@ fn wave_of_spikes(
         let x = sgn * (CONFIG.display.half_virtual_size.0 + HALF_SPIKE_LENGTH);
         let mut y = HALF_SPIKE_LENGTH;
         let angle = sgn * std::f32::consts::FRAC_PI_2;
-        let velocity = vec2(-sgn * if stage.0 == 3 { 470.0 } else { 450.0 }, 0.0);
+        let velocity = vec2(-sgn * if stage.0 == 3 { 550.0 } else { 450.0 }, 0.0);
         while y < CONFIG.display.half_virtual_size.1 {
             let entity1 = commands
                 .spawn((
@@ -279,7 +279,7 @@ fn pole_storm_work(
 }
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Windy_TwoPoles", 0.8, ["Fullscreen", "TwoPoles"]))]
+#[require(Behavior::new("Windy_TwoPoles", 0.7, ["Fullscreen", "TwoPoles"]))]
 pub struct TwoPoles {
     left_up: bool,
 }
@@ -287,9 +287,9 @@ impl TwoPoles {
     const LENGTH: f32 = 300.0;
     const HALF_LENGTH: f32 = Self::LENGTH * 0.5;
     const ACCELERATION: f32 = 70.0;
-    const STAGE3_ACCELERATION: f32 = 100.0;
+    const STAGE3_ACCELERATION: f32 = 110.0;
     const INITIAL_SPEED: f32 = 240.0;
-    const STAGE3_INITIAL_SPEED: f32 = 260.0;
+    const STAGE3_INITIAL_SPEED: f32 = 300.0;
 }
 
 /// Stores the initial speed sign of the pole.
@@ -348,7 +348,7 @@ fn two_poles_start(
         entity: event.entity,
         cooldown: Duration::from_secs_f32(0.5),
         occupies: occupies![
-            ("TwoPoles", rand_normal(10.0, 1.0).clamp(8.5, 12.0)),
+            ("TwoPoles", rand_normal(10.5, 1.0).clamp(9.0, 12.5)),
             ("Fullscreen", rand_normal(9.0, 0.7).max(8.0))
         ],
     });
