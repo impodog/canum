@@ -1,3 +1,8 @@
 {
-  "include": ["lobby/lobby.json", "laser/laser.json", "windy/windy.json"]
+  "include": [
+    "lobby/lobby.json",
+    "laser/laser.json",
+    "windy/windy.json",
+    "bread/bread.json"
+  ]
 }

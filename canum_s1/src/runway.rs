@@ -24,10 +24,12 @@ impl Plugin for RunwayPlugin {
 
 /// This only marks if the level(displacement based) has been completed.
 #[derive(Component, Debug)]
-#[require(health::Friendly(false), player::victory::DefeatToWin::default())]
-pub struct RunwayBoss {
-    pub timer: Timer,
-}
+#[require(
+    SessionOnly,
+    health::Friendly(false),
+    player::victory::DefeatToWin::default()
+)]
+pub struct RunwayBoss;
 
 /// This is the main enemy. Although they only run side by side with player, and occasionally attack.
 #[derive(Component, Default)]

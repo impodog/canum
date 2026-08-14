@@ -23,7 +23,6 @@ impl Plugin for LaserPlugin {
     }
 }
 
-/// Main marker for the apple boss.
 #[derive(Component, Default)]
 #[require(
     Animation::new("Laser_Static", Vec2::new(64.0, 64.0)),

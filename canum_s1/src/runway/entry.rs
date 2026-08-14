@@ -29,6 +29,7 @@ pub struct RunwayOfficialStart;
 fn init_timer(mut commands: Commands) {
     commands.insert_resource(EntryTimer::default());
     commands.spawn((SessionOnly, Observer::new(setup_runway)));
+    commands.spawn(RunwayBoss);
 }
 fn timer_tick(mut commands: Commands, mut timer: ResMut<EntryTimer>, time: Res<Time>) {
     if !timer.is_finished() {

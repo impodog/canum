@@ -48,7 +48,7 @@ impl Default for WindVelocity {
 
 /// Auto spawn as children of `CanBeBlown`.
 #[derive(Component, Default)]
-#[require(movements::PartialVelocity::unlinked())]
+#[require(movements::PartialVelocity::unlinked(), movements::SpeedShrinkExclude)]
 pub struct WindForcedVelocity;
 
 /// Defines the blow strength multiplier.

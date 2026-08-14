@@ -12,7 +12,12 @@
       "Windy_BossTitle": "+Windy 10 a.m.",
       "Windy_UiName": "Windy 10 a.m.",
       "Windy_WindowTitle": "Caution to the wind!",
-      "Windy_Victory_WindowTitle": "Hopefully it's not storm I'm facing..."
+      "Windy_Victory_WindowTitle": "Hopefully it's not storm I'm facing...",
+
+      "Bread_BossTitle": "+The Loaf",
+      "Bread_UiName": "The Loaf",
+      "Bread_WindowTitle": "A hard boss with soft internals",
+      "Bread_Victory_WindowTitle": "Make sure to eat the crumbs!"
     }
   }
 }

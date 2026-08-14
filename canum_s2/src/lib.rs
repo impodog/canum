@@ -1,3 +1,4 @@
+pub mod bread;
 pub mod laser;
 pub mod lobby;
 pub mod windy;
@@ -8,6 +9,11 @@ pub struct CanumS2Plugin;
 
 impl Plugin for CanumS2Plugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((lobby::LobbyPlugin, laser::LaserPlugin, windy::WindyPlugin));
+        app.add_plugins((
+            lobby::LobbyPlugin,
+            laser::LaserPlugin,
+            windy::WindyPlugin,
+            bread::BreadPlugin,
+        ));
     }
 }

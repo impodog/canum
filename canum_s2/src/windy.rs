@@ -164,7 +164,7 @@ fn enter_stage3(
     wind.target_velocity.x = 380.0 * rand_sign();
     wind.friction = 0.3;
     for mut can_be_blown in q_player.iter_mut() {
-        can_be_blown.0 = 0.78;
+        can_be_blown.0 = 0.75;
     }
     stage.0 = 3;
 }

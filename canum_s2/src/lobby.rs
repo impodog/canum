@@ -66,6 +66,21 @@ fn handle_lobby_select(
                 ),
             ));
         }
+        2 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::lobby::boss::boss_panel(
+                    fonts,
+                    canum_ui::lobby::boss::BossPanel {
+                        name: lang.get("Bread_UiName").to_owned(),
+                        fight_name: "Bread".to_owned(),
+                        marks: get_marks(&save, "Bread"),
+                        enter_color: Color::Srgba(Srgba::hex("#e08932").unwrap()),
+                    },
+                    time,
+                ),
+            ));
+        }
         _ => {}
     }
 }
