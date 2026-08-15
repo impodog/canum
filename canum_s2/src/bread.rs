@@ -33,13 +33,14 @@ impl Plugin for BreadPlugin {
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(70.0, 70.0),
+    CollidingEntities,
     Mass(10.0),
     LockedAxes::ROTATION_LOCKED,
     Restitution::new(0.5),
     health::Friendly(false),
     health::ContactDamage { value: 130, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.75),
-    enemy::health::EnemyHealth::new(4800),
+    enemy::health::EnemyHealth::new(4400),
     player::victory::DefeatToWin::default(),
 )]
 pub struct BreadBoss {
@@ -52,5 +53,9 @@ impl Default for BreadBoss {
     }
 }
 
-#[derive(Event)]
-pub struct BreadNextStage(u8);
+#[derive(EntityEvent, Deref)]
+pub struct BreadNextStage {
+    pub entity: Entity,
+    #[deref]
+    pub stage: u8,
+}

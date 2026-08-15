@@ -1,6 +1,7 @@
 {
   "include": [
     "laser/laser.json",
-    "windy/windy.json"
+    "windy/windy.json",
+    "bread/bread.json"
   ]
 }
