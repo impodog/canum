@@ -144,8 +144,21 @@ impl Default for BehaviorManagerInfo {
     }
 }
 impl BehaviorManagerInfo {
+    /// Returns all occupied resources and their cooldown time.
     pub fn occupied(&self) -> &BTreeMap<String, Timer> {
         &self.occupied
+    }
+
+    /// Clears all running information about the manager.
+    pub fn clear(&mut self) {
+        self.occupied.clear();
+        self.running.clear();
+        self.cooldown = Timer::default();
+    }
+
+    /// Apply a global cooldown so that the behavior manage don't react too fast
+    pub fn set_global_cooldown(&mut self, cooldown: Duration) {
+        self.cooldown = Timer::new(cooldown, TimerMode::Once);
     }
 }
 

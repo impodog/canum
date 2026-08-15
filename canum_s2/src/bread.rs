@@ -27,9 +27,12 @@ impl Plugin for BreadPlugin {
     }
 }
 
+const BREAD_LENGTH: f32 = 80.0;
+const BREAD_HALF_LENGTH: f32 = 40.0;
+
 #[derive(Component)]
 #[require(
-    Animation::new("Bread_Loaf", Vec2::new(80.0, 80.0)),
+    Animation::new("Bread_Loaf", Vec2::new(BREAD_LENGTH, BREAD_LENGTH)),
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(70.0, 70.0),

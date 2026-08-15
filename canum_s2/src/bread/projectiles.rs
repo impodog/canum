@@ -25,7 +25,7 @@ const SLICE_LENGTH: f32 = 20.0;
 const SLICE_HALF_LENGTH: f32 = SLICE_LENGTH * 0.5;
 
 /// The main projectile the bread spawns.
-#[derive(Component)]
+#[derive(Component, Clone)]
 #[require(
     enemy::attack::EnemyProjectile,
     Animation::new("Bread_Slice", vec2(SLICE_LENGTH, SLICE_LENGTH)),
@@ -46,7 +46,7 @@ impl Default for BreadSlice {
         Self {
             fade: default_timer.clone(),
             accelerate: default_timer,
-            target_velocity: vec2(400.0, 0.0),
+            target_velocity: vec2(380.0, 0.0),
             track_player: false,
             play_sound: false,
         }

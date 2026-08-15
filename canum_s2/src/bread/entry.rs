@@ -80,6 +80,7 @@ fn switch_stages(
     event: On<BreadNextStage>,
     q_bread: Query<&Children>,
     q_manager: Query<(), With<behaviors::BreadBehaviors>>,
+    mut q_manager_info: Query<&mut enemy::behavior::BehaviorManagerInfo>,
     mut commands: Commands,
 ) {
     let Ok(children) = q_bread.get(event.entity) else {
@@ -88,12 +89,25 @@ fn switch_stages(
     let Some(manager) = children.iter().find(|child| q_manager.get(*child).is_ok()) else {
         return;
     };
+    let Ok(mut manager_info) = q_manager_info.get_mut(manager) else {
+        return;
+    };
+    manager_info.clear();
+    manager_info.set_global_cooldown(Duration::from_secs(1));
     commands.entity(manager).despawn_children();
     match event.stage {
         2 => {
             commands.spawn((ChildOf(manager), behaviors::RandomShoot));
+            commands.spawn((ChildOf(manager), behaviors::SimplyWander::default()));
         }
-        3 => {}
+        3 => {
+            commands.spawn((ChildOf(manager), behaviors::SpeedyDash::default()));
+            commands.spawn((ChildOf(manager), behaviors::StreamSlash::default()));
+        }
+        4 => {
+            commands.spawn((ChildOf(manager), behaviors::SuperRandomShoot));
+            commands.spawn((ChildOf(manager), behaviors::SimplyWander::default()));
+        }
         _ => {}
     }
 }
