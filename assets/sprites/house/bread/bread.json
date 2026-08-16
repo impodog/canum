@@ -1,5 +1,13 @@
 {
   "sprites": {
-    "Bread_Loaf": [{"path": "bread.png", "size": [980, 980]}]
+    "Bread_Loaf": [{"path": "bread.png", "size": [80, 80]}],
+    "Bread_BurntLoaf": [{"path": "bread.png", "size": [80, 80], "offset": [80, 0], "count": 2}],
+    "Bread_Slice": [
+      {"path": "bread_slice.png", "size": [20, 20], "offset": [0, 0]},
+      {"path": "bread_slice.png", "size": [20, 20], "offset": [20, 0]},
+      {"path": "bread_slice.png", "size": [20, 20], "offset": [40, 0]}
+    ],
+    "Bread_Meteor": [{"path": "bread_meteor.png", "size": [32, 32], "offset": [0, 0]}],
+    "Bread_MeteorTail": [{"path": "bread_meteor.png", "size": [32, 32], "offset": [32, 0]}]
   }
 }

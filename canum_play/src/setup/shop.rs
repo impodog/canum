@@ -16,18 +16,14 @@ impl Plugin for ShopPlugin {
             FixedUpdate,
             (update_item_outline, update_item_description).run_if(in_state(setup::PlayState::Shop)),
         );
-        app.add_systems(
-            FixedPostUpdate,
-            purchase_item.run_if(in_state(setup::PlayState::Shop)),
-        );
-        app.add_systems(
-            FixedLast,
-            quit_shop.run_if(in_state(setup::PlayState::Shop)),
-        );
         app.add_systems(FixedPreUpdate, init_shop_indicator);
         app.add_observer(transition_enter_shop)
             .add_observer(enter_shop)
-            .add_observer(update_purchase_item);
+            .add_observer(update_purchase_item)
+            .add_observer(quit_shop_by_enter_key.run_if(in_state(setup::PlayState::Shop)))
+            .add_observer(quit_shop_by_exit_key.run_if(in_state(setup::PlayState::Shop)))
+            .add_observer(purchase_item.run_if(in_state(setup::PlayState::Shop)))
+            .add_observer(quit_shop.run_if(in_state(setup::PlayState::Shop)));
     }
 }
 
@@ -375,33 +371,26 @@ pub struct PurchaseItemSuccess {
 }
 
 fn purchase_item(
-    key: Res<ButtonInput<KeyCode>>,
+    _purchase: On<crate::setup::lobby::LobbySelect>,
     mut commands: Commands,
     q_item: Query<(Entity, &ShopItem)>,
     q_transform: Query<&GlobalTransform>,
     player: Option<Res<crate::player::PrimaryPlayer>>,
-    q_override: Query<(), With<crate::controls::OverrideMainControls>>,
 ) {
-    if q_override.iter().next().is_some() {
+    let Some(player) = player else {
         return;
-    }
-    let ok = key.just_pressed(KeyCode::Enter);
-    if ok {
-        let Some(player) = player else {
-            return;
-        };
-        let Ok(player_transform) = q_transform.get(player.0) else {
-            return;
-        };
-        let player_position = player_transform.translation().xy();
-        for (target_entity, item) in q_item.iter() {
-            if item.range.contains(player_position) {
-                commands.trigger(PurchaseItem {
-                    item: item.item.clone(),
-                    price: item.price,
-                    target_entity,
-                });
-            }
+    };
+    let Ok(player_transform) = q_transform.get(player.0) else {
+        return;
+    };
+    let player_position = player_transform.translation().xy();
+    for (target_entity, item) in q_item.iter() {
+        if item.range.contains(player_position) {
+            commands.trigger(PurchaseItem {
+                item: item.item.clone(),
+                price: item.price,
+                target_entity,
+            });
         }
     }
 }
@@ -442,28 +431,36 @@ fn update_purchase_item(
     });
 }
 
+#[derive(Event, Default)]
+struct QuitShop;
+
+fn quit_shop_by_enter_key(_event: On<crate::setup::lobby::LobbyShop>, mut commands: Commands) {
+    commands.trigger(QuitShop);
+}
+fn quit_shop_by_exit_key(_event: On<crate::setup::lobby::LobbyQuit>, mut commands: Commands) {
+    commands.trigger(QuitShop);
+}
+
 fn quit_shop(
+    _event: On<QuitShop>,
     mut commands: Commands,
-    key: Res<ButtonInput<KeyCode>>,
     q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
 ) {
-    if key.any_just_pressed([KeyCode::KeyS, KeyCode::Escape, KeyCode::Backspace]) {
-        let Ok(camera) = q_camera.single() else {
-            return;
-        };
-        commands.spawn((
-            ChildOf(camera),
-            crate::setup::cutscene::PureColorCutscene {
-                transition: canum_fx::transition::PureColor {
-                    destroy: None,
-                    duration: Duration::from_secs_f32(0.8),
-                    color: Color::srgb_u8(200, 200, 200),
-                    remove_self: true,
-                },
-                fight: "LobbySelect".to_owned(),
+    let Ok(camera) = q_camera.single() else {
+        return;
+    };
+    commands.spawn((
+        ChildOf(camera),
+        crate::setup::cutscene::PureColorCutscene {
+            transition: canum_fx::transition::PureColor {
+                destroy: None,
+                duration: Duration::from_secs_f32(0.8),
+                color: Color::srgb_u8(200, 200, 200),
+                remove_self: true,
             },
-        ));
-    }
+            fight: "LobbySelect".to_owned(),
+        },
+    ));
 }
 
 #[derive(Component)]
@@ -475,12 +472,16 @@ fn init_shop_indicator(
     mut q_indicator: Query<Entity, Added<ShopIndicator>>,
     fonts: Res<canum_res::PixelFonts>,
     lang: Res<Lang>,
+    controller_suffix: Res<crate::controls::ControllerSuffix>,
 ) {
     for entity in q_indicator.iter_mut() {
         commands.entity(entity).insert((
             canum_res::ImageFontPreRenderedText::default(),
             canum_res::ImageFontText::default()
-                .text(lang.get("Ui_ShopIndicator_Keyboard").to_owned())
+                .text(
+                    lang.get(&format!("Ui_ShopIndicator_{}", *controller_suffix))
+                        .to_owned(),
+                )
                 .font_height(14.0)
                 .font(fonts.normal.clone()),
         ));

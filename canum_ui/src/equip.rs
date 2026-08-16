@@ -17,7 +17,10 @@ impl Plugin for EquipPlugin {
             weapons::WeaponsPlugin,
         ));
         app.init_resource::<CurrentMenuNumber>();
-        app.add_systems(FixedUpdate, listen_equip_input);
+        app.add_systems(
+            FixedUpdate,
+            (listen_equip_input_keyboard, listen_equip_input_gamepad),
+        );
         app.add_observer(setup_equip_menu)
             .add_observer(update_charms)
             .add_observer(update_weapons)
@@ -113,12 +116,13 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
 #[derive(Default, Event)]
 struct CallEquipMenu;
 
-fn listen_equip_input(
+fn listen_equip_input_keyboard(
     key: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     q_menu: Query<Entity, With<EquipMenu>>,
+    save: Res<Save>,
 ) {
-    if key.just_pressed(KeyCode::KeyE) {
+    if key.just_pressed(save.keyboard.equip) {
         if q_menu.iter().next().is_some() {
             for entity in q_menu.iter() {
                 commands.entity(entity).despawn();
@@ -132,10 +136,38 @@ fn listen_equip_input(
             commands.entity(entity).despawn();
         }
     }
-    if key.just_pressed(KeyCode::ArrowRight) {
+    if key.just_pressed(save.keyboard.move_right) {
         commands.trigger(ShiftMenuNumber(1));
     }
-    if key.just_pressed(KeyCode::ArrowLeft) {
+    if key.just_pressed(save.keyboard.move_left) {
+        commands.trigger(ShiftMenuNumber(-1));
+    }
+}
+
+fn listen_equip_input_gamepad(
+    gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
+    mut commands: Commands,
+    q_menu: Query<Entity, With<EquipMenu>>,
+    save: Res<Save>,
+) {
+    if gamepad.just_pressed(save.gamepad.equip) {
+        if q_menu.iter().next().is_some() {
+            for entity in q_menu.iter() {
+                commands.entity(entity).despawn();
+            }
+        } else {
+            commands.trigger(CallEquipMenu);
+        }
+    }
+    if gamepad.just_pressed(save.gamepad.cancel) {
+        for entity in q_menu.iter() {
+            commands.entity(entity).despawn();
+        }
+    }
+    if gamepad.just_pressed(GamepadButton::DPadRight) {
+        commands.trigger(ShiftMenuNumber(1));
+    }
+    if gamepad.just_pressed(GamepadButton::DPadLeft) {
         commands.trigger(ShiftMenuNumber(-1));
     }
 }

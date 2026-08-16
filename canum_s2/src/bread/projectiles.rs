@@ -21,15 +21,16 @@ impl Plugin for ProjectilesPlugin {
     }
 }
 
-const SLICE_LENGTH: f32 = 20.0;
+const SLICE_LENGTH: f32 = 25.0;
 const SLICE_HALF_LENGTH: f32 = SLICE_LENGTH * 0.5;
+const SLICE_COLLIDER_RADIUS: f32 = 18.0;
 
 /// The main projectile the bread spawns.
 #[derive(Component, Clone)]
 #[require(
     enemy::attack::EnemyProjectile,
     Animation::new("Bread_Slice", vec2(SLICE_LENGTH, SLICE_LENGTH)),
-    Collider::circle(SLICE_HALF_LENGTH * 0.9)
+    Collider::circle(SLICE_COLLIDER_RADIUS)
 )]
 pub struct BreadSlice {
     pub fade: Timer,

@@ -70,6 +70,7 @@ fn init_get_dash(
     mut commands: Commands,
     lang: Res<Lang>,
     fonts: Res<canum_ui::Fonts>,
+    controller_suffix: Res<controls::ControllerSuffix>,
 ) {
     if save.progress.unlocked_dash {
         // ! Must update tasks for wcat even if not obtaining dash.
@@ -90,7 +91,7 @@ fn init_get_dash(
     save.progress.unlocked_dash = true;
     commands.spawn((
         SessionOnly,
-        Text2d::new(lang.get("Ui_GetDash_Keyboard")),
+        Text2d::new(lang.get(&format!("Ui_GetDash_{}", *controller_suffix))),
         TextColor::WHITE,
         Transform::from_translation(vec3(0.0, 100.0, 0.0)),
         TextFont {

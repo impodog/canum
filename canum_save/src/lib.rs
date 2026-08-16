@@ -34,6 +34,7 @@ pub static WRITE_SAVE: OnceLock<SystemId> = OnceLock::new();
 #[derive(Resource, Debug, Default, Serialize, Deserialize)]
 pub struct Save {
     pub keyboard: controls::Keyboard,
+    pub gamepad: controls::Gamepad,
     pub appearance: appearance::Appearance,
     pub progress: progress::Progress,
 }

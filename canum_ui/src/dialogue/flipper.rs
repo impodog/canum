@@ -191,3 +191,31 @@ fn handle_keyboard(
         }
     }
 }
+
+fn handle_gamepad(
+    mut commands: Commands,
+    gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
+    q_flipper: Query<Entity, With<Flipper>>,
+    save: Res<Save>,
+) {
+    if gamepad.any_just_pressed([
+        save.gamepad.confirm,
+        GamepadButton::DPadDown,
+        GamepadButton::DPadRight,
+    ]) {
+        for entity in q_flipper.iter() {
+            commands.trigger(FlipperInput {
+                entity,
+                kind: FlipperInputKind::NextPage,
+            });
+        }
+    }
+    if gamepad.any_just_pressed([GamepadButton::DPadUp, GamepadButton::DPadLeft]) {
+        for entity in q_flipper.iter() {
+            commands.trigger(FlipperInput {
+                entity,
+                kind: FlipperInputKind::PrevPage,
+            });
+        }
+    }
+}

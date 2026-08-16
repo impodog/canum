@@ -94,8 +94,10 @@ fn update_stage(
         2
     } else if health.value > 1000 {
         3
-    } else {
+    } else if health.value > 0 {
         4
+    } else {
+        0
     };
     if stage != bread.stage {
         bread.stage = stage;

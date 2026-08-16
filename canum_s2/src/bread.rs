@@ -1,4 +1,5 @@
 mod behaviors;
+mod defeat;
 mod entry;
 mod projectiles;
 
@@ -14,6 +15,7 @@ impl Plugin for BreadPlugin {
             entry::EntryPlugin,
             behaviors::BehaviorsPlugin,
             projectiles::ProjectilesPlugin,
+            defeat::DefeatPlugin,
         ));
         app.world_mut()
             .register_component_hooks::<BreadBoss>()
@@ -21,7 +23,7 @@ impl Plugin for BreadPlugin {
                 world.commands().spawn((
                     ChildOf(entity),
                     enemy::health::EnemySensor,
-                    Collider::circle(37.5),
+                    Collider::rectangle(75.0, 75.0),
                 ));
             });
     }
@@ -45,6 +47,7 @@ const BREAD_HALF_LENGTH: f32 = 40.0;
     movements::SpeedDecay(0.75),
     enemy::health::EnemyHealth::new(4400),
     player::victory::DefeatToWin::default(),
+    defeat::BreadDefeat,
 )]
 pub struct BreadBoss {
     pub stage: u8,

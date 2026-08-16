@@ -8,7 +8,10 @@ pub(super) struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, listen_select_input);
+        app.add_systems(
+            FixedUpdate,
+            (listen_select_input_keyboard, listen_select_input_gamepad),
+        );
         app.add_systems(FixedPostUpdate, update_option_info);
         app.add_observer(update_options_display)
             .add_observer(update_menu_style);
@@ -189,29 +192,58 @@ pub enum SelectInput {
     Toggle,
 }
 
-fn listen_select_input(
+fn listen_select_input_keyboard(
     key: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     q_menu: Query<(), With<SelectMenu>>,
+    save: Res<Save>,
 ) {
     if q_menu.iter().next().is_none() {
         return;
     }
-    if key.just_pressed(KeyCode::ArrowUp) {
+    if key.just_pressed(save.keyboard.move_up) {
         if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
             commands.trigger(SelectInput::PrevPage);
         } else {
             commands.trigger(SelectInput::Prev);
         }
     }
-    if key.just_pressed(KeyCode::ArrowDown) {
+    if key.just_pressed(save.keyboard.move_down) {
         if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
             commands.trigger(SelectInput::NextPage);
         } else {
             commands.trigger(SelectInput::Next);
         }
     }
-    if key.any_just_pressed([KeyCode::Enter, KeyCode::KeyC]) {
+    if key.any_just_pressed([save.keyboard.confirm, save.keyboard.primary_attack]) {
+        commands.trigger(SelectInput::Toggle);
+    }
+}
+
+fn listen_select_input_gamepad(
+    gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
+    mut commands: Commands,
+    q_menu: Query<(), With<SelectMenu>>,
+    save: Res<Save>,
+) {
+    if q_menu.iter().next().is_none() {
+        return;
+    }
+    if gamepad.just_pressed(GamepadButton::DPadUp) {
+        if gamepad.pressed(save.gamepad.dash) {
+            commands.trigger(SelectInput::PrevPage);
+        } else {
+            commands.trigger(SelectInput::Prev);
+        }
+    }
+    if gamepad.just_pressed(GamepadButton::DPadDown) {
+        if gamepad.pressed(save.gamepad.dash) {
+            commands.trigger(SelectInput::NextPage);
+        } else {
+            commands.trigger(SelectInput::Next);
+        }
+    }
+    if gamepad.just_pressed(save.gamepad.confirm) {
         commands.trigger(SelectInput::Toggle);
     }
 }
