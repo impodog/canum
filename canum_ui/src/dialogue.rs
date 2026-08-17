@@ -80,7 +80,7 @@ fn init_dialogue(
                 margin: UiRect::all(Val::ZERO),
                 width: px(DIALOGUE_SIZE.x),
                 height: px(DIALOGUE_SIZE.y),
-                padding: UiRect::all(px(3)),
+                padding: UiRect::all(px(0)),
                 ..default()
             },
             Animation::new(dialogue.background.clone(), DIALOGUE_SIZE),
@@ -91,6 +91,8 @@ fn init_dialogue(
             Node {
                 position_type: PositionType::Absolute,
                 max_width: px(DIALOGUE_SIZE.x),
+                top: px(2.0),
+                left: px(2.0),
                 ..default()
             },
             ImageNode::default(),

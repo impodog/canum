@@ -1,3 +1,4 @@
+pub use canum_fx::weapon::NoDisposeProjectile;
 use std::sync::Mutex;
 
 use crate::prelude::*;
@@ -22,10 +23,6 @@ pub struct ProjectileBounds(pub Rect);
 /// Disables collision with boundaries for certain objects.
 #[derive(Component, Default)]
 pub struct NoCollideBoundary;
-
-/// Disables the ability to dispose projectiles for some sensors.
-#[derive(Component, Default)]
-pub struct NoDisposeProjectile;
 
 /// Removes itself when out of bounds.
 #[derive(Component)]

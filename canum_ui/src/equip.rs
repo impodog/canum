@@ -21,7 +21,8 @@ impl Plugin for EquipPlugin {
             FixedUpdate,
             (listen_equip_input_keyboard, listen_equip_input_gamepad),
         );
-        app.add_observer(setup_equip_menu)
+        app.add_observer(exit_equip_menu)
+            .add_observer(setup_equip_menu)
             .add_observer(update_charms)
             .add_observer(update_weapons)
             .add_observer(change_select_menu);
@@ -113,28 +114,28 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
     )
 }
 
+/// Event to start the equip menu
 #[derive(Default, Event)]
 struct CallEquipMenu;
+
+#[derive(Default, Event)]
+struct ExitEquipMenu;
 
 fn listen_equip_input_keyboard(
     key: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
-    q_menu: Query<Entity, With<EquipMenu>>,
+    q_menu: Query<(), With<EquipMenu>>,
     save: Res<Save>,
 ) {
     if key.just_pressed(save.keyboard.equip) {
         if q_menu.iter().next().is_some() {
-            for entity in q_menu.iter() {
-                commands.entity(entity).despawn();
-            }
+            commands.trigger(ExitEquipMenu);
         } else {
             commands.trigger(CallEquipMenu);
         }
     }
     if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
-        for entity in q_menu.iter() {
-            commands.entity(entity).despawn();
-        }
+        commands.trigger(ExitEquipMenu);
     }
     if key.just_pressed(save.keyboard.move_right) {
         commands.trigger(ShiftMenuNumber(1));
@@ -147,22 +148,18 @@ fn listen_equip_input_keyboard(
 fn listen_equip_input_gamepad(
     gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
     mut commands: Commands,
-    q_menu: Query<Entity, With<EquipMenu>>,
+    q_menu: Query<(), With<EquipMenu>>,
     save: Res<Save>,
 ) {
     if gamepad.just_pressed(save.gamepad.equip) {
         if q_menu.iter().next().is_some() {
-            for entity in q_menu.iter() {
-                commands.entity(entity).despawn();
-            }
+            commands.trigger(ExitEquipMenu);
         } else {
             commands.trigger(CallEquipMenu);
         }
     }
     if gamepad.just_pressed(save.gamepad.cancel) {
-        for entity in q_menu.iter() {
-            commands.entity(entity).despawn();
-        }
+        commands.trigger(ExitEquipMenu);
     }
     if gamepad.just_pressed(GamepadButton::DPadRight) {
         commands.trigger(ShiftMenuNumber(1));
@@ -170,6 +167,32 @@ fn listen_equip_input_gamepad(
     if gamepad.just_pressed(GamepadButton::DPadLeft) {
         commands.trigger(ShiftMenuNumber(-1));
     }
+}
+
+fn exit_equip_menu(
+    _event: On<ExitEquipMenu>,
+    mut commands: Commands,
+    q_menu: Query<Entity, With<EquipMenu>>,
+    camera: Single<Entity, With<canum_res::camera::PixelCamera>>,
+) {
+    if q_menu.iter().next().is_none() {
+        return;
+    }
+    for entity in q_menu.iter() {
+        commands.entity(entity).try_despawn();
+    }
+    commands.spawn((
+        ChildOf(camera.entity()),
+        canum_play::setup::cutscene::PureColorCutscene {
+            transition: canum_fx::transition::PureColor {
+                destroy: None,
+                duration: std::time::Duration::from_secs_f32(0.5),
+                color: Color::BLACK,
+                remove_self: true,
+            },
+            fight: "LobbySelect".to_owned(),
+        },
+    ));
 }
 
 fn setup_equip_menu(

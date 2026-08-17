@@ -27,11 +27,9 @@ impl Plugin for BreadPlugin {
                 ));
             });
 
-        app.add_systems(OnEnter(BREAD_STATE.clone()), spawn_bread_health_bar);
-        app.add_systems(
-            FixedPostUpdate,
-            update_bread_health_bar.run_if(in_state(BREAD_STATE.clone())),
-        );
+        app.add_systems(OnEnter(BREAD_STATE.clone()), |mut commands: Commands| {
+            commands.spawn((SessionOnly, Observer::new(spawn_bread_health_bar)));
+        });
     }
 }
 
@@ -74,13 +72,16 @@ pub struct BreadNextStage {
 }
 
 fn spawn_bread_health_bar(
+    _event: On<entry::BreadStart>,
     save: Res<Save>,
     mut commands: Commands,
     bottom_center: Single<Entity, With<canum_ui::BottomCenter>>,
+    bread: Single<Entity, With<BreadBoss>>,
 ) {
     if save.progress.selected_effects.contains("ShowHealth") {
         commands.spawn((
             ChildOf(bottom_center.entity()),
+            canum_ui::bar::AssociatedBoss(bread.entity()),
             canum_ui::bar::health_bar(
                 Color::Srgba(Srgba::hex("#efe1b1").unwrap()),
                 Color::Srgba(Srgba::hex("#4a2d06").unwrap()),
@@ -92,17 +93,4 @@ fn spawn_bread_health_bar(
             ),
         ));
     }
-}
-
-fn update_bread_health_bar(
-    q_health: Query<&enemy::health::EnemyHealth, With<BreadBoss>>,
-    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
-) {
-    let Ok(health) = q_health.single() else {
-        return;
-    };
-    let Ok(mut bar) = q_bar.single_mut() else {
-        return;
-    };
-    bar.current = health.value as f32;
 }

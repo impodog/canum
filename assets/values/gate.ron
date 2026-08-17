@@ -20,6 +20,7 @@
     "Gate": (
       complete_prereqs: ["Wcat"],
       full_size: (4800.0, 450.0),
+      next_stage: Some("House"),
       locks: [(
         prereqs: ["Apple", "Ant"],
         position: 3200.0,

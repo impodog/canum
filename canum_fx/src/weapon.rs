@@ -35,6 +35,10 @@ impl Plugin for WeaponPlugin {
     }
 }
 
+/// Disables the ability to dispose projectiles / weapon ranges for some sensors.
+#[derive(Component, Default)]
+pub struct NoDisposeProjectile;
+
 /// Creates laser like shooting effects and sends touch events.
 /// This shoots to the right if not rotated.
 ///
@@ -97,6 +101,7 @@ fn laser_work(
     )>,
     q_root: Query<&LaserLike>,
     q_laser_marker: Query<(), With<LaserMarker>>,
+    q_no_dispose_projectile: Query<(), With<NoDisposeProjectile>>,
 ) {
     q_laser
         .par_iter_mut()
@@ -112,7 +117,8 @@ fn laser_work(
             }
             let mut any_colliding = false;
             for other in collisions.entities_colliding_with(entity) {
-                if !q_laser_marker.get(other).is_ok() {
+                if !q_laser_marker.get(other).is_ok() && !q_no_dispose_projectile.get(other).is_ok()
+                {
                     any_colliding = true;
                     commands.command_scope(|mut commands| {
                         commands.trigger(LaserTouch {

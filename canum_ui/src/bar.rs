@@ -4,7 +4,10 @@ pub(super) struct BarPlugin;
 
 impl Plugin for BarPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedPostUpdate, update_health_bar);
+        app.add_systems(
+            FixedPostUpdate,
+            (update_associated_health_bar, update_health_bar).chain(),
+        );
     }
 }
 
@@ -25,6 +28,10 @@ impl Default for HealthBar {
         }
     }
 }
+
+#[derive(Component, Debug, Clone, Copy)]
+#[require(HealthBar)]
+pub struct AssociatedBoss(pub Entity);
 
 #[derive(Component, Default)]
 struct HealthBarForegroundChild;
@@ -74,7 +81,7 @@ pub fn health_bar(fore: Color, back: Color, bar: HealthBar) -> impl Bundle {
             (
                 Node {
                     position_type: PositionType::Absolute,
-                    width: px(bar.width - 2.0),
+                    width: px((bar.current / bar.total) * (bar.width - 2.0)),
                     height: px(bar.height - 2.0),
                     left: px(1.0),
                     bottom: px(1.0),
@@ -96,9 +103,26 @@ fn update_health_bar(
         if bar.is_changed() {
             for child in children.iter() {
                 if let Ok(mut node) = q_node.get_mut(child) {
-                    node.width = percent(bar.current / bar.total * 100.0);
+                    node.width = px((bar.current / bar.total) * (bar.width - 2.0));
                 }
             }
+        }
+    }
+}
+
+fn update_associated_health_bar(
+    mut q_bar: Query<(Entity, &AssociatedBoss, &mut HealthBar)>,
+    q_health: Query<&canum_play::enemy::health::EnemyHealth>,
+    mut commands: Commands,
+) {
+    for (entity, associate, mut bar) in q_bar.iter_mut() {
+        if let Ok(health) = q_health.get(associate.0) {
+            let value = health.value as f32;
+            if bar.current != value {
+                bar.current = value;
+            }
+        } else {
+            commands.entity(entity).try_despawn();
         }
     }
 }

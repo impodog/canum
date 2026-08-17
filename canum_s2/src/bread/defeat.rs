@@ -39,7 +39,7 @@ fn on_defeat(
         return;
     };
     let position = transform.translation().xy();
-    let displace = CONFIG.display.screen_size.dot_into_vec(position.signum());
+    let displace = CONFIG.display.screen_size * position.signum();
     let start_position = position - displace;
     let meteor = commands
         .spawn((

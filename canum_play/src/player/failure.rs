@@ -26,10 +26,7 @@ fn update_player_status(
     // Prevents player control.
     commands.remove_resource::<crate::player::PrimaryPlayer>();
     for entity in q_player.iter() {
-        commands
-            .entity(entity)
-            .remove::<Collider>()
-            .remove::<RigidBody>();
+        commands.entity(entity).remove::<Collider>();
         commands.spawn((
             ChildOf(entity),
             crate::setup::cutscene::CutsceneWait,

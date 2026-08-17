@@ -56,6 +56,8 @@ impl Default for WindyMainEntity {
     }
 }
 
+#[derive(Component)]
+struct WindyTimerBar;
 fn spawn_timer_bar(
     _event: On<entry::WindyBegin>,
     mut commands: Commands,
@@ -65,6 +67,7 @@ fn spawn_timer_bar(
     windy.started = true;
     commands.spawn((
         ChildOf(bottom_center.entity()),
+        WindyTimerBar,
         canum_ui::bar::health_bar(
             Color::srgb_u8(180, 180, 220),
             Color::srgb_u8(30, 30, 100),
@@ -101,7 +104,7 @@ fn timer_tick(
     )>,
     time: Res<Time>,
     mut commands: Commands,
-    mut bar: Single<&mut canum_ui::bar::HealthBar>,
+    mut bar: Single<&mut canum_ui::bar::HealthBar, With<WindyTimerBar>>,
 ) {
     if !windy.1.started {
         return;

@@ -33,7 +33,7 @@ fn add_exoskeleton(event: On<setup::StartSessionAction>, save: Res<Save>, mut co
             ChildOf(event.player_entity),
             Exoskeleton,
             Transform::from_translation(vec3(0.0, 0.0, -1.1)),
-            Animation::new("Circle64", vec2(64.0, 64.0)).with_color(Color::BLACK.with_alpha(0.5)),
+            Animation::new("Circle64", vec2(64.0, 64.0)).with_color(Color::BLACK.with_alpha(0.4)),
         ));
     }
 }
@@ -151,8 +151,7 @@ fn exoskeleton_protect(
                     };
                     for child in children.iter() {
                         if let Ok(mut animation) = q_exoskeleton_animation.get_mut(child) {
-                            let alpha = animation.color.alpha();
-                            animation.color = Color::linear_rgba(0.0, 0.0, 0.0, 0.5);
+                            animation.color = Color::linear_rgba(0.0, 0.0, 0.0, 0.4);
                         }
                     }
                 }

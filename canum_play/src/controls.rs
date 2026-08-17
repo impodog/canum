@@ -32,6 +32,13 @@ impl std::fmt::Display for ControllerSuffix {
 #[derive(Default, Component)]
 pub struct OverrideMainControls;
 
+/// Event to change the lobby to another unlocked one.
+#[derive(Event, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChangeStageLobby {
+    Prev,
+    Next,
+}
+
 fn keyboard_controls(
     mut commands: Commands,
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
@@ -111,6 +118,13 @@ fn keyboard_controls(
     }
     if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
         commands.trigger(crate::setup::lobby::LobbyQuit);
+    }
+    if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+        if key.just_pressed(save.keyboard.move_left) {
+            commands.trigger(ChangeStageLobby::Prev);
+        } else if key.just_pressed(save.keyboard.move_right) {
+            commands.trigger(ChangeStageLobby::Next);
+        }
     }
 }
 
@@ -261,6 +275,11 @@ fn gamepad_controls(
         }
         if gamepad.just_pressed(save.gamepad.confirm) {
             commands.trigger(crate::setup::lobby::LobbySelect { position });
+        }
+        if gamepad.just_pressed(GamepadButton::LeftTrigger) {
+            commands.trigger(ChangeStageLobby::Prev);
+        } else if gamepad.just_pressed(GamepadButton::RightTrigger) {
+            commands.trigger(ChangeStageLobby::Next);
         }
     }
 

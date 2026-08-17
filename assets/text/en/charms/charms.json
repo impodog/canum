@@ -8,7 +8,7 @@
       "Charm_S1B_RedHeart_Desc": "A red, lively heart.\n\nGrants one extra health limit.",
       "Charm_S1B_RedHeart_Short": "Red Heart",
       "Charm_S1C_Exoskeleton_Title": "Exoskeleton",
-      "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants.\n\nGains exoskeleton charges by staying close to enemy projectiles. When charging is complete, the exoskeleton can absorb one damage from enemies.",
+      "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants.\n\nGain exoskeleton charges by staying close to enemy projectiles. When charging is completed, the exoskeleton can absorb one damage at the cost of all charges.",
       "Charm_S1C_Exoskeleton_Short": "Exoskeleton"
     }
   }

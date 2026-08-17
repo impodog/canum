@@ -47,6 +47,10 @@ pub struct StageDetails {
     #[serde(default = "return_to_position")]
     /// When the player goes back to this stage (for shopping or replaying), spawn at this place.
     pub return_to_position: Vec2,
+    #[serde(default)]
+    pub next_stage: Option<String>,
+    #[serde(default)]
+    pub prev_stage: Option<String>,
 }
 const fn return_to_position() -> Vec2 {
     vec2(2000.0, 225.0)

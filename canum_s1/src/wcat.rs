@@ -20,10 +20,6 @@ impl Plugin for WcatPlugin {
         app.add_systems(OnEnter(WCAT_STATE.clone()), |mut commands: Commands| {
             commands.spawn((SessionOnly, Observer::new(spawn_wcat_health_bar)));
         });
-        app.add_systems(
-            FixedPostUpdate,
-            update_wcat_health_bar.run_if(in_state(WCAT_STATE.clone())),
-        );
     }
 }
 
@@ -58,6 +54,7 @@ fn spawn_wcat_health_bar(
     save: Res<Save>,
     mut commands: Commands,
     q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+    wcat: Single<Entity, With<WcatBoss>>,
 ) {
     let Ok(bottom_center) = q_bottom_center.single() else {
         return;
@@ -65,6 +62,7 @@ fn spawn_wcat_health_bar(
     if save.progress.selected_effects.contains("ShowHealth") {
         commands.spawn((
             ChildOf(bottom_center),
+            canum_ui::bar::AssociatedBoss(wcat.entity()),
             canum_ui::bar::health_bar(
                 Color::Srgba(Srgba::hex("#0eff52").unwrap()),
                 Color::Srgba(Srgba::hex("#ffa72b").unwrap()),
@@ -76,17 +74,4 @@ fn spawn_wcat_health_bar(
             ),
         ));
     }
-}
-
-fn update_wcat_health_bar(
-    q_health: Query<&enemy::health::EnemyHealth>,
-    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
-) {
-    let Ok(health) = q_health.single() else {
-        return;
-    };
-    let Ok(mut bar) = q_bar.single_mut() else {
-        return;
-    };
-    bar.current = health.value as f32;
 }

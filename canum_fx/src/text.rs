@@ -26,11 +26,11 @@ impl Plugin for TextPlugin {
 }
 
 /// Adaptor for `bevy_image_font::ImageFontText`, a UI node, that allows the '\n' character.
-/// All new line children with be the same configuration as the parent.
+/// All new line children are with the same configuration as the parent.
 ///
 /// ## Note
 ///
-/// To ensure correct behavior, this entity's Node must be to flex in rows.
+/// To ensure correct behavior, this entity's Node must be flex in columns.
 #[derive(Component, Default, Debug, Clone)]
 #[require(Node)]
 pub struct MultilineText {

@@ -52,10 +52,7 @@ fn update_player_status(
         fight: fight.get().0.clone(),
     });
     for entity in q_player.iter() {
-        commands
-            .entity(entity)
-            .remove::<Collider>()
-            .remove::<RigidBody>();
+        commands.entity(entity).remove::<Collider>();
         if !event.skip_cutscene {
             commands.spawn((
                 ChildOf(entity),

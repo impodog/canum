@@ -14,7 +14,8 @@
     "House": (
       complete_prereqs: ["TODO"],
       full_size: (4800.0, 450.0),
-      locks: []
+      prev_stage: Some("Gate"),
+      locks: [],
     )
   },
   shop: {

@@ -15,6 +15,7 @@ impl Plugin for LobbyPlugin {
             FixedLast,
             (dump_save_when_lobby_changed, change_window_title),
         );
+        app.add_observer(change_stage_lobby.run_if(in_state(crate::setup::PlayState::Lobby)));
     }
 }
 
@@ -228,6 +229,7 @@ fn dump_save_when_lobby_changed(
         let Ok(player) = q_player.get(primary_player.0) else {
             return;
         };
+        save.progress.visited_stages.insert(name.0.clone());
         save.progress.current_lobby = name.0.clone();
         save.progress.lobby_position = player.translation().xy();
         commands.run_system(*canum_save::WRITE_SAVE.get().unwrap());
@@ -259,4 +261,36 @@ pub fn get_marks(save: &Save, name: &str) -> Vec<String> {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default()
+}
+
+fn change_stage_lobby(
+    event: On<crate::controls::ChangeStageLobby>,
+    mut commands: Commands,
+    fight: Res<State<crate::setup::Fight>>,
+    camera: Single<Entity, With<canum_res::camera::PixelCamera>>,
+    save: Res<Save>,
+) {
+    if let Some(details) = CONFIG.values.stage.get(&fight.get().0) {
+        let target = match *event {
+            crate::controls::ChangeStageLobby::Next => details.next_stage.as_ref(),
+            crate::controls::ChangeStageLobby::Prev => details.prev_stage.as_ref(),
+        };
+        if let Some(target) = target
+            // You can not skip stages
+            && save.progress.visited_stages.contains(target)
+        {
+            commands.spawn((
+                ChildOf(camera.entity()),
+                crate::setup::cutscene::PureColorCutscene {
+                    fight: target.to_owned(),
+                    transition: canum_fx::transition::PureColor {
+                        color: Color::BLACK,
+                        duration: Duration::from_secs(1),
+                        remove_self: true,
+                        destroy: None,
+                    },
+                },
+            ));
+        }
+    }
 }

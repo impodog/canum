@@ -15,12 +15,7 @@ impl Plugin for ApplePlugin {
             behaviors::BehaviorsPlugin,
             defeat::DefeatPlugin,
         ));
-        app.add_observer(spawn_apple)
-            .add_observer(spawn_apple_health_bar);
-        app.add_systems(
-            FixedPostUpdate,
-            update_apple_health_bar.run_if(in_state(APPLE_STATE.clone())),
-        );
+        app.add_observer(spawn_apple);
         app.world_mut()
             .register_component_hooks::<AppleBoss>()
             .on_add(|mut world, HookContext { entity, .. }| {
@@ -51,7 +46,12 @@ impl Plugin for ApplePlugin {
 )]
 pub struct AppleBoss;
 
-fn spawn_apple(_event: On<background::AppleTreeBackgroundChanged>, mut commands: Commands) {
+fn spawn_apple(
+    _event: On<background::AppleTreeBackgroundChanged>,
+    mut commands: Commands,
+    save: Res<Save>,
+    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+) {
     let apple = commands.spawn((AppleBoss,)).id();
     commands.spawn((
         canum_res::sound::Music,
@@ -62,20 +62,14 @@ fn spawn_apple(_event: On<background::AppleTreeBackgroundChanged>, mut commands:
         enemy::health::EnemySensor,
         Collider::rectangle(50.0, 50.0),
     ));
-}
 
-fn spawn_apple_health_bar(
-    _event: On<background::AppleTreeBackgroundChanged>,
-    save: Res<Save>,
-    mut commands: Commands,
-    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
-) {
     let Ok(bottom_center) = q_bottom_center.single() else {
         return;
     };
     if save.progress.selected_effects.contains("ShowHealth") {
         commands.spawn((
             ChildOf(bottom_center),
+            canum_ui::bar::AssociatedBoss(apple),
             canum_ui::bar::health_bar(
                 Color::Srgba(Srgba::hex("#c73322").unwrap()),
                 Color::Srgba(Srgba::hex("#c1c09f").unwrap()),
@@ -87,18 +81,4 @@ fn spawn_apple_health_bar(
             ),
         ));
     }
-}
-
-fn update_apple_health_bar(
-    q_health: Query<&enemy::health::EnemyHealth>,
-    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
-) {
-    let Ok(health) = q_health.single() else {
-        return;
-    };
-    let Ok(mut bar) = q_bar.single_mut() else {
-        return;
-    };
-    bar.total = bar.total.max(health.value as f32);
-    bar.current = health.value as f32;
 }

@@ -30,7 +30,7 @@ impl Plugin for FlipperPlugin {
                     }
                 },
             );
-        app.add_systems(FixedPreUpdate, handle_keyboard);
+        app.add_systems(FixedPreUpdate, (handle_keyboard, handle_gamepad));
         app.add_systems(FixedUpdate, roll_text);
         app.add_observer(handle_input);
     }

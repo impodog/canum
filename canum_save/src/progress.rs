@@ -16,6 +16,7 @@ pub struct Progress {
 
     pub boss_progress: HashMap<String, BossProgress>,
     pub completed_stages: HashSet<String>,
+    pub visited_stages: HashSet<String>,
     pub achievements: Achievements,
 
     pub current_lobby: String,
@@ -39,6 +40,7 @@ impl Default for Progress {
             gained_weapons: BTreeSet::from_iter(["A_Filed".to_owned()]),
             boss_progress: Default::default(),
             completed_stages: Default::default(),
+            visited_stages: Default::default(),
             achievements: Default::default(),
             current_lobby: "Gate".to_owned(),
             lobby_position: Vec2::new(400.0, 225.0),

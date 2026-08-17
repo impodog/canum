@@ -56,6 +56,9 @@ fn turf_count_down(
     }
 }
 
+#[derive(Component)]
+struct TurfTimerBar;
+
 fn spawn_turf(
     _event: On<background::TurfSetupTimerComplete>,
     mut commands: Commands,
@@ -67,6 +70,7 @@ fn spawn_turf(
     let turf = commands.spawn((TurfBoss::default(),)).id();
     commands.spawn((
         ChildOf(bottom_center),
+        TurfTimerBar,
         canum_ui::bar::health_bar(
             Color::linear_rgb(0.2, 1.0, 0.2),
             Color::linear_rgb(1.0, 0.1, 0.0),
@@ -81,7 +85,7 @@ fn spawn_turf(
 }
 
 fn update_health_bar(
-    mut q_health_bar: Query<&mut canum_ui::bar::HealthBar>,
+    mut q_health_bar: Query<&mut canum_ui::bar::HealthBar, With<TurfTimerBar>>,
     q_turf: Query<&TurfBoss>,
 ) {
     let Ok(turf) = q_turf.single() else {

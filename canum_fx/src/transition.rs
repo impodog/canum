@@ -81,7 +81,7 @@ fn work_pure_color(
         let current = clock.elapsed().as_secs_f32();
         if current >= half {
             sprite.color.set_alpha(
-                CubicInOutCurve
+                QuadraticOutCurve
                     .sample((half * 2.0 - current) / half)
                     .unwrap()
                     * pure_color.color.alpha(),

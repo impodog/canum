@@ -28,10 +28,6 @@ impl Plugin for AntPlugin {
                     .commands()
                     .spawn((ChildOf(entity), entry::AntEntry(entity)));
             });
-        app.add_systems(
-            FixedPostUpdate,
-            update_ant_health_bar.run_if(in_state(ANT_STATE.clone())),
-        );
     }
 }
 
@@ -75,6 +71,7 @@ fn spawn_ant_health_bar(
     save: Res<Save>,
     mut commands: Commands,
     q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+    ant: Single<Entity, With<AntBoss>>,
 ) {
     let Ok(bottom_center) = q_bottom_center.single() else {
         return;
@@ -82,6 +79,7 @@ fn spawn_ant_health_bar(
     if save.progress.selected_effects.contains("ShowHealth") {
         commands.spawn((
             ChildOf(bottom_center),
+            canum_ui::bar::AssociatedBoss(ant.entity()),
             canum_ui::bar::health_bar(
                 Color::Srgba(Srgba::hex("#977d70").unwrap()),
                 Color::Srgba(Srgba::hex("#101c2a").unwrap()),
@@ -93,18 +91,4 @@ fn spawn_ant_health_bar(
             ),
         ));
     }
-}
-
-fn update_ant_health_bar(
-    q_health: Query<&enemy::health::EnemyHealth>,
-    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
-) {
-    let Ok(health) = q_health.single() else {
-        return;
-    };
-    let Ok(mut bar) = q_bar.single_mut() else {
-        return;
-    };
-    bar.total = bar.total.max(health.value as f32);
-    bar.current = health.value as f32;
 }

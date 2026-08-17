@@ -4,7 +4,10 @@ pub(super) struct EntryPlugin;
 
 impl Plugin for EntryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(LASER_STATE.clone()), (spawn_laser, move_player));
+        app.add_systems(
+            OnEnter(LASER_STATE.clone()),
+            (spawn_laser, move_player, spawn_laser_health_bar).chain(),
+        );
     }
 }
 
@@ -56,5 +59,34 @@ fn spawn_laser(
 fn move_player(mut q_player: Query<&mut Transform, With<player::Player>>) {
     for mut transform in q_player.iter_mut() {
         transform.translation.x = -200.0;
+    }
+}
+
+fn spawn_laser_health_bar(
+    save: Res<Save>,
+    mut commands: Commands,
+    q_bottom_center: Query<Entity, With<canum_ui::BottomCenter>>,
+    mut title: ResMut<canum_res::window::WindowTitle>,
+    lang: Res<Lang>,
+    laser: Single<Entity, With<LaserBoss>>,
+) {
+    let Ok(bottom_center) = q_bottom_center.single() else {
+        return;
+    };
+    title.0 = lang.get("Laser_WindowTitle").to_owned();
+    if save.progress.selected_effects.contains("ShowHealth") {
+        commands.spawn((
+            ChildOf(bottom_center),
+            canum_ui::bar::AssociatedBoss(laser.entity()),
+            canum_ui::bar::health_bar(
+                Color::Srgba(Srgba::hex("#ffb9db").unwrap()),
+                Color::Srgba(Srgba::hex("#cc0000").unwrap()),
+                canum_ui::bar::HealthBar {
+                    total: 4000.0,
+                    current: 4000.0,
+                    ..default()
+                },
+            ),
+        ));
     }
 }

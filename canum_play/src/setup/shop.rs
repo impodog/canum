@@ -476,7 +476,6 @@ fn init_shop_indicator(
 ) {
     for entity in q_indicator.iter_mut() {
         commands.entity(entity).insert((
-            canum_res::ImageFontPreRenderedText::default(),
             canum_res::ImageFontText::default()
                 .text(
                     lang.get(&format!("Ui_ShopIndicator_{}", *controller_suffix))
@@ -484,6 +483,7 @@ fn init_shop_indicator(
                 )
                 .font_height(14.0)
                 .font(fonts.normal.clone()),
+            canum_res::ImageFontPreRenderedText::default(),
         ));
     }
 }

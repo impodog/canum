@@ -1,8 +1,8 @@
 {
   "text": {
     "en": {
-      "Ui_ShopIndicator_Keyboard": "Press <S> to enter the shop!",
-      "Ui_ShopIndicator_Gamepad": "Press <R3> to enter the shop!",
+      "Ui_ShopIndicator_Keyboard": "Press <S> to enter the shop; Press <E> to equip purchased items",
+      "Ui_ShopIndicator_Gamepad": "Press <R3> to enter the shop; Press <L3> to equip purchased items",
 
       "Ui_GetDash_Keyboard": "You have obtained the ability to dash.\nPress <X> to dash.\nPress <ESC> to exit.",
       "Ui_GetDash_Gamepad": "You have obtained the ability to dash.\nPress <R2> to dash.\nPress <EAST> to exit."
