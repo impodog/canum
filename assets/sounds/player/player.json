@@ -1,5 +1,5 @@
 {
-  "include": ["weapons/weapons.json"],
+  "include": ["weapons/weapons.json", "charms/charms.json"],
   "sounds": {
     "Dash": { "path": "dash.wav", "volume": 2.0 },
     "BasicHp_Damage": { "path": "basichp_damage.wav", "volume": 5.0 },

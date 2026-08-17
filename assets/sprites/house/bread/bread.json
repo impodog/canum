@@ -8,6 +8,7 @@
       {"path": "bread_slice.png", "size": [20, 20], "offset": [40, 0]}
     ],
     "Bread_Meteor": [{"path": "bread_meteor.png", "size": [32, 32], "offset": [0, 0]}],
-    "Bread_MeteorTail": [{"path": "bread_meteor.png", "size": [32, 32], "offset": [32, 0]}]
+    "Bread_MeteorTail": [{"path": "bread_meteor.png", "size": [32, 32], "offset": [32, 0]}],
+    "Bread_Back": [{"path": "bread_back.png", "size": [400, 225]}]
   }
 }

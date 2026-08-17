@@ -8,24 +8,39 @@ impl Plugin for BarPlugin {
     }
 }
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, Debug, Clone, Copy)]
 pub struct HealthBar {
     pub total: f32,
     pub current: f32,
+    pub width: f32,
+    pub height: f32,
 }
-impl HealthBar {
-    pub const WIDTH: f32 = 600.0;
-    pub const HEIGHT: f32 = 10.0;
+impl Default for HealthBar {
+    fn default() -> Self {
+        Self {
+            total: 1.0,
+            current: 1.0,
+            width: 600.0,
+            height: 10.0,
+        }
+    }
 }
 
 #[derive(Component, Default)]
 struct HealthBarForegroundChild;
 
 pub fn health_bar(fore: Color, back: Color, bar: HealthBar) -> impl Bundle {
+    let back_linear = back.to_linear();
+    let inverse_back = Color::linear_rgba(
+        1.0 - back_linear.red,
+        1.0 - back_linear.green,
+        1.0 - back_linear.blue,
+        back_linear.alpha,
+    );
     (
         Node {
-            width: px(HealthBar::WIDTH),
-            height: px(HealthBar::HEIGHT),
+            width: px(bar.width),
+            height: px(bar.height),
             left: px(0),
             bottom: px(0),
             ..default()
@@ -42,15 +57,27 @@ pub fn health_bar(fore: Color, back: Color, bar: HealthBar) -> impl Bundle {
                     padding: UiRect::all(px(0)),
                     ..default()
                 },
+                BackgroundColor(inverse_back),
+            ),
+            (
+                Node {
+                    position_type: PositionType::Absolute,
+                    width: px(bar.width - 2.0),
+                    height: px(bar.height - 2.0),
+                    left: px(1.0),
+                    bottom: px(1.0),
+                    padding: UiRect::all(px(0)),
+                    ..default()
+                },
                 BackgroundColor(back),
             ),
             (
                 Node {
                     position_type: PositionType::Absolute,
-                    width: percent(100),
-                    height: percent(100),
-                    left: px(0),
-                    bottom: px(0),
+                    width: px(bar.width - 2.0),
+                    height: px(bar.height - 2.0),
+                    left: px(1.0),
+                    bottom: px(1.0),
                     padding: UiRect::all(px(0)),
                     ..default()
                 },

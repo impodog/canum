@@ -26,6 +26,12 @@ impl Plugin for BreadPlugin {
                     Collider::rectangle(75.0, 75.0),
                 ));
             });
+
+        app.add_systems(OnEnter(BREAD_STATE.clone()), spawn_bread_health_bar);
+        app.add_systems(
+            FixedPostUpdate,
+            update_bread_health_bar.run_if(in_state(BREAD_STATE.clone())),
+        );
     }
 }
 
@@ -46,6 +52,7 @@ const BREAD_HALF_LENGTH: f32 = 40.0;
     health::ContactDamage { value: 130, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.75),
     enemy::health::EnemyHealth::new(4400),
+    enemy::health::DamageSound::new("Wcat_Damage"),
     player::victory::DefeatToWin::default(),
     defeat::BreadDefeat,
 )]
@@ -64,4 +71,38 @@ pub struct BreadNextStage {
     pub entity: Entity,
     #[deref]
     pub stage: u8,
+}
+
+fn spawn_bread_health_bar(
+    save: Res<Save>,
+    mut commands: Commands,
+    bottom_center: Single<Entity, With<canum_ui::BottomCenter>>,
+) {
+    if save.progress.selected_effects.contains("ShowHealth") {
+        commands.spawn((
+            ChildOf(bottom_center.entity()),
+            canum_ui::bar::health_bar(
+                Color::Srgba(Srgba::hex("#efe1b1").unwrap()),
+                Color::Srgba(Srgba::hex("#4a2d06").unwrap()),
+                canum_ui::bar::HealthBar {
+                    total: 4400.0,
+                    current: 4400.0,
+                    ..default()
+                },
+            ),
+        ));
+    }
+}
+
+fn update_bread_health_bar(
+    q_health: Query<&enemy::health::EnemyHealth, With<BreadBoss>>,
+    mut q_bar: Query<&mut canum_ui::bar::HealthBar>,
+) {
+    let Ok(health) = q_health.single() else {
+        return;
+    };
+    let Ok(mut bar) = q_bar.single_mut() else {
+        return;
+    };
+    bar.current = health.value as f32;
 }

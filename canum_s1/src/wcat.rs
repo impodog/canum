@@ -71,6 +71,7 @@ fn spawn_wcat_health_bar(
                 canum_ui::bar::HealthBar {
                     total: 5000.0,
                     current: 5000.0,
+                    ..default()
                 },
             ),
         ));

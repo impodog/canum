@@ -206,13 +206,15 @@ fn deal_contact_damage(
         Option<&mut ProjectileContacted>,
     )>,
     q_friendly: Query<&Friendly>,
+    q_no_dispose_projectile: Query<(), With<projectile::NoDisposeProjectile>>,
 ) {
     q_contact_damage.par_iter_mut().for_each(
         |(contact_damage, colliding_entities, friendly, mut contacted)| {
             for entity in colliding_entities.iter() {
-                if contacted
-                    .as_mut()
-                    .is_none_or(|contacted| contacted.insert(*entity))
+                if q_no_dispose_projectile.get(*entity).is_err()
+                    && contacted
+                        .as_mut()
+                        .is_none_or(|contacted| contacted.insert(*entity))
                     && q_friendly
                         .get(*entity)
                         .is_ok_and(|target_friendly| target_friendly.0 ^ friendly.0)

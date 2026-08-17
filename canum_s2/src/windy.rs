@@ -71,6 +71,7 @@ fn spawn_timer_bar(
             canum_ui::bar::HealthBar {
                 total: TOTAL_TIME,
                 current: TOTAL_TIME,
+                ..default()
             },
         ),
     ));

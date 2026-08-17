@@ -41,7 +41,7 @@ impl BasicHpDetails {
 }
 
 fn spawn_health_uis(
-    event: On<canum_play::setup::StartSessionLast>,
+    event: On<canum_play::setup::StartSessionBaseUi>,
     mut commands: Commands,
     health: Res<HealthDetails>,
     q_top_left: Query<Entity, With<crate::TopLeft>>,

@@ -82,6 +82,7 @@ fn spawn_apple_health_bar(
                 canum_ui::bar::HealthBar {
                     total: 3000.0,
                     current: 3000.0,
+                    ..default()
                 },
             ),
         ));

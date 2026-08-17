@@ -73,6 +73,7 @@ fn spawn_turf(
             canum_ui::bar::HealthBar {
                 total: TurfBoss::TIME.as_secs_f32(),
                 current: TurfBoss::TIME.as_secs_f32(),
+                ..default()
             },
         ),
     ));

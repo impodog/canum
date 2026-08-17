@@ -86,8 +86,9 @@ fn spawn_ant_health_bar(
                 Color::Srgba(Srgba::hex("#977d70").unwrap()),
                 Color::Srgba(Srgba::hex("#101c2a").unwrap()),
                 canum_ui::bar::HealthBar {
-                    total: 3000.0,
-                    current: 3000.0,
+                    total: 3500.0,
+                    current: 3500.0,
+                    ..default()
                 },
             ),
         ));

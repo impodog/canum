@@ -77,16 +77,23 @@ pub struct StartSessionMiddle {
     pub player_entity: Entity,
 }
 
-/// Sent after responding to `StartSessionFirst`, used for spawning addons.
+/// Sent after responding to `StartSessionMiddle`, used for spawning addons.
 #[derive(Event, Debug, Clone)]
 pub struct StartSessionAction {
     pub fight: String,
     pub player_entity: Entity,
 }
 
-/// Sent after responding to `StartSessionMiddle` with extra information, used for spawning UIs.
+/// Sent after responding to `StartSessionAction` with extra information, used for spawning fundamental UIs.
 #[derive(Event, Debug, Clone)]
-pub struct StartSessionLast {
+pub struct StartSessionBaseUi {
+    pub fight: String,
+    pub player_entity: Entity,
+}
+
+/// Sent after responding to `StartSessionBaseUi` with extra information, used for spawning UIs related to optional effects.
+#[derive(Event, Debug, Clone)]
+pub struct StartSessionAddedUi {
     pub fight: String,
     pub player_entity: Entity,
 }
@@ -255,7 +262,8 @@ struct PostStartSessionSynchronizer {
     first_tick: bool,
     middle_sent: bool,
     action_sent: bool,
-    last_sent: bool,
+    base_ui_sent: bool,
+    added_ui_sent: bool,
 }
 /// The universal marker for all setup completed in any fight. This takes about 5 frames.
 /// Use it with the system generator: `in_stable_state`.
@@ -283,31 +291,39 @@ fn send_delayed_start_session_events(
     let Some(primary_player) = primary_player else {
         return;
     };
-    if !synchronizer.last_sent {
-        if !synchronizer.action_sent {
-            if !synchronizer.middle_sent {
-                if synchronizer.first_tick {
-                    commands.trigger(StartSessionMiddle {
+    if !synchronizer.added_ui_sent {
+        if !synchronizer.base_ui_sent {
+            if !synchronizer.action_sent {
+                if !synchronizer.middle_sent {
+                    if synchronizer.first_tick {
+                        commands.trigger(StartSessionMiddle {
+                            fight: fight.get().0.clone(),
+                            player_entity: primary_player.0,
+                        });
+                        synchronizer.middle_sent = true;
+                    } else {
+                        synchronizer.first_tick = true;
+                    }
+                } else {
+                    commands.trigger(StartSessionAction {
                         fight: fight.get().0.clone(),
                         player_entity: primary_player.0,
                     });
-                    synchronizer.middle_sent = true;
-                } else {
-                    synchronizer.first_tick = true;
+                    synchronizer.action_sent = true;
                 }
             } else {
-                commands.trigger(StartSessionAction {
+                commands.trigger(StartSessionBaseUi {
                     fight: fight.get().0.clone(),
                     player_entity: primary_player.0,
                 });
-                synchronizer.action_sent = true;
+                synchronizer.base_ui_sent = true;
             }
         } else {
-            commands.trigger(StartSessionLast {
+            commands.trigger(StartSessionAddedUi {
                 fight: fight.get().0.clone(),
                 player_entity: primary_player.0,
             });
-            synchronizer.last_sent = true;
+            synchronizer.added_ui_sent = true;
         }
     } else {
         init_completed.0 = true;

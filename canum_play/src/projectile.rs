@@ -8,7 +8,10 @@ impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DisposeQueue>()
             .init_resource::<ProjectileBounds>();
-        app.add_systems(FixedLast, (remove_out_of_bound, dispose_after_collision));
+        app.add_systems(
+            FixedPreUpdate,
+            (remove_out_of_bound, dispose_after_collision),
+        );
     }
 }
 
@@ -19,6 +22,10 @@ pub struct ProjectileBounds(pub Rect);
 /// Disables collision with boundaries for certain objects.
 #[derive(Component, Default)]
 pub struct NoCollideBoundary;
+
+/// Disables the ability to dispose projectiles for some sensors.
+#[derive(Component, Default)]
+pub struct NoDisposeProjectile;
 
 /// Removes itself when out of bounds.
 #[derive(Component)]
@@ -70,7 +77,7 @@ fn remove_out_of_bound(
             let position = (position - center) * removal.distance_scale + center;
             if !bounds.contains(position) {
                 commands.command_scope(|mut commands| {
-                    commands.entity(entity).despawn();
+                    commands.entity(entity).try_despawn();
                 });
             }
         });
@@ -85,15 +92,25 @@ fn dispose_after_collision(
     mut queue: ResMut<DisposeQueue>,
     collisions: Collisions,
     q_projectile: Query<(Entity, &Projectile)>,
+    q_no_dispose_projectile: Query<(), With<NoDisposeProjectile>>,
 ) {
     for entity in queue.drain(..) {
         if let Ok(mut commands) = commands.get_entity(entity) {
-            commands.despawn();
+            commands.try_despawn();
         }
     }
     let queue = Mutex::new(queue);
     q_projectile.par_iter().for_each(|(entity, projectile)| {
-        if !projectile.no_dispose && collisions.collisions_with(entity).next().is_some() {
+        if !projectile.no_dispose
+            && collisions.collisions_with(entity).any(|contact_pair| {
+                let other = if contact_pair.collider1 == entity {
+                    contact_pair.collider2
+                } else {
+                    contact_pair.collider1
+                };
+                !q_no_dispose_projectile.get(other).is_ok()
+            })
+        {
             queue.lock().unwrap().push(entity);
         }
     });

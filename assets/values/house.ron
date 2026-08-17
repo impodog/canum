@@ -6,6 +6,9 @@
     "Windy": (
       gains: { "Completed": 3, "NoHits": 2 },
     ),
+    "Bread": (
+      gains: { "Completed": 2, "NoHits": 2 },
+    ),
   },
   stage: {
     "House": (

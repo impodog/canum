@@ -51,6 +51,7 @@ fn setup_ui(mut commands: Commands) {
             position_type: PositionType::Absolute,
             left: px(3.0),
             top: px(3.0),
+            flex_direction: FlexDirection::Column,
             ..default()
         },
     ));

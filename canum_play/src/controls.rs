@@ -138,13 +138,14 @@ fn connect_gamepads(
 #[derive(Resource, Default)]
 pub struct GamepadArrowEmulate {
     pub trigger_time: Option<Duration>,
+    pub pressed_list: Vec<GamepadButton>,
 }
 
 #[derive(Debug, Deref, DerefMut)]
 struct GamepadTriggerInterval(Timer);
 impl Default for GamepadTriggerInterval {
     fn default() -> Self {
-        Self(Timer::from_seconds(0.1, TimerMode::Once))
+        Self(Timer::from_seconds(0.15, TimerMode::Repeating))
     }
 }
 
@@ -162,7 +163,7 @@ fn gamepad_controls(
     time: Res<Time>,
     mut interval: Local<GamepadTriggerInterval>,
 ) {
-    const HOLD_DURATION: Duration = Duration::new(1, 0);
+    const HOLD_DURATION: Duration = Duration::from_millis(500);
 
     let override_main_controls = override_main_controls.iter().next().is_some();
     let Some(primary_player) = primary_player.map(|player| **player) else {
@@ -183,7 +184,6 @@ fn gamepad_controls(
             if time.elapsed() > trigger_time + HOLD_DURATION {
                 interval.tick(time.delta()).just_finished()
             } else {
-                interval.reset();
                 false
             }
         } else {
@@ -193,15 +193,30 @@ fn gamepad_controls(
         if can_trigger {
             use std::f32::consts::*;
             let angle = canum_fx::math::normalize_angle(direction.to_angle());
+            let mut press_button = |button: GamepadButton| {
+                if gamepad.pressed(button) {
+                    gamepad.digital_mut().release(button);
+                }
+                gamepad.digital_mut().press(button);
+                if !arrow.pressed_list.contains(&button) {
+                    arrow.pressed_list.push(button);
+                }
+            };
             if (0.0..FRAC_PI_4).contains(&angle) || (TAU - FRAC_PI_4..TAU).contains(&angle) {
-                gamepad.digital_mut().press(GamepadButton::DPadRight);
+                press_button(GamepadButton::DPadRight);
             } else if (FRAC_PI_4..FRAC_PI_4 * 3.0).contains(&angle) {
-                gamepad.digital_mut().press(GamepadButton::DPadUp);
+                press_button(GamepadButton::DPadUp);
             } else if (FRAC_PI_4 * 3.0..FRAC_PI_4 * 5.0).contains(&angle) {
-                gamepad.digital_mut().press(GamepadButton::DPadLeft);
+                press_button(GamepadButton::DPadLeft);
             } else {
-                gamepad.digital_mut().press(GamepadButton::DPadDown);
+                press_button(GamepadButton::DPadDown);
             }
+        }
+    } else {
+        arrow.trigger_time = None;
+        interval.reset();
+        for pressed in arrow.pressed_list.drain(..) {
+            gamepad.digital_mut().release(pressed);
         }
     }
 

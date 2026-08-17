@@ -14,7 +14,8 @@ impl Plugin for MenuPlugin {
         );
         app.add_systems(FixedPostUpdate, update_option_info);
         app.add_observer(update_options_display)
-            .add_observer(update_menu_style);
+            .add_observer(update_menu_style)
+            .add_observer(play_select_input_sound);
     }
 }
 
@@ -245,6 +246,18 @@ fn listen_select_input_gamepad(
     }
     if gamepad.just_pressed(save.gamepad.confirm) {
         commands.trigger(SelectInput::Toggle);
+    }
+}
+
+fn play_select_input_sound(event: On<SelectInput>, mut commands: Commands) {
+    match *event {
+        SelectInput::Next | SelectInput::Prev => {
+            commands.spawn(canum_res::sound::Sound::new("Ui_Navigate"));
+        }
+        SelectInput::NextPage | SelectInput::PrevPage => {
+            commands.spawn(canum_res::sound::Sound::new("Ui_Navigate").with_volume_add(5.0));
+        }
+        _ => {}
     }
 }
 

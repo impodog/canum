@@ -63,6 +63,7 @@ fn spawn_laser_health_bar(
                 canum_ui::bar::HealthBar {
                     total: 4000.0,
                     current: 4000.0,
+                    ..default()
                 },
             ),
         ));

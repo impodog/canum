@@ -1,0 +1,5 @@
+{
+  "sounds": {
+    "ShieldBreak": { "path": "shield_break.wav", "volume": 15.0 }
+  }
+}

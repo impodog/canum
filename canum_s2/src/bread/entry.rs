@@ -34,6 +34,13 @@ fn init_bread(
         .spawn(BreadStartTrigger)
         .observe(BreadStartTrigger::observer);
 
+    commands.spawn((
+        SessionOnly,
+        canum_res::background::Background::new(CONFIG.display.screen_size),
+        Animation::new("Bread_Back", CONFIG.display.screen_size)
+            .with_color(Color::default().with_alpha(0.5)),
+    ));
+
     let bread = commands.spawn(BreadBoss::default()).id();
     commands.spawn((
         ChildOf(bread),

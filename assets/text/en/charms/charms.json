@@ -2,11 +2,14 @@
   "text": {
     "en": {
       "Charm_S1A_SharpLeaf_Title": "Sharp Leaf",
-      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nSlightly increases weapon damage.\n\nOffensive slot.",
+      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nSlightly increases weapon damage.",
       "Charm_S1A_SharpLeaf_Short": "Sharp Leaf",
       "Charm_S1B_RedHeart_Title": "Red Heart",
       "Charm_S1B_RedHeart_Desc": "A red, lively heart.\n\nGrants one extra health limit.",
-      "Charm_S1B_RedHeart_Short": "Red Heart"
+      "Charm_S1B_RedHeart_Short": "Red Heart",
+      "Charm_S1C_Exoskeleton_Title": "Exoskeleton",
+      "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants.\n\nGains exoskeleton charges by staying close to enemy projectiles. When charging is complete, the exoskeleton can absorb one damage from enemies.",
+      "Charm_S1C_Exoskeleton_Short": "Exoskeleton"
     }
   }
 }
