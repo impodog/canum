@@ -9,3 +9,4 @@ canum_play = { path = "../canum_play" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
 canum_ui = { path = "../canum_ui" }
+canum_fx = { path = "../canum_fx" }

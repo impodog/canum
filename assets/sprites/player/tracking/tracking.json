@@ -1,0 +1,6 @@
+{
+  "sprites": {
+    "Tracking": [{"path": "tracking.png", "size": [7, 7], "count": 2, "interval": 200}],
+    "Tracking_Splash": [{"path": "tracking_splash.png", "count": 4, "interval": 35}]
+  }
+}

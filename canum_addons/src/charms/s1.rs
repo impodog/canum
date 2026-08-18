@@ -39,7 +39,7 @@ fn add_exoskeleton(event: On<setup::StartSessionAction>, save: Res<Save>, mut co
 }
 
 const EXOSKELETON_CONSUMPTION: f32 = 1.0;
-const EXOSKELETON_INCREASE_PER_SEC: f32 = 0.1;
+const EXOSKELETON_INCREASE_PER_SEC: f32 = 0.12;
 const EXOSKELETON_INVINC_TIME: f32 = 1.0;
 
 #[derive(Component, Default, Clone, Copy)]
@@ -91,13 +91,19 @@ fn exoskeleton_increase(
     let (ref mut exoskeleton, ref mut bar) = *q_exoskeleton;
     let mut incr = 0.0;
     for colliding_entities in q_sensor.iter() {
-        for entity in colliding_entities.iter() {
+        // For one sensor, there is only one increment. But for many sensors(by duplicating charms) there can be stacking effects.
+        let any_colliding = colliding_entities.iter().any(|entity| {
             if q_projectile.get(*entity).is_ok()
                 && let Ok(friendly) = q_friendly.get(*entity)
                 && !friendly.0
             {
-                incr += EXOSKELETON_INCREASE_PER_SEC * time.delta_secs();
+                true
+            } else {
+                false
             }
+        });
+        if any_colliding {
+            incr += EXOSKELETON_INCREASE_PER_SEC * time.delta_secs();
         }
     }
     exoskeleton.amount = (exoskeleton.amount + incr).min(exoskeleton.max);

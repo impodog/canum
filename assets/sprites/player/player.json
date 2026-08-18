@@ -1,3 +1,9 @@
 {
-  "include": ["cyan/cyan.json", "filed/filed.json", "basichp/basichp.json", "spread/spread.json"]
+  "include": [
+    "cyan/cyan.json",
+    "filed/filed.json",
+    "basichp/basichp.json",
+    "spread/spread.json",
+    "tracking/tracking.json"
+  ]
 }

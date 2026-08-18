@@ -291,7 +291,7 @@ pub(crate) fn tick_animation(
                 if next_index == pause {
                     // Prevents clock from triggering again.
                     clock.paused = true;
-                } else {
+                } else if texture_atlas.index != next_index {
                     texture_atlas.index = next_index;
                 }
                 if let Some(ref inform) = *animation.inform.lock().unwrap() {

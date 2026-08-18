@@ -1,5 +1,6 @@
 mod filed;
 mod spread;
+mod tracking;
 
 use crate::prelude::*;
 use canum_play::player::attack::*;
@@ -9,7 +10,11 @@ pub(super) struct WeaponsPlugin;
 
 impl Plugin for WeaponsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((filed::FiledPlugin, spread::SpreadPlugin));
+        app.add_plugins((
+            filed::FiledPlugin,
+            spread::SpreadPlugin,
+            tracking::TrackingPlugin,
+        ));
         app.add_observer(init_weapon_values)
             .add_observer(apply_weapon_effects)
             .add_observer(spawn_weapons);
@@ -81,6 +86,15 @@ fn spawn_weapons(
                 spread.damage = spread.damage.mul(total_damage_multiplier);
                 weapons.push(Some(
                     commands.spawn((ChildOf(event.player_entity), spread)).id(),
+                ));
+            }
+            "C_Tracking" => {
+                let mut tracking = tracking::Tracking::default();
+                tracking.damage = tracking.damage.mul(total_damage_multiplier);
+                weapons.push(Some(
+                    commands
+                        .spawn((ChildOf(event.player_entity), tracking))
+                        .id(),
                 ));
             }
             _ => {

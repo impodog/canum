@@ -59,7 +59,7 @@ impl Default for Spread {
             speed: 375.0,
             max_spread_angle: (45.0_f32).to_radians(),
             base_spread_angle: (5.0_f32).to_radians(),
-            increment_ratio: 70.0_f32.recip() * (1.0_f32).to_radians(),
+            increment_ratio: 80.0_f32.recip() * (1.0_f32).to_radians(),
         }
     }
 }

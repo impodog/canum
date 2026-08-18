@@ -1,6 +1,7 @@
 {
   "sounds": {
     "Filed": { "path": "filed.wav", "loop_point": 0.0, "volume": -3.0 },
-    "Spread": { "path": "spread.wav", "volume": -15.0 }
+    "Spread": { "path": "spread.wav", "volume": -15.0 },
+    "Tracking": { "path": "tracking.wav", "volume": -10.0, "loop_point": 0.0 }
   }
 }

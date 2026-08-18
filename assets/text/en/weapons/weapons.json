@@ -7,7 +7,11 @@
 
       "Weapon_B_Spread_Title": "Spread Gun",
       "Weapon_B_Spread_Desc": "Fires three bullets in an angle, which expands by speed.\n\nDeals high damage, if all can hit.",
-      "Weapon_B_Spread_Short": "Spread Gun"
+      "Weapon_B_Spread_Short": "Spread Gun",
+
+      "Weapon_C_Tracking_Title": "Tracking",
+      "Weapon_C_Tracking_Desc": "Rapidly fires bullets that auto home in on the nearest enemy.\n\nDeals very low damage, but you can never miss.",
+      "Weapon_C_Tracking_Short": "Tracking"
     }
   }
 }
