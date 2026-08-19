@@ -1,6 +1,7 @@
 pub mod bread;
 pub mod laser;
 pub mod lobby;
+pub mod projected;
 pub mod windy;
 
 use canum_play::prelude::*;
@@ -14,6 +15,7 @@ impl Plugin for CanumS2Plugin {
             laser::LaserPlugin,
             windy::WindyPlugin,
             bread::BreadPlugin,
+            projected::ProjectedPlugin,
         ));
     }
 }

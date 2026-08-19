@@ -3,6 +3,7 @@
     "lobby/lobby.json",
     "laser/laser.json",
     "windy/windy.json",
-    "bread/bread.json"
+    "bread/bread.json",
+    "projected/projected.json"
   ]
 }

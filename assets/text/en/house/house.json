@@ -17,7 +17,12 @@
       "Bread_BossTitle": "+The Loaf",
       "Bread_UiName": "The Loaf",
       "Bread_WindowTitle": "A hard boss with soft internals",
-      "Bread_Victory_WindowTitle": "Make sure to eat the crumbs!"
+      "Bread_Victory_WindowTitle": "Make sure to eat the crumbs!",
+
+      "Projected_BossTitle": "All the \n+Projected\nOnes",
+      "Projected_UiName": "The Projected Project",
+      "Projected_WindowTitle": "Creepy in the darkness...",
+      "Projected_Victory_WindowTitle": "I just hate enemy gauntlets!"
     }
   }
 }

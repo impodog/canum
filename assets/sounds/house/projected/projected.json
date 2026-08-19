@@ -1,0 +1,5 @@
+{
+  "sounds": {
+    "Projected_Bgm": { "path": "projected.ogg", "volume": 1.0 }
+  }
+}

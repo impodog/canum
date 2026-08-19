@@ -81,6 +81,21 @@ fn handle_lobby_select(
                 ),
             ));
         }
+        3 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::lobby::boss::boss_panel(
+                    fonts,
+                    canum_ui::lobby::boss::BossPanel {
+                        name: lang.get("Projected_UiName").to_owned(),
+                        fight_name: "Projected".to_owned(),
+                        marks: get_marks(&save, "Projected"),
+                        enter_color: Color::Srgba(Srgba::hex("#303000").unwrap()),
+                    },
+                    time,
+                ),
+            ));
+        }
         _ => {}
     }
 }
