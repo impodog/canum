@@ -17,6 +17,8 @@ pub struct Values {
     pub shop: HashMap<String, ShopDetails>,
     #[serde(default)]
     pub achievement: HashMap<String, AchievementDetails>,
+    #[serde(default)]
+    pub custom: HashMap<String, ron::Value>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
@@ -197,6 +199,9 @@ impl Values {
         }
         for (name, details) in values.achievement {
             base.achievement.insert(name, details);
+        }
+        for (name, custom) in values.custom {
+            base.custom.insert(name, custom);
         }
         for sub_path in values.include {
             let sub_path = base_path.join(&sub_path);

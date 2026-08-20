@@ -108,7 +108,7 @@ where
 }
 
 /// The parent entity of all behaviors.
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone)]
 #[require(BehaviorManagerInfo, Transform)]
 pub struct BehaviorManager {
     /// The target that all behaviors affect. Defaults to the parent of the manager. If parent does not exist, defaults to itself.
@@ -123,6 +123,11 @@ impl BehaviorManager {
             target: None,
             disabled: false,
         }
+    }
+}
+impl Default for BehaviorManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

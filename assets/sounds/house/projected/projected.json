@@ -1,5 +1,7 @@
 {
   "sounds": {
-    "Projected_Bgm": { "path": "projected.ogg", "volume": 1.0 }
+    "Projected_Bgm": { "path": "projected.ogg", "volume": 1.0, "loop_point": 0.0 },
+    "Projected_ShadowHit": { "path": "projected_shadow_hit.wav", "volume": -10.0, "loop_point": 0.0 },
+    "Projected_ShadowDefeated": { "path": "projected_shadow_defeated.wav", "volume": -3.0 }
   }
 }

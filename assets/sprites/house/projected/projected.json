@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Projected_Flashlight": [{"path": "flashlight.png", "size": [400, 225]}]
+    "Projected_Flashlight": [{"path": "flashlight.png", "size": [400, 225]}],
+    "Projected_ShadowDefeated": [{"path":"shadow_defeated.png", "count": 4, "interval": 40}]
   }
 }

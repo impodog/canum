@@ -13,3 +13,5 @@ canum_save = { path = "../canum_save" }
 canum_ui = { path = "../canum_ui" }
 rand = "0.10.1"
 rand_distr = "0.6.0"
+ron = "0.12.1"
+serde = { version = "1.0.228", features = ["derive"] }

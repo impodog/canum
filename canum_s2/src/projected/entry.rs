@@ -9,12 +9,12 @@ impl Plugin for EntryPlugin {
 }
 
 #[derive(Event, Default)]
-struct ProjectedSpawn;
-canum_fx::wait_then_trigger!(ProjectedSpawnTrigger, ProjectedSpawn, 0.5);
+pub struct ProjectedSpawn;
+canum_fx::wait_then_trigger!(ProjectedSpawnTrigger, ProjectedSpawn, 0.2);
 
 #[derive(Event, Default)]
-struct ProjectedStart;
-canum_fx::wait_then_trigger!(ProjectedStartTrigger, ProjectedStart, 1.0);
+pub struct ProjectedStart;
+canum_fx::wait_then_trigger!(ProjectedStartTrigger, ProjectedStart, 2.0);
 
 fn setup_projected(mut commands: Commands) {
     commands
@@ -24,6 +24,7 @@ fn setup_projected(mut commands: Commands) {
         .spawn(ProjectedStartTrigger)
         .observe(ProjectedStartTrigger::observer);
     commands.spawn((SessionOnly, Observer::new(spawn_necessary)));
+    commands.spawn(ProjectedMainEntity);
 }
 
 fn spawn_necessary(
@@ -35,7 +36,7 @@ fn spawn_necessary(
     fonts: Res<canum_ui::Fonts>,
     bottom_left: Single<Entity, With<canum_ui::BottomLeft>>,
 ) {
-    const AMPLIFY_RATIO: f32 = 1.2;
+    const AMPLIFY_RATIO: f32 = 1.6;
     commands.spawn((
         ChildOf(primary_player.0),
         flashlight::FlashlightOverlay {

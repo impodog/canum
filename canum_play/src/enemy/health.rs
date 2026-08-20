@@ -28,6 +28,7 @@ impl Plugin for HealthPlugin {
                 world.commands().entity(entity).observe(play_damage_sound);
             });
         app.add_systems(FixedPreUpdate, reset_damage_sound_continuous);
+        app.add_systems(FixedUpdate, despawn_damage_sound);
     }
 }
 
@@ -110,6 +111,9 @@ struct DamageSoundContinuous {
     child: Option<Entity>,
 }
 
+#[derive(Component, Debug)]
+struct DamageSoundParent(Entity);
+
 fn reset_damage_sound_continuous(
     commands: ParallelCommands,
     mut q_damage_sound: Query<&mut DamageSoundContinuous>,
@@ -130,16 +134,33 @@ fn reset_damage_sound_continuous(
 fn play_damage_sound(
     event: On<Damage>,
     mut commands: Commands,
-    mut q_damage_sound: Query<(&DamageSound, &mut DamageSoundContinuous)>,
+    mut q_damage_sound: Query<(Entity, &DamageSound, &mut DamageSoundContinuous)>,
 ) {
-    let Ok((damage_sound, mut continuous)) = q_damage_sound.get_mut(event.entity) else {
+    let Ok((entity, damage_sound, mut continuous)) = q_damage_sound.get_mut(event.entity) else {
         return;
     };
     continuous.flag = 15;
     if continuous.child.is_none() {
         let child = commands
-            .spawn(canum_res::sound::Sound::new(damage_sound.0.clone()))
+            .spawn((
+                canum_res::sound::Sound::new(damage_sound.0.clone()),
+                DamageSoundParent(entity),
+            ))
             .id();
         continuous.child = Some(child);
     }
+}
+
+fn despawn_damage_sound(
+    q_sound: Query<(Entity, &DamageSoundParent)>,
+    q_entity: Query<()>,
+    commands: ParallelCommands,
+) {
+    q_sound.par_iter().for_each(|(entity, parent)| {
+        if q_entity.get(parent.0).is_err() {
+            commands.command_scope(|mut commands| {
+                commands.entity(entity).despawn();
+            });
+        }
+    });
 }

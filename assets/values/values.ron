@@ -1,5 +1,6 @@
 (
   include: [
+  "levels.ron",
   "gate.ron",
   "charms.ron",
   "achievements.ron",
