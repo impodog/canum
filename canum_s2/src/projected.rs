@@ -43,7 +43,7 @@ struct ProjectedAllDefeated;
 
 #[derive(Event, Default)]
 struct ProjectedVictory;
-canum_fx::wait_then_trigger!(ProjectedVictoryTrigger, ProjectedVictory, 1.0);
+canum_fx::wait_then_trigger!(ProjectedVictoryTrigger, ProjectedVictory, 2.0);
 
 fn projected_all_defeated(
     _event: On<ProjectedAllDefeated>,
@@ -52,7 +52,9 @@ fn projected_all_defeated(
     mut main_entity: Single<&mut player::victory::DefeatToWin, With<ProjectedMainEntity>>,
 ) {
     main_entity.defeated = true;
-    commands.entity(music.entity()).despawn();
+    commands
+        .entity(music.entity())
+        .insert(canum_res::sound::FadeOut);
     commands
         .spawn(ProjectedVictoryTrigger)
         .observe(ProjectedVictoryTrigger::observer);

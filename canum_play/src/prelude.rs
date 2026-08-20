@@ -1,6 +1,6 @@
 pub use crate::*;
 pub use avian2d::prelude::*;
-pub use bevy::{ecs::lifecycle::HookContext, prelude::*};
+pub use bevy::{ecs::lifecycle::HookContext, ecs::world::DeferredWorld, prelude::*};
 pub use std::sync::LazyLock;
 pub use std::time::Duration;
 

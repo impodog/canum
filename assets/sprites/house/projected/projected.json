@@ -1,6 +1,7 @@
 {
   "sprites": {
     "Projected_Flashlight": [{"path": "flashlight.png", "size": [400, 225]}],
-    "Projected_ShadowDefeated": [{"path":"shadow_defeated.png", "count": 4, "interval": 40}]
+    "Projected_ShadowDefeated": [{"path":"shadow_defeated.png", "count": 4, "interval": 50}],
+    "Projected_Mantis_SlashResidue": [{"path": "mantis_slash_residue.png", "count": 3, "interval": 100}]
   }
 }

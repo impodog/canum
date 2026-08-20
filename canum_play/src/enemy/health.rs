@@ -27,8 +27,10 @@ impl Plugin for HealthPlugin {
             .on_add(|mut world, HookContext { entity, .. }| {
                 world.commands().entity(entity).observe(play_damage_sound);
             });
-        app.add_systems(FixedPreUpdate, reset_damage_sound_continuous);
-        app.add_systems(FixedUpdate, despawn_damage_sound);
+        app.add_systems(
+            FixedPreUpdate,
+            (reset_damage_sound_continuous, despawn_damage_sound).chain(),
+        );
     }
 }
 
@@ -159,7 +161,7 @@ fn despawn_damage_sound(
     q_sound.par_iter().for_each(|(entity, parent)| {
         if q_entity.get(parent.0).is_err() {
             commands.command_scope(|mut commands| {
-                commands.entity(entity).despawn();
+                commands.entity(entity).try_despawn();
             });
         }
     });

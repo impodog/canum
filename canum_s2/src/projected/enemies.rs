@@ -167,7 +167,7 @@ fn spawn_enemy_wave(
     time: Res<Time>,
 ) {
     timeout.tick(time.delta());
-    if q_enemy.iter().next().is_some() && !timeout.is_finished() {
+    if q_enemy.iter().next().is_some() || !timeout.is_finished() {
         return;
     }
     let Some(mut waves) = waves else {
@@ -196,6 +196,7 @@ fn spawn_enemy_wave(
         }
     } else {
         timeout.0 = Timer::from_seconds(10000.0, TimerMode::Once);
+        commands.trigger(ProjectedAllDefeated);
     }
 }
 

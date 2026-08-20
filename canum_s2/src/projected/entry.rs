@@ -25,6 +25,17 @@ fn setup_projected(mut commands: Commands) {
         .observe(ProjectedStartTrigger::observer);
     commands.spawn((SessionOnly, Observer::new(spawn_necessary)));
     commands.spawn(ProjectedMainEntity);
+
+    commands.spawn((
+        SessionOnly,
+        canum_res::background::Background::new(CONFIG.display.screen_size),
+        //Animation::new("Projected_Back", CONFIG.display.screen_size),
+        Sprite {
+            color: Color::WHITE,
+            custom_size: Some(CONFIG.display.screen_size),
+            ..default()
+        },
+    ));
 }
 
 fn spawn_necessary(
