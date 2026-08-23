@@ -1,3 +1,4 @@
+/// Developing notes: Compared to other bosses this level is much more lenient on damage boxes, and larger hit boxes.
 mod enemies;
 mod entry;
 mod flashlight;

@@ -1,3 +1,4 @@
+mod apple;
 mod bird;
 mod mantis;
 mod moon;
@@ -10,7 +11,12 @@ pub(super) struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((mantis::MantisPlugin, bird::BirdPlugin, moon::MoonPlugin));
+        app.add_plugins((
+            mantis::MantisPlugin,
+            bird::BirdPlugin,
+            moon::MoonPlugin,
+            apple::ApplePlugin,
+        ));
         app.world_mut()
             .register_component_hooks::<ProjectedEnemy>()
             .on_add(|mut world, HookContext { entity, .. }| {
@@ -69,7 +75,7 @@ fn enemy_defeated(
 }
 
 static ENEMY_VALUES: LazyLock<HashMap<String, i32>> = LazyLock::new(|| {
-    let iter = [("Mantis", 5), ("Bird", 7), ("Moon", 7)]
+    let iter = [("Mantis", 8), ("Bird", 7), ("Moon", 5), ("Apple", 15)]
         .into_iter()
         .map(|(key, value)| (key.to_owned(), value));
     HashMap::from_iter(iter)
@@ -204,6 +210,9 @@ fn spawn_enemy_wave(
                     }
                     "Moon" => {
                         commands.spawn((moon::Moon, transform));
+                    }
+                    "Apple" => {
+                        commands.spawn((apple::Apple, transform));
                     }
                     _ => {
                         warn!("Unknown projected enemy: {enemy}");

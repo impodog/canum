@@ -20,9 +20,9 @@ impl Plugin for BirdPlugin {
 #[require(
     ProjectedEnemy,
     Collider::rectangle(10.0, 20.0),
-    Animation::new("Projected_Bird", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(230),
-    movements::AutoFlip::FLIP_RIGHT
+    Animation::new("Projected_Bird_Static", vec2(64.0, 64.0)),
+    enemy::health::EnemyHealth::new(200),
+    movements::AutoFlip::FLIP_LEFT
 )]
 pub struct Bird;
 
@@ -30,12 +30,12 @@ fn bird_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) 
     world.commands().spawn((
         ChildOf(entity),
         enemy::health::EnemySensor,
-        Collider::rectangle(32.0, 32.0),
+        Collider::circle(26.0),
     ));
     world.commands().spawn((
         ChildOf(entity),
         BirdBehaviors,
-        children![RandomMoving, ShootFeather],
+        children![RandomMoving::default(), ShootFeather],
     ));
 }
 
@@ -45,7 +45,9 @@ struct BirdBehaviors;
 
 #[derive(Component, Default)]
 #[require(Behavior::new("Projected_Bird_RandomMoving", 1.0, ["Bird"]))]
-struct RandomMoving;
+struct RandomMoving {
+    target: Option<Entity>,
+}
 
 fn random_moving_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
     world
@@ -59,7 +61,14 @@ fn random_moving_start(
     event: On<BehaveStart>,
     mut commands: Commands,
     q_transform: Query<&GlobalTransform>,
+    mut q_animation: Query<&mut Animation>,
+    mut q_behavior: Query<&mut RandomMoving>,
 ) {
+    let Ok(mut random_moving) = q_behavior.get_mut(event.entity) else {
+        return;
+    };
+    random_moving.target = Some(event.target);
+
     let Ok(transform) = q_transform.get(event.entity) else {
         return;
     };
@@ -80,14 +89,34 @@ fn random_moving_start(
             notify: Some(event.entity),
         },
     ));
+
+    let Ok(mut animation) = q_animation.get_mut(event.target) else {
+        return;
+    };
+    animation.replace("Projected_Bird_Walking", false, None);
 }
 
-fn random_moving_end(event: On<enemy::movements::DisplacementComplete>, mut commands: Commands) {
+fn random_moving_end(
+    event: On<enemy::movements::DisplacementComplete>,
+    mut commands: Commands,
+    mut q_animation: Query<&mut Animation>,
+    q_behavior: Query<&RandomMoving>,
+) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(rand_normal(3.0, 0.6)),
         occupies: occupies![],
-    })
+    });
+
+    let Ok(random_moving) = q_behavior.get(event.entity) else {
+        return;
+    };
+    if let Some(target) = random_moving.target {
+        let Ok(mut animation) = q_animation.get_mut(target) else {
+            return;
+        };
+        animation.replace("Projected_Bird_Static", false, None);
+    }
 }
 
 #[derive(Component, Default)]
@@ -125,8 +154,8 @@ fn shoot_feather(
     let direction = (player_position - position).normalize_or(vec2(1.0, 0.0));
 
     let transform = Transform::from_translation(vec3(position.x, position.y, 0.0))
-        .with_rotation(Quat::from_rotation_arc_2d(vec2(1.0, 0.0), direction));
-    commands.spawn((BirdFeather, transform, LinearVelocity(direction * 220.0)));
+        .with_rotation(Quat::from_rotation_z(direction.to_angle()));
+    commands.spawn((BirdFeather, transform, LinearVelocity(direction * 200.0)));
     commands.spawn(Sound::new("Projected_Bird_Chirp"));
     commands.trigger(BehaveEnd {
         entity: event.entity,

@@ -2,6 +2,27 @@
   "sprites": {
     "Projected_Flashlight": [{"path": "flashlight.png", "size": [400, 225]}],
     "Projected_ShadowDefeated": [{"path":"shadow_defeated.png", "count": 4, "interval": 50}],
-    "Projected_Mantis_SlashResidue": [{"path": "mantis_slash_residue.png", "count": 3, "interval": 100}]
+    "Projected_Mantis_SlashResidue": [{"path": "mantis_slash_residue.png", "count": 3, "interval": 100}],
+    "Projected_Mantis_Static": [{"path": "projected_mantis.png", "offset": [0, 0]}],
+    "Projected_Mantis_AdjustPosition": [{"path": "projected_mantis.png", "offset": [32, 0], "count": 2, "interval": 200}],
+    "Projected_Mantis_Slash": [{"path": "projected_mantis.png", "offset": [96, 0], "count": 4, "interval": 175}],
+    "Projected_Bird_Static": [{"path": "projected_bird.png", "offset": [0, 0]}],
+    "Projected_Bird_Walking": [{"path": "projected_bird.png", "offset": [32, 0], "count": 2, "interval": 350}],
+    "Projected_Bird_Feather": [{"path": "projected_bird_feather.png", "size": [48, 48]}],
+    "Projected_Moon": [
+      {"path": "projected_moon.png", "offset": [0, 0]},
+      {"path": "projected_moon.png", "offset": [32, 0]}
+    ],
+    "Projected_Star": [
+      {"path": "projected_star.png", "offset": [0, 0]},
+      {"path": "projected_star.png", "offset": [32, 0]},
+      {"path": "projected_star.png", "offset": [64, 0]}
+    ],
+    "Projected_Apple": [
+      {"path": "projected_apple.png", "offset": [0, 0]},
+      {"path": "projected_apple.png", "offset": [32, 0]},
+      {"path": "projected_apple.png", "offset": [64, 0]}
+    ],
+    "Projected_Apple_Slice": [{"path": "projected_apple_slice.png", "count": 2, "interval": 200}]
   }
 }

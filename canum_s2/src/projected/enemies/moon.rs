@@ -19,8 +19,7 @@ impl Plugin for MoonPlugin {
     ProjectedEnemy,
     Collider::circle(10.0),
     Animation::new("Projected_Moon", vec2(48.0, 48.0)),
-    enemy::health::EnemyHealth::new(300),
-    movements::AutoFlip::FLIP_RIGHT
+    enemy::health::EnemyHealth::new(180)
 )]
 pub struct Moon;
 
@@ -65,7 +64,7 @@ fn star_rotate(mut q_star: Query<&mut Transform, With<Star>>, time: Res<Time>) {
 }
 
 fn moon_move_closer(
-    mut q_moon: Query<(&GlobalTransform, &mut movements::ForcedVelocity)>,
+    mut q_moon: Query<(&GlobalTransform, &mut movements::ForcedVelocity), With<Moon>>,
     q_transform: Query<&GlobalTransform>,
     player: Option<Res<player::PrimaryPlayer>>,
 ) {
@@ -82,6 +81,6 @@ fn moon_move_closer(
             let position = global_transform.translation().xy();
             let diff = player_position - position;
             let direction = diff.normalize_or_zero();
-            **velocity = direction * ((diff.length() * 0.3).clamp(10.0, 70.0))
+            **velocity = direction * ((diff.length() * 0.3).clamp(10.0, 60.0))
         });
 }

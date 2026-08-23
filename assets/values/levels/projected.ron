@@ -1,7 +1,7 @@
 (
   custom: {
     "Projected_Waves": [
-      (enemies: [("Moon", 5)], timeout: 10.0)
+      (enemies: [("Mantis", 1), ("Moon", 1), ("Bird", 1), ("Apple", 1)], timeout: 10.0)
     ]
   }
 )

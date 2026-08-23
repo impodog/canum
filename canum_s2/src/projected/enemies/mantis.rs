@@ -35,7 +35,7 @@ impl Plugin for MantisPlugin {
                 world.commands().spawn((
                     ChildOf(entity),
                     enemy::health::EnemySensor,
-                    Collider::rectangle(20.0, 32.0),
+                    Collider::rectangle(50.0, 50.0),
                 ));
             },
         );
@@ -47,8 +47,8 @@ impl Plugin for MantisPlugin {
     ProjectedEnemy,
     Collider::rectangle(10.0, 20.0),
     Animation::new("Projected_Mantis_Static", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(300),
-    movements::AutoFlip::FLIP_RIGHT
+    enemy::health::EnemyHealth::new(270),
+    movements::AutoFlip::FLIP_LEFT
 )]
 pub struct Mantis;
 
@@ -93,13 +93,13 @@ fn adjust_position(
 fn adjust_position_end(event: On<enemy::movements::DisplacementComplete>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(rand_normal(0.5, 0.05)),
+        cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.05)),
         occupies: occupies![],
     });
 }
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Projected_Mantis_Slash", 1.0, ["Mantis"]), BaseByDistance::new(90.0, 10.0))]
+#[require(Behavior::new("Projected_Mantis_Slash", 1.0, ["Mantis"]), BaseByDistance::new(90.0, 15.0))]
 struct DoSlash;
 
 #[derive(Component, Default)]
@@ -204,13 +204,15 @@ fn do_slash_end(
     mut q_animation: Query<&mut Animation>,
     mut commands: Commands,
 ) {
-    let Ok(mut animation) = q_animation.get_mut(event.source) else {
-        return;
-    };
-    animation.replace("Projected_Mantis_Static", false, None);
-    commands.trigger(BehaveEnd {
-        entity: event.entity,
-        cooldown: Duration::from_secs_f32(5.0),
-        occupies: occupies![],
-    });
+    if event.index == usize::MAX {
+        let Ok(mut animation) = q_animation.get_mut(event.source) else {
+            return;
+        };
+        animation.replace("Projected_Mantis_Static", false, None);
+        commands.trigger(BehaveEnd {
+            entity: event.entity,
+            cooldown: Duration::from_secs_f32(5.0),
+            occupies: occupies![],
+        });
+    }
 }
