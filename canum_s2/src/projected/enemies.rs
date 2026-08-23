@@ -1,4 +1,6 @@
+mod bird;
 mod mantis;
+mod moon;
 
 use super::*;
 use enemy::behavior::*;
@@ -8,7 +10,7 @@ pub(super) struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((mantis::MantisPlugin,));
+        app.add_plugins((mantis::MantisPlugin, bird::BirdPlugin, moon::MoonPlugin));
         app.world_mut()
             .register_component_hooks::<ProjectedEnemy>()
             .on_add(|mut world, HookContext { entity, .. }| {
@@ -40,6 +42,7 @@ impl Plugin for EnemiesPlugin {
     health::Friendly(false),
     health::ContactDamage { value: 120, projectile: false, order: consts::order::ENEMY_MINION },
     movements::SpeedDecay(0.4),
+    movements::ForcedVelocity,
     enemy::health::EnemyHealth,
     enemy::health::DamageSound::new("Projected_ShadowHit"),
     projectile::NoCollideBoundary,
@@ -66,7 +69,7 @@ fn enemy_defeated(
 }
 
 static ENEMY_VALUES: LazyLock<HashMap<String, i32>> = LazyLock::new(|| {
-    let iter = [("Mantis", 10)]
+    let iter = [("Mantis", 5), ("Bird", 7), ("Moon", 7)]
         .into_iter()
         .map(|(key, value)| (key.to_owned(), value));
     HashMap::from_iter(iter)
@@ -177,15 +180,30 @@ fn spawn_enemy_wave(
         timeout.0 = Timer::from_seconds(wave.timeout, TimerMode::Once);
         for (enemy, count) in wave.enemies.into_iter() {
             for _ in 0..count {
-                let y = rand::random_range(
-                    -CONFIG.display.half_virtual_size.1 + 32.0
-                        ..CONFIG.display.half_virtual_size.1 - 32.0,
-                );
-                let x = (CONFIG.display.half_virtual_size.0 + 32.0) * rand_sign();
-                let transform = Transform::from_translation(vec3(x, y, 5.0));
+                let transform = if rand::random_ratio(1, 2) {
+                    let y = rand::random_range(
+                        -CONFIG.display.half_virtual_size.1 + 32.0
+                            ..CONFIG.display.half_virtual_size.1 - 32.0,
+                    );
+                    let x = (CONFIG.display.half_virtual_size.0 + 32.0) * rand_sign();
+                    Transform::from_translation(vec3(x, y, 5.0))
+                } else {
+                    let x = rand::random_range(
+                        -CONFIG.display.half_virtual_size.0 + 32.0
+                            ..CONFIG.display.half_virtual_size.0 - 32.0,
+                    );
+                    let y = (CONFIG.display.half_virtual_size.1 + 32.0) * rand_sign();
+                    Transform::from_translation(vec3(x, y, 5.0))
+                };
                 match enemy.as_str() {
                     "Mantis" => {
                         commands.spawn((mantis::Mantis, transform));
+                    }
+                    "Bird" => {
+                        commands.spawn((bird::Bird, transform));
+                    }
+                    "Moon" => {
+                        commands.spawn((moon::Moon, transform));
                     }
                     _ => {
                         warn!("Unknown projected enemy: {enemy}");

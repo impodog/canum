@@ -38,22 +38,24 @@ fn setup_projected(mut commands: Commands) {
     ));
 }
 
+const AMPLIFY_RATIO: f32 = 2.0;
+const Y_DIFF: f32 = (200.0 - 55.0) * AMPLIFY_RATIO;
+
 fn spawn_necessary(
     _event: On<ProjectedSpawn>,
     mut commands: Commands,
-    primary_player: Res<player::PrimaryPlayer>,
     mut title: ResMut<canum_res::window::WindowTitle>,
+    primary_player: Res<player::PrimaryPlayer>,
     lang: Res<Lang>,
     fonts: Res<canum_ui::Fonts>,
     bottom_left: Single<Entity, With<canum_ui::BottomLeft>>,
 ) {
-    const AMPLIFY_RATIO: f32 = 1.6;
     commands.spawn((
         ChildOf(primary_player.0),
         flashlight::FlashlightOverlay {
             amplify_ratio: AMPLIFY_RATIO,
         },
-        Transform::from_translation(vec3(0.0, (200.0 - 55.0) * AMPLIFY_RATIO, 0.1))
+        Transform::from_translation(vec3(0.0, Y_DIFF, 26.0))
             .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
     ));
     title.0 = lang.get("Projected_WindowTitle").to_owned();

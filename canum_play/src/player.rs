@@ -138,6 +138,7 @@ fn rotate_player(
         With<Player>,
     >,
     q_partial_velocity: Query<&movements::PartialVelocity>,
+    time: Res<Time>,
 ) {
     fn wrap_angle(angle: f32) -> f32 {
         if angle > std::f32::consts::PI {
@@ -170,6 +171,7 @@ fn rotate_player(
             let base = target_velocity.length() / 100.0
                 * (40.0f32)
                 * (diff.abs() / std::f32::consts::PI + 0.01);
+            let base = base.min(diff.abs() / time.delta_secs());
             if (0.0..std::f32::consts::PI).contains(&diff) {
                 angular_velocity.0 = base;
             } else {

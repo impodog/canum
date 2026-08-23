@@ -63,9 +63,12 @@ struct AdjustPosition;
 fn adjust_position(
     event: On<BehaveStart>,
     mut commands: Commands,
-    primary_player: Res<player::PrimaryPlayer>,
+    primary_player: Option<Res<player::PrimaryPlayer>>,
     q_transform: Query<&GlobalTransform>,
 ) {
+    let Some(primary_player) = primary_player else {
+        return;
+    };
     let Ok(player_transform) = q_transform.get(primary_player.0) else {
         return;
     };
@@ -134,11 +137,14 @@ fn slash_residue_change_hitbox(event: On<AnimationComplete>, mut commands: Comma
 
 fn do_slash(
     event: On<BehaveStart>,
-    player: Res<player::PrimaryPlayer>,
+    player: Option<Res<player::PrimaryPlayer>>,
     q_transform: Query<&GlobalTransform>,
     mut q_sprite: Query<(&mut Sprite, &mut Animation)>,
     mut commands: Commands,
 ) {
+    let Some(player) = player else {
+        return;
+    };
     let Ok(player_transform) = q_transform.get(player.0) else {
         return;
     };
