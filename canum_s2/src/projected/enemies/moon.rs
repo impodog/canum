@@ -14,14 +14,25 @@ impl Plugin for MoonPlugin {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component)]
 #[require(
     ProjectedEnemy,
     Collider::circle(10.0),
     Animation::new("Projected_Moon", vec2(48.0, 48.0)),
-    enemy::health::EnemyHealth::new(180)
+    enemy::health::EnemyHealth::new(120)
 )]
-pub struct Moon;
+pub struct Moon {
+    /// This prevents moons from stacking up.
+    pub fixed_displace: Vec2,
+}
+impl Default for Moon {
+    fn default() -> Self {
+        Self {
+            fixed_displace: Vec2::from_angle(rand::random_range(0.0..std::f32::consts::TAU))
+                * rand_normal(32.0, 5.0),
+        }
+    }
+}
 
 fn moon_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
     world.commands().spawn((
@@ -57,14 +68,15 @@ const STAR_ANGLE_DIFF: f32 = std::f32::consts::FRAC_PI_3 * 2.0;
 fn star_rotate(mut q_star: Query<&mut Transform, With<Star>>, time: Res<Time>) {
     q_star.par_iter_mut().for_each(|mut transform| {
         let xy = transform.translation.xy();
-        let new_xy = xy.rotate(Vec2::from_angle(STAR_ANGULAR_VELOCITY * time.delta_secs()));
+        let new_xy = Vec2::from_angle(xy.to_angle() + STAR_ANGULAR_VELOCITY * time.delta_secs())
+            * STAR_RADIUS;
         transform.translation.x = new_xy.x;
         transform.translation.y = new_xy.y;
     });
 }
 
 fn moon_move_closer(
-    mut q_moon: Query<(&GlobalTransform, &mut movements::ForcedVelocity), With<Moon>>,
+    mut q_moon: Query<(&GlobalTransform, &mut movements::ForcedVelocity, &Moon)>,
     q_transform: Query<&GlobalTransform>,
     player: Option<Res<player::PrimaryPlayer>>,
 ) {
@@ -77,9 +89,9 @@ fn moon_move_closer(
     let player_position = player_transform.translation().xy();
     q_moon
         .par_iter_mut()
-        .for_each(|(global_transform, mut velocity)| {
+        .for_each(|(global_transform, mut velocity, moon)| {
             let position = global_transform.translation().xy();
-            let diff = player_position - position;
+            let diff = player_position - position + moon.fixed_displace;
             let direction = diff.normalize_or_zero();
             **velocity = direction * ((diff.length() * 0.3).clamp(10.0, 60.0))
         });

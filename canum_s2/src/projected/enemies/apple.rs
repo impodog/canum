@@ -46,7 +46,7 @@ fn apple_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext)
 struct AppleBehaviors;
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Projected_Apple_RandomMove", 1.0, ["Apple"]))]
+#[require(Behavior::new("Projected_Apple_RandomMove", 1.0, ["RandomMove"]))]
 struct RandomMove;
 
 fn random_move_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
@@ -86,8 +86,8 @@ fn random_move(
 fn random_move_end(event: On<enemy::movements::DisplacementComplete>, mut commands: Commands) {
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(2.0),
-        occupies: occupies![],
+        cooldown: Duration::from_secs_f32(0.1),
+        occupies: occupies![("RandomMove", 2.0)],
     });
 }
 
@@ -137,8 +137,8 @@ fn throw_slice(
     commands.spawn(Sound::new("Apple_Swoosh"));
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(rand_normal(6.0, 0.5)),
-        occupies: occupies![],
+        cooldown: Duration::from_secs_f32(0.5),
+        occupies: occupies![("ThrowSlice", rand_normal(6.0, 0.5))],
     });
 }
 

@@ -27,11 +27,21 @@ impl Plugin for EnemiesPlugin {
             OnEnter(PROJECTED_STATE.clone()),
             |mut commands: Commands| {
                 commands.spawn((SessionOnly, Observer::new(init_enemy_waves)));
+                commands.insert_resource(PendingWave::default());
+                commands.insert_resource(AllDefeated::default());
             },
         );
+        app.add_systems(OnExit(PROJECTED_STATE.clone()), |mut commands: Commands| {
+            commands.remove_resource::<PendingWave>();
+            commands.remove_resource::<AllDefeated>();
+        });
         app.add_systems(
             FixedUpdate,
-            (update_health_bar, spawn_enemy_wave).in_set(ProjectedSet),
+            (
+                update_health_bar,
+                (update_enemy_wave, spawn_enemies).chain(),
+            )
+                .in_set(ProjectedSet),
         );
     }
 }
@@ -75,13 +85,13 @@ fn enemy_defeated(
 }
 
 static ENEMY_VALUES: LazyLock<HashMap<String, i32>> = LazyLock::new(|| {
-    let iter = [("Mantis", 8), ("Bird", 7), ("Moon", 5), ("Apple", 15)]
+    let iter = [("Mantis", 5), ("Bird", 10), ("Moon", 7), ("Apple", 15)]
         .into_iter()
         .map(|(key, value)| (key.to_owned(), value));
     HashMap::from_iter(iter)
 });
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub struct Wave {
     pub enemies: Vec<(String, usize)>,
     pub timeout: f32,
@@ -168,15 +178,29 @@ impl Default for SpawnTimeout {
     }
 }
 
-fn spawn_enemy_wave(
+/// Spread enemy spawning across frames so that there aren't lags.
+#[derive(Resource, Default, Debug, Deref, DerefMut)]
+struct PendingWave {
+    #[deref]
+    wave: Wave,
+}
+
+#[derive(Resource, Default, Debug)]
+struct AllDefeated(bool);
+
+fn update_enemy_wave(
     mut commands: Commands,
     q_enemy: Query<(), With<ProjectedEnemy>>,
     waves: Option<ResMut<Waves>>,
     mut timeout: Local<SpawnTimeout>,
     time: Res<Time>,
+    mut pending_wave: ResMut<PendingWave>,
+    mut all_defeated: ResMut<AllDefeated>,
 ) {
     timeout.tick(time.delta());
-    if q_enemy.iter().next().is_some() || !timeout.is_finished() {
+    if (!pending_wave.enemies.is_empty() || q_enemy.iter().next().is_some())
+        && !timeout.is_finished()
+    {
         return;
     }
     let Some(mut waves) = waves else {
@@ -184,46 +208,53 @@ fn spawn_enemy_wave(
     };
     if let Some(wave) = waves.waves.pop_front() {
         timeout.0 = Timer::from_seconds(wave.timeout, TimerMode::Once);
-        for (enemy, count) in wave.enemies.into_iter() {
-            for _ in 0..count {
-                let transform = if rand::random_ratio(1, 2) {
-                    let y = rand::random_range(
-                        -CONFIG.display.half_virtual_size.1 + 32.0
-                            ..CONFIG.display.half_virtual_size.1 - 32.0,
-                    );
-                    let x = (CONFIG.display.half_virtual_size.0 + 32.0) * rand_sign();
-                    Transform::from_translation(vec3(x, y, 5.0))
-                } else {
-                    let x = rand::random_range(
-                        -CONFIG.display.half_virtual_size.0 + 32.0
-                            ..CONFIG.display.half_virtual_size.0 - 32.0,
-                    );
-                    let y = (CONFIG.display.half_virtual_size.1 + 32.0) * rand_sign();
-                    Transform::from_translation(vec3(x, y, 5.0))
-                };
-                match enemy.as_str() {
-                    "Mantis" => {
-                        commands.spawn((mantis::Mantis, transform));
-                    }
-                    "Bird" => {
-                        commands.spawn((bird::Bird, transform));
-                    }
-                    "Moon" => {
-                        commands.spawn((moon::Moon, transform));
-                    }
-                    "Apple" => {
-                        commands.spawn((apple::Apple, transform));
-                    }
-                    _ => {
-                        warn!("Unknown projected enemy: {enemy}");
-                    }
-                }
-            }
-            waves.current_value += ENEMY_VALUES.get(&enemy).copied().unwrap_or(0) * count as i32;
+        for (enemy, count) in wave.enemies.iter() {
+            waves.current_value += ENEMY_VALUES.get(enemy).copied().unwrap_or(0) * *count as i32;
         }
-    } else {
+        pending_wave.wave = wave;
+    } else if !all_defeated.0 && q_enemy.iter().next().is_none() {
+        all_defeated.0 = true;
         timeout.0 = Timer::from_seconds(10000.0, TimerMode::Once);
         commands.trigger(ProjectedAllDefeated);
+    }
+}
+
+fn spawn_enemies(mut commands: Commands, mut wave: ResMut<PendingWave>) {
+    if wave.enemies.is_empty() {
+        return;
+    }
+
+    let index = rand::random_range(0..wave.enemies.len());
+    let (enemy, count) = &mut wave.enemies[index];
+    *count = (*count).saturating_sub(1);
+
+    let transform = {
+        let y = rand::random_range(
+            -CONFIG.display.half_virtual_size.1 + 32.0..CONFIG.display.half_virtual_size.1 - 32.0,
+        );
+        let x = (CONFIG.display.half_virtual_size.0 + 32.0) * rand_sign();
+        Transform::from_translation(vec3(x, y, 5.0))
+    };
+    match enemy.as_str() {
+        "Mantis" => {
+            commands.spawn((mantis::Mantis, transform));
+        }
+        "Bird" => {
+            commands.spawn((bird::Bird, transform));
+        }
+        "Moon" => {
+            commands.spawn((moon::Moon::default(), transform));
+        }
+        "Apple" => {
+            commands.spawn((apple::Apple, transform));
+        }
+        _ => {
+            warn!("Unknown projected enemy: {enemy}");
+        }
+    }
+
+    if *count == 0 {
+        wave.enemies.remove(index);
     }
 }
 
@@ -232,7 +263,7 @@ fn update_health_bar(
     mut bar: Single<&mut canum_ui::bar::HealthBar, With<ProjectedTimerBar>>,
     time: Res<Time>,
 ) {
-    const INCREMENT_SPEED: f32 = 10.0;
+    const INCREMENT_SPEED: f32 = 30.0;
     if let Some(waves) = waves {
         let target = waves.current_value as f32;
         if bar.current < target {

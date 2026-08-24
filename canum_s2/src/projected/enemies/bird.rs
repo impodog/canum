@@ -21,8 +21,8 @@ impl Plugin for BirdPlugin {
     ProjectedEnemy,
     Collider::rectangle(10.0, 20.0),
     Animation::new("Projected_Bird_Static", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(200),
-    movements::AutoFlip::FLIP_LEFT
+    enemy::health::EnemyHealth::new(150),
+    movements::AutoFlip::FLIP_RIGHT
 )]
 pub struct Bird;
 
@@ -44,7 +44,7 @@ fn bird_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) 
 struct BirdBehaviors;
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Projected_Bird_RandomMoving", 1.0, ["Bird"]))]
+#[require(Behavior::new("Projected_Bird_RandomMoving", 1.0, ["RandomMoving"]))]
 struct RandomMoving {
     target: Option<Entity>,
 }
@@ -74,7 +74,7 @@ fn random_moving_start(
     };
     let position = transform.translation().xy();
     let displace = if !CONFIG.display.screen_rect.contains(position) || rand::random_bool(0.2) {
-        position.normalize_or(vec2(1.0, 0.0)) * -100.0
+        position.normalize_or(vec2(1.0, 0.0)) * -160.0
     } else {
         let perp = position.normalize_or(vec2(1.0, 0.0)).perp() * rand_sign();
         let direction = perp.rotate(Vec2::from_angle(rand_normal(0.0, 0.5)));
@@ -130,7 +130,7 @@ fn random_moving_end(
 struct BirdFeather;
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Projected_Bird_ShootFeather", 0.5, ["Bird"]))]
+#[require(Behavior::new("Projected_Bird_ShootFeather", 0.5, ["ShootFeather"]))]
 struct ShootFeather;
 
 fn shoot_feather_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
@@ -159,7 +159,7 @@ fn shoot_feather(
     commands.spawn(Sound::new("Projected_Bird_Chirp"));
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(rand_normal(8.0, 1.0)),
-        occupies: occupies![],
+        cooldown: Duration::from_secs_f32(1.0),
+        occupies: occupies![("ShootFeather", rand_normal(9.0, 1.0))],
     });
 }

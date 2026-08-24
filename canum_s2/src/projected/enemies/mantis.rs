@@ -30,7 +30,7 @@ impl Plugin for MantisPlugin {
                 world.commands().spawn((
                     ChildOf(entity),
                     MantisBehaviors,
-                    children![AdjustPosition, DoSlash],
+                    children![AdjustPosition::default(), DoSlash],
                 ));
                 world.commands().spawn((
                     ChildOf(entity),
@@ -47,7 +47,7 @@ impl Plugin for MantisPlugin {
     ProjectedEnemy,
     Collider::rectangle(10.0, 20.0),
     Animation::new("Projected_Mantis_Static", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(270),
+    enemy::health::EnemyHealth::new(200),
     movements::AutoFlip::FLIP_LEFT
 )]
 pub struct Mantis;
@@ -58,28 +58,42 @@ struct MantisBehaviors;
 
 #[derive(Component, Default)]
 #[require(Behavior::new("Projected_Mantis_AdjustPosition", 1.0, ["Mantis"]))]
-struct AdjustPosition;
+struct AdjustPosition {
+    target: Option<Entity>,
+}
 
 fn adjust_position(
     event: On<BehaveStart>,
     mut commands: Commands,
     primary_player: Option<Res<player::PrimaryPlayer>>,
     q_transform: Query<&GlobalTransform>,
+    mut q_adjust_position: Query<&mut AdjustPosition>,
+    mut q_animation: Query<&mut Animation>,
 ) {
+    const TARGET_RADIUS: f32 = 90.0;
     let Some(primary_player) = primary_player else {
         return;
     };
-    let Ok(player_transform) = q_transform.get(primary_player.0) else {
+    let Ok(mut adjust_position) = q_adjust_position.get_mut(event.entity) else {
+        return;
+    };
+    adjust_position.target = Some(event.target);
+    let Ok(mut animation) = q_animation.get_mut(event.target) else {
+        return;
+    };
+    animation.replace("Projected_Mantis_AdjustPosition", false, None);
+
+    let Ok([player_transform, transform]) = q_transform.get_many([primary_player.0, event.entity])
+    else {
         return;
     };
     let player_position = player_transform.translation().xy();
-    let Ok(transform) = q_transform.get(event.entity) else {
-        return;
-    };
     let position = transform.translation().xy();
     let direction = (position - player_position).normalize_or_zero();
-    let target = direction * rand_normal(90.0, 5.0) + player_position;
-    let displace = target - position;
+    let target_position = player_position
+        + Vec2::from_angle(rand_normal(0.0, 0.5).clamp(-1.0, 1.0)).rotate(direction)
+            * rand_normal(TARGET_RADIUS, 5.0);
+    let displace = target_position - position;
     commands.spawn((
         ChildOf(event.target),
         enemy::movements::Displacement {
@@ -90,7 +104,22 @@ fn adjust_position(
         },
     ));
 }
-fn adjust_position_end(event: On<enemy::movements::DisplacementComplete>, mut commands: Commands) {
+
+fn adjust_position_end(
+    event: On<enemy::movements::DisplacementComplete>,
+    mut commands: Commands,
+    q_adjust_position: Query<&AdjustPosition>,
+    mut q_animation: Query<&mut Animation>,
+) {
+    let Ok(adjust_position) = q_adjust_position.get(event.entity) else {
+        return;
+    };
+    if let Some(target) = adjust_position.target {
+        let Ok(mut animation) = q_animation.get_mut(target) else {
+            return;
+        };
+        animation.replace("Projected_Mantis_Static", false, None);
+    }
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.05)),
