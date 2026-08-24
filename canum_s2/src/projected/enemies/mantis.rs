@@ -47,7 +47,7 @@ impl Plugin for MantisPlugin {
     ProjectedEnemy,
     Collider::rectangle(10.0, 20.0),
     Animation::new("Projected_Mantis_Static", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(200),
+    enemy::health::EnemyHealth::new(230),
     movements::AutoFlip::FLIP_LEFT
 )]
 pub struct Mantis;

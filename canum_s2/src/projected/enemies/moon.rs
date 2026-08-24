@@ -19,7 +19,7 @@ impl Plugin for MoonPlugin {
     ProjectedEnemy,
     Collider::circle(10.0),
     Animation::new("Projected_Moon", vec2(48.0, 48.0)),
-    enemy::health::EnemyHealth::new(120)
+    enemy::health::EnemyHealth::new(130)
 )]
 pub struct Moon {
     /// This prevents moons from stacking up.

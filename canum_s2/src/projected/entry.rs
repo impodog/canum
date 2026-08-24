@@ -29,12 +29,7 @@ fn setup_projected(mut commands: Commands) {
     commands.spawn((
         SessionOnly,
         canum_res::background::Background::new(CONFIG.display.screen_size),
-        //Animation::new("Projected_Back", CONFIG.display.screen_size),
-        Sprite {
-            color: Color::WHITE,
-            custom_size: Some(CONFIG.display.screen_size),
-            ..default()
-        },
+        Animation::new("Projected_Back", CONFIG.display.screen_size),
     ));
 }
 

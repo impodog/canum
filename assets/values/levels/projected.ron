@@ -10,8 +10,8 @@
       (enemies: [("Apple", 1)], timeout: 30.0),
       (enemies: [("Mantis", 3), ("Moon", 3), ("Bird", 1)], timeout: 30.0),
       (enemies: [("Mantis", 2), ("Bird", 3)], timeout: 40.0),
-      (enemies: [("Apple", 1), ("Bird", 1), ("Moon", 1), ("Mantis", 1)], timeout: 60.0),
-      (enemies: [("Apple", 3)], timeout: 60.0)
+      (enemies: [("Apple", 1), ("Bird", 1), ("Moon", 2), ("Mantis", 2)], timeout: 60.0),
+      (enemies: [("Apple", 4)], timeout: 60.0)
     ]
   }
 )
