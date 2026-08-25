@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "House_Lobby": [{"path": "lobby.png", "size": [2400, 225]}]
+    "House_Lobby": [{"path": "lobby.png", "size": [2400, 225]}],
+    "House_Shop": [{"path": "house_shop.png", "size": [400, 225]}]
   }
 }

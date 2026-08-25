@@ -1,14 +1,17 @@
 (
   boss: {
     "Laser": (
-      gains: { "Completed": 2, "NoHits": 2 },
+      gains: { "Completed": 1, "NoHits": 2 },
     ),
     "Windy": (
       gains: { "Completed": 3, "NoHits": 2 },
     ),
     "Bread": (
-      gains: { "Completed": 2, "NoHits": 2 },
+      gains: { "Completed": 1, "NoHits": 2 },
     ),
+    "Projected": (
+      gains: { "Completed": 3, "NoHits": 2 },
+    )
   },
   stage: {
     "House": (
@@ -19,5 +22,11 @@
     )
   },
   shop: {
+    "Shop_Bread": (
+      items: [
+        (price: 5, item: Weapon("C_Tracking")),
+      ],
+      background: "House_Shop",
+    )
   }
 )

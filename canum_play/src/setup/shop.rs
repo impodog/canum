@@ -251,11 +251,12 @@ fn enter_shop(
                 ),
                 (
                     Transform::from_translation(vec3(-ITEM_RECT_SIZE.x * 0.5 + 3.0, 0.0, 0.0)),
-                    canum_res::ImageFontPreRenderedText::default(),
-                    canum_res::ImageFontText::default()
-                        .text(item_text)
-                        .font(fonts.normal.clone()),
-                    Anchor::TOP_LEFT,
+                    canum_fx::text::MultilineSpriteText::new(
+                        canum_res::ImageFontText::default()
+                            .text(item_text)
+                            .font(fonts.normal.clone()),
+                        canum_res::ImageFontSpriteText::default().anchor(Anchor::TOP_LEFT),
+                    ),
                     TextBounds {
                         width: Some(ITEM_RECT_SIZE.x),
                         height: None
@@ -270,14 +271,15 @@ fn enter_shop(
                     children![(
                         Transform::from_translation(Vec3::new(
                             -ITEM_RECT_SIZE.x * 0.5 + 3.0,
-                            0.0,
+                            ITEM_RECT_SIZE.y * 0.5 - 2.0,
                             0.1
                         )),
-                        canum_res::ImageFontPreRenderedText::default(),
-                        canum_res::ImageFontText::default()
-                            .text(desc)
-                            .font(fonts.normal.clone()),
-                        Anchor::TOP_LEFT,
+                        canum_fx::text::MultilineSpriteText::new(
+                            canum_res::ImageFontText::default()
+                                .text(desc)
+                                .font(fonts.normal.clone()),
+                            canum_res::ImageFontSpriteText::default().anchor(Anchor::TOP_LEFT),
+                        ),
                     )]
                 ),
                 (
@@ -465,16 +467,31 @@ fn quit_shop(
 
 #[derive(Component)]
 #[require(SessionOnly)]
-pub struct ShopIndicator;
+pub struct ShopIndicator {
+    pub color: Color,
+}
+impl Default for ShopIndicator {
+    fn default() -> Self {
+        Self {
+            color: Color::WHITE,
+        }
+    }
+}
+impl ShopIndicator {
+    pub fn color(mut self, color: Color) -> Self {
+        self.color = color;
+        self
+    }
+}
 
 fn init_shop_indicator(
     mut commands: Commands,
-    mut q_indicator: Query<Entity, Added<ShopIndicator>>,
+    mut q_indicator: Query<(Entity, &ShopIndicator), Added<ShopIndicator>>,
     fonts: Res<canum_res::PixelFonts>,
     lang: Res<Lang>,
     controller_suffix: Res<crate::controls::ControllerSuffix>,
 ) {
-    for entity in q_indicator.iter_mut() {
+    for (entity, indicator) in q_indicator.iter_mut() {
         commands.entity(entity).insert((
             canum_res::ImageFontText::default()
                 .text(
@@ -483,6 +500,10 @@ fn init_shop_indicator(
                 )
                 .font_height(14.0)
                 .font(fonts.normal.clone()),
+            Sprite {
+                color: indicator.color,
+                ..default()
+            },
             canum_res::ImageFontPreRenderedText::default(),
         ));
     }

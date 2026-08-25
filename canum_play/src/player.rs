@@ -47,7 +47,7 @@ impl Plugin for PlayerPlugin {
     Animation,
     Transform::from_translation(Vec3::new(0.0, 0.0, 24.37)),
     RigidBody::Dynamic,
-    Collider::circle(7.9),
+    Collider::circle(7.7),
     Mass(1.0),
     Restitution::new(1.0),
     CollisionEventsEnabled,

@@ -43,20 +43,30 @@ struct TrackingArgs {
     interval: Timer,
 }
 
-#[derive(Component, Default)]
+#[derive(Component)]
 #[require(canum_play::projectile::Projectile)]
 pub struct TrackingBullet {
     pub target: Option<Entity>,
+    /// The bullet only tracks for a short while, so some bullets may miss.
+    pub timer: Timer,
+}
+impl Default for TrackingBullet {
+    fn default() -> Self {
+        Self {
+            target: None,
+            timer: Timer::from_seconds(1.8, TimerMode::Once),
+        }
+    }
 }
 
 impl Default for Tracking {
     fn default() -> Self {
         Self {
             interval: 0.1,
-            damage: math::ApproxFloat::from(2.5),
+            damage: math::ApproxFloat::from(4),
             order: consts::order::PLAYER_PROJ_WEAK,
             size: vec2(7.0, 7.0),
-            speed: 360.0,
+            speed: 380.0,
         }
     }
 }
@@ -111,16 +121,27 @@ fn tracking_work(
         (Entity, &GlobalTransform, &canum_play::health::Friendly),
         With<enemy::health::EnemyHealth>,
     >,
+    time: Res<Time>,
 ) {
     q_bullet.par_iter_mut().for_each(
         |(mut bullet, mut linear_velocity, mut rotation, global_transform, friendly)| {
+            if bullet.timer.is_finished() {
+                return;
+            }
+            bullet.timer.tick(time.delta());
             let position = global_transform.translation().xy();
             if let Some(target) = bullet.target {
                 if let Ok(target_transform) = q_transform.get(target) {
                     let target_position = target_transform.translation().xy();
                     let direction = (target_position - position).normalize_or(vec2(1.0, 0.0));
-                    **linear_velocity = direction * linear_velocity.length();
-                    *rotation = Rotation::from_sin_cos(-direction.x, direction.y);
+
+                    let new_speed =
+                        (linear_velocity.length() - time.delta_secs() * 32.0).max(250.0);
+                    let new_direction = linear_velocity
+                        .normalize_or(vec2(1.0, 0.0))
+                        .rotate_towards(direction, 2.6 * time.delta_secs());
+                    **linear_velocity = new_direction * new_speed;
+                    *rotation = Rotation::from_sin_cos(new_direction.x, -new_direction.y);
                 } else {
                     bullet.target = None;
                 }

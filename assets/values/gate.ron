@@ -4,16 +4,16 @@
       gains: { "Completed": 1, "NoHits": 1 },
     ),
     "Turf": (
-      gains: { "Completed": 2, "NoHits": 1 },
+      gains: { "Completed": 3, "NoHits": 1 },
     ),
     "Ant": (
       gains: { "Completed": 1, "NoHits": 1 }
     ),
     "Runway": (
-      gains: { "Completed": 2, "NoHits": 1 }
+      gains: { "Completed": 3, "NoHits": 1 }
     ),
     "Wcat": (
-      gains: { "Completed": 3, "NoHits": 3 }
+      gains: { "Completed": 3, "NoHits": 1 }
     )
   },
   stage: {

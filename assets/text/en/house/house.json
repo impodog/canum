@@ -22,7 +22,9 @@
       "Projected_BossTitle": "All the \n+/Projected\nOnes",
       "Projected_UiName": "The Projected Project",
       "Projected_WindowTitle": "Creepy in the darkness...",
-      "Projected_Victory_WindowTitle": "I just hate enemy gauntlets!"
+      "Projected_Victory_WindowTitle": "I just hate enemy gauntlets!",
+
+      "Weapon_C_Tracking_ShopDesc": "Tracks the closest enemy.\nWorks even if you misalign a bit."
     }
   }
 }

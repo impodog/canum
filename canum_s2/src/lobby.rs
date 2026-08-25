@@ -9,10 +9,22 @@ impl Plugin for LobbyPlugin {
     }
 }
 
-fn setup_lobby(mut commands: Commands) {
+fn setup_lobby(mut commands: Commands, save: Res<Save>) {
     use setup::cutscene::CutsceneDelete;
     commands.spawn((CutsceneDelete, Observer::new(handle_lobby_select)));
+    commands.spawn((CutsceneDelete, Observer::new(handle_lobby_shop)));
     commands.spawn((CutsceneDelete, Observer::new(quit_lobby_panel)));
+    if save
+        .progress
+        .boss_progress
+        .get("Bread")
+        .is_some_and(|bread| bread.defeated)
+    {
+        commands.spawn((
+            Transform::from_translation(Vec3::new(2000.0, 400.0, 0.0)),
+            setup::shop::ShopIndicator::default().color(Color::linear_rgb(1.0, 0.0, 1.0)),
+        ));
+    }
 }
 
 #[allow(clippy::single_match)]
@@ -97,6 +109,22 @@ fn handle_lobby_select(
             ));
         }
         _ => {}
+    }
+}
+
+fn handle_lobby_shop(
+    event: On<setup::lobby::LobbyShop>,
+    mut commands: Commands,
+    q_shop: Query<(), With<setup::shop::ShopIndicator>>,
+) {
+    if q_shop.iter().next().is_none() {
+        return;
+    }
+    let index = (event.position.x / 800.0).floor() as i32;
+    if index == 2 {
+        commands.trigger(setup::shop::EnterShop {
+            fight: "Shop_Bread".to_owned(),
+        });
     }
 }
 

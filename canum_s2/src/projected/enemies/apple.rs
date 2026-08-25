@@ -23,7 +23,7 @@ impl Plugin for ApplePlugin {
     ProjectedEnemy,
     Collider::circle(15.0),
     Animation::new("Projected_Apple", vec2(64.0, 64.0)),
-    enemy::health::EnemyHealth::new(600),
+    enemy::health::EnemyHealth::new(550),
     movements::AutoFlip::FLIP_RIGHT
 )]
 pub struct Apple;

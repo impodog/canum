@@ -20,7 +20,7 @@ fn setup_lobby(mut commands: Commands, save: Res<Save>) {
     {
         commands.spawn((
             Transform::from_translation(Vec3::new(2000.0, 400.0, 0.0)),
-            setup::shop::ShopIndicator,
+            setup::shop::ShopIndicator::default(),
         ));
     }
 }
