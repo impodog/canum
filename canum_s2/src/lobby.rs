@@ -108,6 +108,21 @@ fn handle_lobby_select(
                 ),
             ));
         }
+        4 => {
+            commands.spawn((
+                ChildOf(center),
+                canum_ui::lobby::boss::boss_panel(
+                    fonts,
+                    canum_ui::lobby::boss::BossPanel {
+                        name: lang.get("Ruler_UiName").to_owned(),
+                        fight_name: "Ruler".to_owned(),
+                        marks: get_marks(&save, "Ruler"),
+                        enter_color: Color::Srgba(Srgba::hex("#ffffff").unwrap()),
+                    },
+                    time,
+                ),
+            ));
+        }
         _ => {}
     }
 }

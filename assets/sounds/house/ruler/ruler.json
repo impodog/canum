@@ -1,0 +1,6 @@
+{
+  "sounds": {
+    "Ruler_Intro": { "path": "ruler_intro.wav", "volume": -5.0 },
+    "Ruler_Bgm": { "path": "ruler_bgm.ogg", "volume": -5.0 }
+  }
+}

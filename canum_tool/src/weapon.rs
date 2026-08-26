@@ -35,10 +35,6 @@ impl Plugin for WeaponPlugin {
     }
 }
 
-/// Disables the ability to dispose projectiles / weapon ranges for some sensors.
-#[derive(Component, Default)]
-pub struct NoDisposeProjectile;
-
 /// Creates laser like shooting effects and sends touch events.
 /// This shoots to the right if not rotated.
 ///
@@ -101,7 +97,7 @@ fn laser_work(
     )>,
     q_root: Query<&LaserLike>,
     q_laser_marker: Query<(), With<LaserMarker>>,
-    q_no_dispose_projectile: Query<(), With<NoDisposeProjectile>>,
+    q_no_dispose_projectile: Query<(), With<canum_play::projectile::NoDisposeProjectile>>,
 ) {
     q_laser
         .par_iter_mut()

@@ -100,7 +100,7 @@ fn shoot_and_rotate_begin(
             Transform::from_translation(vec3(30.0, 0.0, 0.0)),
         ))
         .observe(laser_shoot_spawn)
-        .insert(canum_fx::weapon::LaserLike {
+        .insert(canum_tool::weapon::LaserLike {
             middle: Animation::new("Laser_AttackMiddle", LASER_SIZE),
             terminal: Animation::new("Laser_AttackTerminal", LASER_SIZE),
             collider: Collider::rectangle(LASER_SIZE.x, LASER_SIZE.y - 4.0),
@@ -109,7 +109,7 @@ fn shoot_and_rotate_begin(
     commands.spawn((ChildOf(event.entity), Sound::new("Laser_Shoot")));
 }
 
-fn laser_shoot_spawn(event: On<canum_fx::weapon::LaserSpawn>, mut commands: Commands) {
+fn laser_shoot_spawn(event: On<canum_tool::weapon::LaserSpawn>, mut commands: Commands) {
     commands.entity(event.spawn).insert((
         projectile::Projectile::default().no_dispose(),
         health::ContactDamage {

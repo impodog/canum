@@ -36,6 +36,7 @@ fn main() {
             canum_ui::CanumUiPlugin,
             canum_fx::CanumFxPlugin,
             canum_addons::CanumAddonsPlugin,
+            canum_tool::CanumToolPlugin,
         ))
         .add_plugins((canum_s1::CanumS1Plugin, canum_s2::CanumS2Plugin))
         .insert_resource(Time::<Fixed>::from_hz(

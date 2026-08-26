@@ -41,6 +41,7 @@ canum_s1 = { path = "canum_s1" }
 canum_s2 = { path = "canum_s2" }
 canum_save = { path = "canum_save" }
 canum_ui = { path = "canum_ui" }
+canum_tool = { path = "canum_tool" }
 rand = "0.10.1"
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 

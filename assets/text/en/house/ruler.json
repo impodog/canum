@@ -1,0 +1,17 @@
+{
+  "text": {
+    "en": {
+      "Ruler1": [
+        "Ruler_Dialogue_Icon:Ruler:",
+        "Challenger. This house belongs to someone under my protection.</br>",
+        "Every enemy you've faced so far, even the cat, means little,</br>",
+        "For you now face the true ruler indoors. Ready your weapons!"
+      ]
+    }
+  },
+  "dialogue": {
+    "Ruler_Prefight": {
+      "sections": ["Ruler1"]
+    }
+  }
+}

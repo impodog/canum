@@ -1,0 +1,7 @@
+{
+  "sprites": {
+    "Ruler_BigTitle_Upper": [{"path": "title.png", "size": [200, 50], "offset": [0, 0]}],
+    "Ruler_BigTitle_Lower": [{"path": "title.png", "size": [200, 50], "offset": [200, 0]}],
+    "Ruler_BigTitle_Middle": [{"path": "title.png", "size": [200, 50], "offset": [400, 0]}]
+  }
+}

@@ -18,7 +18,18 @@
       complete_prereqs: ["TODO"],
       full_size: (4800.0, 450.0),
       prev_stage: Some("Gate"),
-      locks: [],
+      locks: [
+        (
+          prereqs: ["Laser", "Bread"],
+          position: 3200.0,
+          notify_text: Some("House_RulerCheckpoint")
+        ),
+        (
+          prereqs: ["Laser", "Bread", "Ruler"],
+          position: 4000.0,
+          notify_text: Some("House_NextStageCheckpoint")
+        )
+      ],
     )
   },
   shop: {

@@ -96,3 +96,12 @@ macro_rules! wait_then_trigger {
         }
     };
 }
+
+#[macro_export]
+macro_rules! session_observers {
+    ($commands:expr, $($fn:expr),* $(,)?) => {{
+            $commands.spawn_batch([
+                $((canum_play::setup::SessionOnly, bevy::prelude::Observer::new($fn))),*
+            ]);
+    }};
+}

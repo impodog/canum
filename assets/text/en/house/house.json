@@ -1,5 +1,5 @@
 {
-  "include": [],
+  "include": ["ruler.json"],
   "text": {
     "en": {
       "House_WindowTitle": "Indoors",
@@ -24,7 +24,14 @@
       "Projected_WindowTitle": "Creepy in the darkness...",
       "Projected_Victory_WindowTitle": "I just hate enemy gauntlets!",
 
-      "Weapon_C_Tracking_ShopDesc": "Tracks the closest enemy.\nWorks even if you misalign a bit."
+      "Ruler_BossTitle": "+Divine Ruler",
+      "Ruler_UiName": "Divine Ruler",
+      "Ruler_WindowTitle": "Face the Ruler itself",
+
+      "Weapon_C_Tracking_ShopDesc": "Tracks the closest enemy.\nWorks even if you misalign a bit.",
+
+      "House_RulerCheckpoint": "Defeat Laser Pen and The Loaf so that this gate will open!",
+      "House_NextStageCheckpoint": "Defeat Divine Ruler to enter the next stage!"
     }
   }
 }

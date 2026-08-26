@@ -4,6 +4,7 @@
     "laser/laser.json",
     "windy/windy.json",
     "bread/bread.json",
-    "projected/projected.json"
+    "projected/projected.json",
+    "ruler/ruler.json"
   ]
 }

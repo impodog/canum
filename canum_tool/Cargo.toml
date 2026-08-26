@@ -1,5 +1,5 @@
 [package]
-name = "canum_s2"
+name = "canum_tool"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,7 +11,4 @@ canum_play = { path = "../canum_play" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
 canum_ui = { path = "../canum_ui" }
-canum_tool = { path = "../canum_tool" }
 rand = "0.10.1"
-ron = "0.12.1"
-serde = { version = "1.0.228", features = ["derive"] }
