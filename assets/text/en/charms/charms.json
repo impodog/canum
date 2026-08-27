@@ -9,7 +9,11 @@
       "Charm_S1B_RedHeart_Short": "Red Heart",
       "Charm_S1C_Exoskeleton_Title": "Exoskeleton",
       "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants.\n\nGain exoskeleton charges by staying close to enemy projectiles. When charging is completed, the exoskeleton can absorb one damage at the cost of all charges.",
-      "Charm_S1C_Exoskeleton_Short": "Exoskeleton"
+      "Charm_S1C_Exoskeleton_Short": "Exoskeleton",
+
+      "Charm_S2A_Thermostat_Title": "Thermostat",
+      "Charm_S2A_Thermostat_Desc": "A cooking device that also measures the enemy\n\nAlways show the bosses' remaining health.",
+      "Charm_S2A_Thermostat_Short": "Thermostat"
     }
   }
 }

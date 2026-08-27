@@ -1,33 +1,54 @@
 use bevy::math::FloatPow;
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     f32,
     time::Duration,
 };
 
 use crate::prelude::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub enum BehaviorProcess {
+    Init,
+    Calc,
+    Trigger,
+}
+
 pub(super) struct BehaviorPlugin;
 
 impl Plugin for BehaviorPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerAveragePosition>();
-        app.add_systems(
+        app.configure_sets(
             FixedPreUpdate,
-            (init_behavior_weights, update_player_average_position),
+            (
+                BehaviorProcess::Init,
+                BehaviorProcess::Calc,
+                BehaviorProcess::Trigger,
+            ),
         );
         app.add_systems(
-            FixedUpdate,
+            FixedPreUpdate,
+            (init_behavior_weights, update_player_average_position).in_set(BehaviorProcess::Init),
+        );
+        app.add_systems(
+            FixedPreUpdate,
             (
                 base_by_distance,
                 base_farther_better,
                 multiplier_manual,
                 multiplier_by_speed,
                 multiplier_when_resource_occupied,
-            ),
+            )
+                .in_set(BehaviorProcess::Calc),
         );
-        app.add_systems(FixedPostUpdate, start_behavior);
-        app.add_observer(end_behavior)
+        app.add_systems(
+            FixedPreUpdate,
+            select_behavior.in_set(BehaviorProcess::Trigger),
+        );
+
+        app.add_observer(start_behavior)
+            .add_observer(end_behavior)
             .add_observer(intervene_behavior);
         app.world_mut()
             .register_component_hooks::<BehaviorManager>()
@@ -138,6 +159,10 @@ pub struct BehaviorManagerInfo {
     /// All running behaviors.
     running: BTreeSet<Entity>,
     cooldown: Timer,
+    /// A queue of behavior entities that custom implementation asked to perform.
+    /// Note that resource availablility check will not run, but this respects overall cooldown.
+    /// It will update behavior resources.
+    queued: VecDeque<Entity>,
 }
 impl Default for BehaviorManagerInfo {
     fn default() -> Self {
@@ -145,6 +170,7 @@ impl Default for BehaviorManagerInfo {
             occupied: Default::default(),
             running: Default::default(),
             cooldown: Timer::from_seconds(1.0, TimerMode::Once),
+            queued: Default::default(),
         }
     }
 }
@@ -165,16 +191,28 @@ impl BehaviorManagerInfo {
     pub fn set_global_cooldown(&mut self, cooldown: Duration) {
         self.cooldown = Timer::new(cooldown, TimerMode::Once);
     }
+
+    /// Queue a behavior entity to run without checking resource availability, but still respects overall cooldown.
+    /// This will prevent auto selection of behaviors until the queue is empty.
+    pub fn push_queue(&mut self, entity: Entity) {
+        self.queued.push_back(entity);
+    }
 }
 
-fn start_behavior(
+/// Common event for queued and selected behaviors. Precursor of `BehaveStart` which triggers custom code.
+#[derive(Event, Debug, Clone, Copy)]
+struct BehaviorSelected {
+    entity: Entity,
+    manager_entity: Entity,
+}
+
+fn select_behavior(
     commands: ParallelCommands,
     mut q_manager: Query<(
         Entity,
         &BehaviorManager,
         &mut BehaviorManagerInfo,
         &Children,
-        Option<&ChildOf>,
     )>,
     q_behavior: Query<(&Behavior, &Weight)>,
     time: Res<Time>,
@@ -183,7 +221,7 @@ fn start_behavior(
 
     q_manager
         .par_iter_mut()
-        .for_each(|(manager_entity, manager, mut info, children, parent)| {
+        .for_each(|(manager_entity, manager, mut info, children)| {
             if manager.disabled {
                 return;
             }
@@ -193,6 +231,17 @@ fn start_behavior(
                 return;
             }
             info.cooldown = Default::default();
+
+            // Trigger queued behaviors.
+            if let Some(entity) = info.queued.pop_front() {
+                commands.command_scope(|mut commands| {
+                    commands.trigger(BehaviorSelected {
+                        entity,
+                        manager_entity,
+                    });
+                });
+                return;
+            }
 
             {
                 let mut cooldown_ended = Vec::new();
@@ -232,29 +281,51 @@ fn start_behavior(
             else {
                 return;
             };
-            let Ok((behavior, _)) = q_behavior.get(*entity) else {
-                return;
-            };
-            for resource in behavior.occupies.iter() {
-                info.occupied.insert(
-                    resource.to_owned(),
-                    Timer::from_seconds(99999.0, TimerMode::Once),
-                );
-            }
-            info.running.insert(*entity);
-            if let Some(cooldown) = behavior.cooldown {
-                info.cooldown = Timer::new(cooldown, TimerMode::Once);
-            }
-            // info!("Triggering behavior {}", behavior.name);
+
             commands.command_scope(|mut commands| {
-                commands.trigger(BehaveStart {
+                commands.trigger(BehaviorSelected {
                     entity: *entity,
-                    target: manager
-                        .target
-                        .unwrap_or(parent.map(|parent| parent.0).unwrap_or(manager_entity)),
+                    manager_entity,
                 });
             });
         });
+}
+
+fn start_behavior(
+    event: On<BehaviorSelected>,
+    mut commands: Commands,
+    q_behavior: Query<(&Behavior, &Weight)>,
+    mut q_manager: Query<(&BehaviorManager, &mut BehaviorManagerInfo, Option<&ChildOf>)>,
+) {
+    let BehaviorSelected {
+        entity,
+        manager_entity,
+    } = *event;
+
+    let Ok((behavior, _)) = q_behavior.get(entity) else {
+        return;
+    };
+    let Ok((manager, mut info, parent)) = q_manager.get_mut(manager_entity) else {
+        return;
+    };
+
+    for resource in behavior.occupies.iter() {
+        info.occupied.insert(
+            resource.to_owned(),
+            Timer::from_seconds(99999.0, TimerMode::Once),
+        );
+    }
+    info.running.insert(entity);
+    if let Some(cooldown) = behavior.cooldown {
+        info.cooldown = Timer::new(cooldown, TimerMode::Once);
+    }
+    // info!("Triggering behavior {}", behavior.name);
+    commands.trigger(BehaveStart {
+        entity,
+        target: manager
+            .target
+            .unwrap_or(parent.map(|parent| parent.0).unwrap_or(manager_entity)),
+    });
 }
 
 fn end_behavior(

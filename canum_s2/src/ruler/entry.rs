@@ -25,8 +25,11 @@ pub enum RulerSpawnTitle {
 }
 
 /// After the ruler big title, where player gain control.
-#[derive(Event)]
+#[derive(Event, Default)]
 pub struct RulerStart;
+
+// This is only used when normal title is displayed.
+canum_fx::wait_then_trigger!(RulerStartTrigger, RulerStart, 1.0);
 
 fn setup_ruler(
     mut commands: Commands,
@@ -100,8 +103,9 @@ const TITLE_SIZE: Vec2 = vec2(400.0, 100.0);
 const TITLE_ANGLE: f32 = 15.0_f32.to_radians();
 const TITLE_Z: f32 = 25.0;
 const TITLE_IN_TIME: f32 = 1.2;
-const TITLE_OUT_TIME: f32 = 1.6;
-const TITLE_COLOR: Color = Color::srgb(0.0, 1.0, 1.0);
+const TITLE_OUT_TIME: f32 = 1.1;
+static TITLE_COLOR: LazyLock<Color> =
+    LazyLock::new(|| Color::Srgba(Srgba::hex("#347bff").unwrap()));
 
 fn ruler_spawn_title(
     event: On<RulerSpawnTitle>,
@@ -120,6 +124,9 @@ fn ruler_spawn_title(
                     Duration::from_secs_f32(1.5),
                 ),
             ));
+            commands
+                .spawn(RulerStartTrigger)
+                .observe(RulerStartTrigger::observer);
         }
         RulerSpawnTitle::Big => {
             commands.spawn(TitleInTimer::default());
@@ -142,7 +149,7 @@ fn ruler_spawn_title(
                 EntryBigTitle {
                     move_vec: direction * TITLE_SIZE.x * 2.0,
                 },
-                Animation::new("Ruler_BigTitle_Upper", TITLE_SIZE).with_color(TITLE_COLOR),
+                Animation::new("Ruler_BigTitle_Upper", TITLE_SIZE).with_color(*TITLE_COLOR),
                 Transform::from_translation(vec3(up_shift.x, up_shift.y, TITLE_Z))
                     .with_rotation(rotation),
             ));
@@ -150,7 +157,7 @@ fn ruler_spawn_title(
                 EntryBigTitle {
                     move_vec: direction * -TITLE_SIZE.x * 2.0,
                 },
-                Animation::new("Ruler_BigTitle_Lower", TITLE_SIZE).with_color(TITLE_COLOR),
+                Animation::new("Ruler_BigTitle_Lower", TITLE_SIZE).with_color(*TITLE_COLOR),
                 Transform::from_translation(vec3(-up_shift.x, -up_shift.y, TITLE_Z))
                     .with_rotation(rotation),
             ));
@@ -216,4 +223,15 @@ fn ruler_handle_title_fade_out(
 
 fn ruler_start(_event: On<RulerStart>, mut commands: Commands) {
     commands.spawn((Music, Sound::new("Ruler_Bgm")));
+    let ruler = commands
+        .spawn((
+            RulerBoss,
+            Transform::from_translation(vec3(
+                0.0,
+                CONFIG.display.half_virtual_size.1 + INITIAL_HEIGHT * 0.5,
+                14.37,
+            )),
+        ))
+        .id();
+    commands.spawn((ChildOf(ruler), behaviors::phase1::RulerPhase1));
 }

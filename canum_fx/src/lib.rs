@@ -1,5 +1,6 @@
 mod prelude;
 
+pub mod emphasis;
 pub mod math;
 pub mod splash;
 pub mod text;
@@ -19,6 +20,7 @@ impl Plugin for CanumFxPlugin {
             util::UtilPlugin,
             text::TextPlugin,
             visual::VisualPlugin,
+            emphasis::EmphasisPlugin,
         ));
     }
 }

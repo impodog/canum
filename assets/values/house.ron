@@ -36,6 +36,7 @@
     "Shop_Bread": (
       items: [
         (price: 5, item: Weapon("C_Tracking")),
+        (price: 3, item: Charm("S2A_Thermostat")),
       ],
       background: "House_Shop",
     )

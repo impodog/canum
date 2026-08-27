@@ -4,7 +4,7 @@ pub(super) struct UtilPlugin;
 
 impl Plugin for UtilPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedPreUpdate, update_wait);
+        app.add_systems(FixedPreUpdate, (update_wait, check_despawn));
     }
 }
 
@@ -104,4 +104,59 @@ macro_rules! session_observers {
                 $((canum_play::setup::SessionOnly, bevy::prelude::Observer::new($fn))),*
             ]);
     }};
+}
+
+/// Notify an entity(default self) when the target entity is despawned.
+///
+/// If notify is not self, the entity is despawned after completion.
+/// Otherwise, this component will be removed.
+#[derive(Component, Debug, Clone, Copy)]
+#[non_exhaustive]
+pub struct DespawnCheck {
+    pub target: Entity,
+    pub notify: Option<Entity>,
+}
+impl DespawnCheck {
+    pub fn new(target: Entity) -> Self {
+        Self {
+            target,
+            notify: None,
+        }
+    }
+    pub fn with_notify(mut self, notify: Entity) -> Self {
+        self.notify = Some(notify);
+        self
+    }
+}
+
+/// Notify event of `DespawnCheck`.
+#[derive(EntityEvent, Debug)]
+pub struct DespawnObserved {
+    pub entity: Entity,
+}
+
+fn check_despawn(
+    q_until_despawn: Query<(Entity, &DespawnCheck)>,
+    q_entity: Query<()>,
+    commands: ParallelCommands,
+) {
+    q_until_despawn
+        .par_iter()
+        .for_each(|(checker_entity, checker)| {
+            if q_entity.get(checker.target).is_err() {
+                if let Some(notify) = checker.notify {
+                    commands.command_scope(|mut commands| {
+                        commands.entity(checker_entity).despawn();
+                        commands.trigger(DespawnObserved { entity: notify });
+                    });
+                } else {
+                    commands.command_scope(|mut commands| {
+                        commands.entity(checker_entity).remove::<DespawnCheck>();
+                        commands.trigger(DespawnObserved {
+                            entity: checker_entity,
+                        });
+                    });
+                }
+            }
+        });
 }

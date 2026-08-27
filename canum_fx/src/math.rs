@@ -27,3 +27,33 @@ pub fn normalize_angle_signed(angle: f32) -> f32 {
     let a = normalize_angle(angle);
     if a > PI { a - TAU } else { a }
 }
+
+#[macro_export]
+/// Builds a `fn(f32) -> f32` for a derivable piecewise-quadratic curve on [0, 1].
+///
+/// Guarantees:
+///   f(0) = 0,  f(1) = 1
+///   f'(0) = start_slope,  f'(1) = end_slope
+///   The two quadratic halves meet at x = 0.5 with matched value and slope.
+///
+/// This overshoots [0, 1] if any of the slopes is outside [0, 2]
+macro_rules! quadratic_curve {
+    ($start_slope:expr, $end_slope:expr) => {{
+        const S0: f32 = $start_slope as f32;
+        const S1: f32 = $end_slope as f32;
+
+        const A1: f32 = 0.5 * (4.0 - 3.0 * S0 - S1);
+        const B2: f32 = 0.5 * (S0 + 3.0 * S1 - 4.0);
+
+        fn __curve(x: f32) -> f32 {
+            if x <= 0.5 {
+                A1 * x * x + S0 * x
+            } else {
+                let u = x - 1.0;
+                1.0 + u * (S1 + B2 * u)
+            }
+        }
+
+        __curve as fn(f32) -> f32
+    }};
+}

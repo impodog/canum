@@ -2,6 +2,7 @@
   charm: {
     "S1A_SharpLeaf": (cost: "O", effects: ["Damage+%10"]),
     "S1B_RedHeart": (cost: "D", effects: ["Health+1:Hp_RedHeart"]),
-    "S1C_Exoskeleton": (cost: "D", effects: ["Exoskeleton"])
+    "S1C_Exoskeleton": (cost: "D", effects: ["Exoskeleton"]),
+    "S2A_Thermostat": (cost: "D", effects: ["ShowHealth"]),
   }
 )
