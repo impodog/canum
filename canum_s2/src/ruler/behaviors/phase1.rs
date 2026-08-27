@@ -101,7 +101,7 @@ fn swipe_displacement_complete(
                 ))
                 .id();
             swipe.status = SwipeStatus::Align(
-                Timer::from_seconds(rand_normal(3.0, 0.3).max(2.7), TimerMode::Once),
+                Timer::from_seconds(rand_normal(2.0, 0.3).clamp(1.5, 2.3), TimerMode::Once),
                 velocity,
             );
         }

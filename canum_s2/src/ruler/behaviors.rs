@@ -1,3 +1,4 @@
+mod laser;
 pub mod phase1;
 
 use super::*;
@@ -7,6 +8,6 @@ pub(super) struct BehaviorsPlugin;
 
 impl Plugin for BehaviorsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((phase1::Phase1Plugin,));
+        app.add_plugins((phase1::Phase1Plugin, laser::LaserPlugin));
     }
 }

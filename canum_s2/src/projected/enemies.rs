@@ -134,7 +134,6 @@ fn init_enemy_waves(
     mut commands: Commands,
     bottom_center: Single<Entity, With<canum_ui::BottomCenter>>,
 ) {
-    commands.init_resource::<Waves>();
     let waves: Waves = if let Some(waves) = CONFIG.values.custom.get("Projected_Waves") {
         match waves.clone().into_rust::<VecDeque<Wave>>() {
             Ok(wave_enemies) => {

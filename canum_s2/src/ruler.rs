@@ -33,7 +33,7 @@ pub const SIZE: Vec2 = vec2(LENGTH_RATIO * INITIAL_HEIGHT, INITIAL_HEIGHT);
     health::Friendly(false),
     health::ContactDamage { value: 130, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.8),
-    enemy::health::EnemyHealth::new(3000),
+    enemy::health::EnemyHealth::new(3300),
     enemy::health::DamageSound::new("Wcat_Damage"),
     projectile::NoCollideBoundary,
 )]
