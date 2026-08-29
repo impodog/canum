@@ -7,6 +7,9 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
+        app.world_mut()
+            .register_component_hooks::<Friendly>()
+            .on_insert(friendly_change_hook);
         app.add_systems(FixedPostUpdate, (work_invincibility_timer,));
         app.add_systems(FixedPreUpdate, deal_contact_damage);
         app.add_systems(FixedPostUpdate, init_contact_damage);
@@ -90,13 +93,41 @@ fn work_invincibility_timer(
 }
 
 /// Marks if an entity is friendly to player.
-#[derive(Component, Default, Deref, DerefMut)]
+#[derive(
+    Component, Default, Deref, DerefMut, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[require(
     ActiveCollisionHooks::FILTER_PAIRS,
     CollisionEventsEnabled,
     crate::SessionOnly
 )]
 pub struct Friendly(pub bool);
+
+/// Helper marker for `Friendly`. This is auto created when `Friendly` changes.
+#[derive(Component, Default)]
+pub struct EnemyRelated;
+/// Helper marker for `Friendly`. This is auto created when `Friendly` changes.
+#[derive(Component, Default)]
+pub struct PlayerRelated;
+
+fn friendly_change_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+    let Some(friendly) = world.get::<Friendly>(entity) else {
+        return;
+    };
+    if friendly.0 {
+        world
+            .commands()
+            .entity(entity)
+            .try_remove::<EnemyRelated>()
+            .insert(PlayerRelated);
+    } else {
+        world
+            .commands()
+            .entity(entity)
+            .try_remove::<PlayerRelated>()
+            .insert(EnemyRelated);
+    }
+}
 
 /// Marks to collide only with the player.
 #[derive(Component, Default)]

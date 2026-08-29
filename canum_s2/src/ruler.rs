@@ -17,8 +17,9 @@ impl Plugin for RulerPlugin {
 }
 
 pub const LENGTH_RATIO: f32 = 100.0 / 15.0;
-pub const INITIAL_HEIGHT: f32 = 15.0;
-pub const INITIAL_HITBOX_HEIGHT: f32 = 14.0;
+pub const INITIAL_HEIGHT: f32 = 21.0;
+pub const INITIAL_WIDTH: f32 = INITIAL_HEIGHT * LENGTH_RATIO;
+pub const INITIAL_HITBOX_HEIGHT: f32 = 18.0;
 pub const HITBOX_RATIO: f32 = INITIAL_HITBOX_HEIGHT / INITIAL_HEIGHT;
 pub const SIZE: Vec2 = vec2(LENGTH_RATIO * INITIAL_HEIGHT, INITIAL_HEIGHT);
 

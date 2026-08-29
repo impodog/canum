@@ -4,6 +4,7 @@ pub mod emphasis;
 pub mod math;
 pub mod splash;
 pub mod text;
+pub mod transform;
 pub mod transition;
 pub mod util;
 pub mod visual;
@@ -21,6 +22,7 @@ impl Plugin for CanumFxPlugin {
             text::TextPlugin,
             visual::VisualPlugin,
             emphasis::EmphasisPlugin,
+            transform::TransformPlugin,
         ));
     }
 }

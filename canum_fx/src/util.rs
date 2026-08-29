@@ -106,25 +106,36 @@ macro_rules! session_observers {
     }};
 }
 
+/// In many canum_fx utilities, choose the behavior when the target entity is despawned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DespawnBehavior {
+    #[default]
+    Despawn,
+    Remove,
+}
+
 /// Notify an entity(default self) when the target entity is despawned.
-///
-/// If notify is not self, the entity is despawned after completion.
-/// Otherwise, this component will be removed.
 #[derive(Component, Debug, Clone, Copy)]
 #[non_exhaustive]
 pub struct DespawnCheck {
     pub target: Entity,
     pub notify: Option<Entity>,
+    pub despawn_behavior: DespawnBehavior,
 }
 impl DespawnCheck {
     pub fn new(target: Entity) -> Self {
         Self {
             target,
             notify: None,
+            despawn_behavior: default(),
         }
     }
     pub fn with_notify(mut self, notify: Entity) -> Self {
         self.notify = Some(notify);
+        self
+    }
+    pub fn with_despawn_behavior(mut self, despawn_behavior: DespawnBehavior) -> Self {
+        self.despawn_behavior = despawn_behavior;
         self
     }
 }
@@ -146,16 +157,26 @@ fn check_despawn(
             if q_entity.get(checker.target).is_err() {
                 if let Some(notify) = checker.notify {
                     commands.command_scope(|mut commands| {
-                        commands.entity(checker_entity).despawn();
                         commands.trigger(DespawnObserved { entity: notify });
                     });
                 } else {
                     commands.command_scope(|mut commands| {
-                        commands.entity(checker_entity).remove::<DespawnCheck>();
                         commands.trigger(DespawnObserved {
                             entity: checker_entity,
                         });
                     });
+                }
+                match checker.despawn_behavior {
+                    DespawnBehavior::Despawn => {
+                        commands.command_scope(|mut commands| {
+                            commands.entity(checker_entity).despawn();
+                        });
+                    }
+                    DespawnBehavior::Remove => {
+                        commands.command_scope(|mut commands| {
+                            commands.entity(checker_entity).remove::<DespawnCheck>();
+                        });
+                    }
                 }
             }
         });

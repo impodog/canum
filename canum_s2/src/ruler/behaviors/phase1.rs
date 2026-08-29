@@ -10,7 +10,13 @@ impl Plugin for Phase1Plugin {
         app.world_mut()
             .register_component_hooks::<Swipe>()
             .on_add(swipe_hook);
-        app.add_systems(FixedUpdate, swipe_align_with_player.in_set(RulerSet));
+        app.world_mut()
+            .register_component_hooks::<LaserAttack>()
+            .on_add(laser_attack_hook);
+        app.add_systems(
+            FixedUpdate,
+            (swipe_align_with_player, laser_attack_platform).in_set(RulerSet),
+        );
     }
 }
 
@@ -19,9 +25,9 @@ impl Plugin for Phase1Plugin {
 pub struct RulerPhase1;
 
 fn ruler_phase1_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
-    world
-        .commands()
-        .spawn_batch([(ChildOf(entity), Swipe::default())]);
+    let mut commands = world.commands();
+    commands.spawn((ChildOf(entity), Swipe::default()));
+    commands.spawn((ChildOf(entity), LaserAttack::default()));
 }
 
 #[derive(Component, Default)]
@@ -200,4 +206,195 @@ fn swipe_warning_complete(
         },
     ));
     commands.spawn(Sound::new("Bread_Dash"));
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Ruler_LaserAttack", 1.0, ["Main", "LaserAttack"]))]
+pub struct LaserAttack {
+    target: Option<Entity>,
+    x_direction: f32,
+    state: LaserAttackState,
+}
+#[derive(Default, Debug, Clone, Copy)]
+enum LaserAttackState {
+    #[default]
+    ToCorner,
+    Attack,
+}
+
+#[derive(Component, Default)]
+struct LaserAttackSoundEffect;
+
+#[derive(Component)]
+#[require(
+    Animation::new("Wcat_Bar", vec2(80.0, 12.0)),
+    Collider::rectangle(80.0, 12.0),
+    RigidBody::Static,
+    health::Friendly(false)
+)]
+struct LaserAttackPlatform {
+    timer: Timer,
+    fade_in: bool,
+}
+impl Default for LaserAttackPlatform {
+    fn default() -> Self {
+        Self {
+            timer: Timer::from_seconds(0.5, TimerMode::Once),
+            fade_in: true,
+        }
+    }
+}
+
+fn laser_attack_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+    world
+        .commands()
+        .entity(entity)
+        .observe(laser_attack_start)
+        .observe(laser_attack_go);
+}
+
+fn laser_attack_platform(
+    mut q_platform: Query<(Entity, &mut LaserAttackPlatform, &mut Sprite)>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for (entity, mut platform, mut sprite) in q_platform.iter_mut() {
+        if platform.timer.is_finished() {
+            continue;
+        };
+        platform.timer.tick(time.delta());
+        if platform.timer.just_finished() {
+            sprite
+                .color
+                .set_alpha(if platform.fade_in { 1.0 } else { 0.0 });
+            if !platform.fade_in {
+                commands.entity(entity).despawn();
+            }
+        } else {
+            let fraction = platform.timer.fraction();
+            sprite.color.set_alpha(if platform.fade_in {
+                fraction
+            } else {
+                1.0 - fraction
+            });
+        }
+    }
+}
+
+fn laser_attack_start(
+    event: On<BehaveStart>,
+    mut q_laser_attack: Query<&mut LaserAttack>,
+    mut commands: Commands,
+    q_transform: Query<&GlobalTransform>,
+) {
+    let Ok(mut laser_attack) = q_laser_attack.get_mut(event.entity) else {
+        return;
+    };
+    laser_attack.target = Some(event.target);
+    laser_attack.x_direction = rand_sign();
+    laser_attack.state = LaserAttackState::ToCorner;
+
+    let Ok(transform) = q_transform.get(event.entity) else {
+        return;
+    };
+    let position = transform.translation().xy();
+    let target_position = vec2(
+        (CONFIG.display.half_virtual_size.0 - SIZE.x * 0.5) * -laser_attack.x_direction,
+        CONFIG.display.half_virtual_size.1 - SIZE.y * 0.5,
+    );
+    let displace = target_position - position;
+    commands.spawn((
+        ChildOf(event.target),
+        enemy::movements::Displacement {
+            curve: canum_fx::quadratic_curve!(2.0, 0.5),
+            displace,
+            duration: Duration::from_secs_f32(displace.length() / 340.0),
+            notify: Some(event.entity),
+        },
+    ));
+    let x_lim = CONFIG.display.half_virtual_size.0 * 0.75;
+    let y_lim = CONFIG.display.half_virtual_size.1 * 0.4;
+    commands.spawn((
+        LaserAttackPlatform::default(),
+        Sprite {
+            color: Color::Srgba(Srgba::WHITE.with_alpha(0.0)),
+            ..default()
+        },
+        Transform::from_translation(vec3(
+            rand_range(-x_lim..x_lim),
+            rand_range(-y_lim..y_lim),
+            0.0,
+        )),
+    ));
+}
+
+#[allow(clippy::type_complexity)]
+fn laser_attack_go(
+    event: On<enemy::movements::DisplacementComplete>,
+    mut q_laser_attack: Query<&mut LaserAttack>,
+    mut commands: Commands,
+    q_despawn: Query<Entity, Or<(With<super::laser::RulerLaser>, With<LaserAttackSoundEffect>)>>,
+    mut q_platform: Query<&mut LaserAttackPlatform>,
+) {
+    let Ok(mut laser_attack) = q_laser_attack.get_mut(event.entity) else {
+        return;
+    };
+    let Some(target) = laser_attack.target else {
+        return;
+    };
+    match laser_attack.state {
+        LaserAttackState::ToCorner => {
+            let mut batch = Vec::new();
+            let mut current = 10.0;
+            while current + 5.0 < SIZE.x * 0.5 {
+                batch.push((
+                    super::laser::RulerLaser {
+                        direction: vec2(0.0, 1.0),
+                        double: true,
+                    },
+                    Transform::from_translation(vec3(current, 0.0, -0.1)),
+                    canum_fx::transform::Follow::new(target),
+                ));
+                batch.push((
+                    super::laser::RulerLaser {
+                        direction: vec2(0.0, 1.0),
+                        double: true,
+                    },
+                    Transform::from_translation(vec3(-current, 0.0, -0.1)),
+                    canum_fx::transform::Follow::new(target),
+                ));
+                current += 20.0;
+            }
+            commands.spawn_batch(batch);
+            let displace = vec2(
+                (CONFIG.display.screen_size.x - SIZE.x) * laser_attack.x_direction,
+                0.0,
+            );
+            commands.spawn((LaserAttackSoundEffect, Sound::new("Ruler_Laser")));
+            commands.spawn((
+                ChildOf(target),
+                enemy::movements::Displacement {
+                    curve: |x| x,
+                    displace,
+                    duration: Duration::from_secs_f32(displace.x.abs() / 250.0),
+                    notify: Some(event.entity),
+                },
+            ));
+            laser_attack.state = LaserAttackState::Attack;
+        }
+        LaserAttackState::Attack => {
+            for laser in q_despawn.iter() {
+                commands.entity(laser).despawn();
+            }
+            for mut platform in q_platform.iter_mut() {
+                platform.timer.reset();
+                platform.fade_in = false;
+            }
+            commands.trigger(BehaveEnd {
+                entity: event.entity,
+                cooldown: Duration::from_secs_f32(0.5),
+                occupies: occupies![("LaserAttack", rand_normal(9.0, 1.0).clamp(7.0, 9.0))],
+            });
+        }
+    }
 }

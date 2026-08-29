@@ -10,6 +10,6 @@
       {"path": "ruler_laser.png", "size": [10, 10], "offset": [0, 0]},
       {"path": "ruler_laser.png", "size": [10, 10], "offset": [10, 0]}
     ],
-    "Ruler_Laser_Terminal": [{"path": "ruler_laser.png", "size": [10, 10], "offset": [20, 0]}]
+    "Ruler_Laser_Terminal": [{"path": "ruler_laser.png", "size": [10, 10], "offset": [20, 0], "count": 2, "interval": 90}]
   }
 }

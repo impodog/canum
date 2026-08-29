@@ -1,3 +1,5 @@
+pub use rand::{random_bool as rand_bool, random_range as rand_range};
+
 /// This will ensure the result falls between mean +/- 3 * std_dev
 pub fn rand_normal(mean: f32, std_dev: f32) -> f32 {
     use rand_distr::Distribution;
@@ -10,6 +12,12 @@ pub fn rand_normal(mean: f32, std_dev: f32) -> f32 {
 /// Returns a random sign (1.0 or -1.0) with equal probability.
 pub fn rand_sign() -> f32 {
     if rand::random_bool(0.5) { 1.0 } else { -1.0 }
+}
+
+/// Returns a small enough random transform z offset, when there are multiple entities with the same z layer,
+/// this makes sure they have a constant random layering.
+pub fn rand_offset() -> f32 {
+    rand::random_range(-1e-3..1e-3)
 }
 
 /// Take any angle to return between [0, 2π).
