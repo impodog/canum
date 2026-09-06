@@ -34,7 +34,7 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
         terminal: Animation::new("Ruler_Laser_Terminal", LASER_SIZE),
         length: COLLIDER_SIZE.x,
         collide_width: COLLIDER_SIZE.y,
-        ignore_layer: LaserLayer::LASER_ENEMY,
+        ignore_layer: LaserLayer::LASER_ENEMY | LaserLayer::LASER_PROJECTILE,
     };
 
     if laser.double {

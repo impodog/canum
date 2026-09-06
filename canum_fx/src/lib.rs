@@ -2,6 +2,7 @@ mod prelude;
 
 pub mod emphasis;
 pub mod math;
+pub mod physics;
 pub mod splash;
 pub mod text;
 pub mod transform;
@@ -23,6 +24,7 @@ impl Plugin for CanumFxPlugin {
             visual::VisualPlugin,
             emphasis::EmphasisPlugin,
             transform::TransformPlugin,
+            physics::PhysicsPlugin,
         ));
     }
 }

@@ -13,13 +13,28 @@ impl Plugin for LaserPlugin {
             FixedUpdate,
             (update_laser_like, (apply_laser_buffer, apply_length_change)).chain(),
         );
-        app.register_required_components_with::<health::EnemyRelated, _>(|| {
-            LaserLayer::LASER_ENEMY
+        app.add_systems(FixedPreUpdate, add_for_friendly);
+        app.register_required_components_with::<projectile::Projectile, _>(|| {
+            LaserLayer::LASER_PROJECTILE
         });
-        app.register_required_components_with::<health::PlayerRelated, _>(|| {
-            LaserLayer::LASER_PLAYER
-        });
+        app.register_required_components::<health::Friendly, LaserLayer>();
     }
+}
+
+fn add_for_friendly(
+    mut q_friendly: Query<(&health::Friendly, &mut LaserLayer), Changed<health::Friendly>>,
+) {
+    q_friendly
+        .par_iter_mut()
+        .for_each(|(friendly, mut laser_layer)| {
+            if friendly.0 {
+                laser_layer.0 =
+                    (laser_layer.0 | LaserLayer::LASER_PLAYER.0) & !LaserLayer::LASER_ENEMY.0;
+            } else {
+                laser_layer.0 =
+                    (laser_layer.0 | LaserLayer::LASER_ENEMY.0) & !LaserLayer::LASER_PLAYER.0;
+            }
+        });
 }
 
 /// Creates laser-like visual effects by duplicating animations, and sends touch events.
@@ -65,6 +80,13 @@ pub struct LaserLayer(pub u32);
 impl LaserLayer {
     pub const LASER_ENEMY: LaserLayer = LaserLayer(0b1);
     pub const LASER_PLAYER: LaserLayer = LaserLayer(0b10);
+    pub const LASER_PROJECTILE: LaserLayer = LaserLayer(0b100);
+}
+impl std::ops::BitOr for LaserLayer {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
 }
 
 #[derive(Component, Default)]

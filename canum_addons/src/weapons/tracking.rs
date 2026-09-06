@@ -63,7 +63,7 @@ impl Default for Tracking {
     fn default() -> Self {
         Self {
             interval: 0.1,
-            damage: math::ApproxFloat::from(4),
+            damage: math::ApproxFloat::from(3.5),
             order: consts::order::PLAYER_PROJ_WEAK,
             size: vec2(7.0, 7.0),
             speed: 380.0,

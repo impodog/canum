@@ -1,6 +1,11 @@
+mod base;
+mod multiplier;
+pub use base::*;
+pub use multiplier::*;
+
 use bevy::math::FloatPow;
 use std::{
-    collections::{BTreeMap, BTreeSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, VecDeque},
     f32,
     time::Duration,
 };
@@ -18,6 +23,7 @@ pub(super) struct BehaviorPlugin;
 
 impl Plugin for BehaviorPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((base::WeightBasePlugin, multiplier::WeightMultiplierPlugin));
         app.init_resource::<PlayerAveragePosition>();
         app.configure_sets(
             FixedPreUpdate,
@@ -25,22 +31,17 @@ impl Plugin for BehaviorPlugin {
                 BehaviorProcess::Init,
                 BehaviorProcess::Calc,
                 BehaviorProcess::Trigger,
-            ),
-        );
-        app.add_systems(
-            FixedPreUpdate,
-            (init_behavior_weights, update_player_average_position).in_set(BehaviorProcess::Init),
+            )
+                .chain(),
         );
         app.add_systems(
             FixedPreUpdate,
             (
-                base_by_distance,
-                base_farther_better,
-                multiplier_manual,
-                multiplier_by_speed,
-                multiplier_when_resource_occupied,
+                init_behavior_weights,
+                update_player_average_position,
+                update_manager_info,
             )
-                .in_set(BehaviorProcess::Calc),
+                .in_set(BehaviorProcess::Init),
         );
         app.add_systems(
             FixedPreUpdate,
@@ -49,7 +50,8 @@ impl Plugin for BehaviorPlugin {
 
         app.add_observer(start_behavior)
             .add_observer(end_behavior)
-            .add_observer(intervene_behavior);
+            .add_observer(intervene_behavior)
+            .add_observer(push_queue_behavior);
         app.world_mut()
             .register_component_hooks::<BehaviorManager>()
             .on_add(|mut world, HookContext { entity, .. }| {
@@ -67,6 +69,8 @@ pub struct BehaveStart {
     pub entity: Entity,
     /// The target entity(boss) that trigger this behavior.
     pub target: Entity,
+    /// Some the behavior is queued by another certain name.
+    pub caller: Option<String>,
 }
 /// The behavior must send this back to end itself.
 #[derive(EntityEvent, Debug, Clone)]
@@ -155,6 +159,8 @@ impl Default for BehaviorManager {
 /// Stores runtime information of the manager. External code may only access read-only.
 #[derive(Component, Debug)]
 pub struct BehaviorManagerInfo {
+    /// Maps from behavior name to entity.
+    name_map: HashMap<String, Entity>,
     occupied: BTreeMap<String, Timer>,
     /// All running behaviors.
     running: BTreeSet<Entity>,
@@ -162,11 +168,12 @@ pub struct BehaviorManagerInfo {
     /// A queue of behavior entities that custom implementation asked to perform.
     /// Note that resource availablility check will not run, but this respects overall cooldown.
     /// It will update behavior resources.
-    queued: VecDeque<Entity>,
+    queued: VecDeque<(Entity, String)>,
 }
 impl Default for BehaviorManagerInfo {
     fn default() -> Self {
         Self {
+            name_map: Default::default(),
             occupied: Default::default(),
             running: Default::default(),
             cooldown: Timer::from_seconds(1.0, TimerMode::Once),
@@ -194,16 +201,76 @@ impl BehaviorManagerInfo {
 
     /// Queue a behavior entity to run without checking resource availability, but still respects overall cooldown.
     /// This will prevent auto selection of behaviors until the queue is empty.
-    pub fn push_queue(&mut self, entity: Entity) {
-        self.queued.push_back(entity);
+    fn push_queue(&mut self, entity: Entity, caller: impl Into<String>) {
+        self.queued.push_back((entity, caller.into()));
+    }
+}
+
+/// Call this on behaviors, for their manager to queue another behavior.
+/// This will prevent auto selection of behaviors until the queue is empty.
+#[derive(EntityEvent, Debug, Clone)]
+pub struct BehaveQueue {
+    /// The caller behavior entity.
+    pub entity: Entity,
+    /// The name of the target behavior.
+    pub name: String,
+}
+impl BehaveQueue {
+    pub fn new(entity: Entity, name: impl Into<String>) -> Self {
+        Self {
+            entity,
+            name: name.into(),
+        }
+    }
+}
+
+fn update_manager_info(
+    mut q_manager: Query<(&mut BehaviorManagerInfo, &Children), With<BehaviorManager>>,
+    q_behavior: Query<&Behavior>,
+) {
+    q_manager.par_iter_mut().for_each(|(mut info, children)| {
+        for child in children.iter() {
+            let Ok(behavior) = q_behavior.get(child) else {
+                continue;
+            };
+            if info
+                .name_map
+                .get(&behavior.name)
+                .is_none_or(|old_child| *old_child != child)
+            {
+                info.name_map.insert(behavior.name.clone(), child);
+            }
+        }
+    });
+}
+
+fn push_queue_behavior(
+    event: On<BehaveQueue>,
+    mut q_manager: Query<&mut BehaviorManagerInfo>,
+    q_behavior: Query<(&Behavior, &ChildOf)>,
+) {
+    let Ok((behavior, parent)) = q_behavior.get(event.entity) else {
+        return;
+    };
+    let Ok(mut manager) = q_manager.get_mut(parent.0) else {
+        return;
+    };
+    if let Some(target) = manager.name_map.get(&event.name).copied() {
+        manager.push_queue(target, behavior.name.clone());
+    } else {
+        warn!(
+            "Unable to find requested sibling behavior {} for behavior {}.",
+            event.name, behavior.name
+        );
     }
 }
 
 /// Common event for queued and selected behaviors. Precursor of `BehaveStart` which triggers custom code.
-#[derive(Event, Debug, Clone, Copy)]
+#[derive(Event, Debug, Clone)]
 struct BehaviorSelected {
     entity: Entity,
     manager_entity: Entity,
+    caller: Option<String>,
 }
 
 fn select_behavior(
@@ -233,11 +300,12 @@ fn select_behavior(
             info.cooldown = Default::default();
 
             // Trigger queued behaviors.
-            if let Some(entity) = info.queued.pop_front() {
+            if let Some((entity, caller)) = info.queued.pop_front() {
                 commands.command_scope(|mut commands| {
                     commands.trigger(BehaviorSelected {
                         entity,
                         manager_entity,
+                        caller: Some(caller),
                     });
                 });
                 return;
@@ -286,6 +354,7 @@ fn select_behavior(
                 commands.trigger(BehaviorSelected {
                     entity: *entity,
                     manager_entity,
+                    caller: None,
                 });
             });
         });
@@ -300,7 +369,8 @@ fn start_behavior(
     let BehaviorSelected {
         entity,
         manager_entity,
-    } = *event;
+        caller,
+    } = event.clone();
 
     let Ok((behavior, _)) = q_behavior.get(entity) else {
         return;
@@ -325,6 +395,7 @@ fn start_behavior(
         target: manager
             .target
             .unwrap_or(parent.map(|parent| parent.0).unwrap_or(manager_entity)),
+        caller,
     });
 }
 
@@ -481,151 +552,4 @@ fn update_player_average_position(
         center /= count as f32;
         position.0 = center;
     }
-}
-
-/// Decides weight base by distance to the player.
-/// This uses gaussian probability.
-#[derive(Component, Debug, Default)]
-#[require(Transform)]
-pub struct BaseByDistance {
-    pub mean: f32,
-    pub deviation: f32,
-}
-impl BaseByDistance {
-    pub fn new(mean: f32, deviation: f32) -> Self {
-        Self { mean, deviation }
-    }
-}
-fn base_by_distance(
-    mut q_behavior: Query<(&mut Weight, &BaseByDistance, &GlobalTransform)>,
-    average_position: Res<PlayerAveragePosition>,
-) {
-    q_behavior
-        .par_iter_mut()
-        .for_each(|(mut weight, modifier, global_transform)| {
-            let distance = global_transform
-                .translation()
-                .xy()
-                .distance(**average_position);
-            weight.base = std::f32::consts::E
-                .powf(-(distance - modifier.mean).squared() * 0.5 / modifier.deviation.squared());
-        });
-}
-
-/// The farther the player is, the more likely this will perform.
-/// This uses inverse function.
-#[derive(Component, Debug, Default)]
-#[require(Transform)]
-pub struct BaseFartherBetter {
-    /// The probability increases from 0.0, after distance > `start`.
-    pub start: f32,
-    pub unit_length: f32,
-}
-impl BaseFartherBetter {
-    pub fn new(start: f32, unit_length: f32) -> Self {
-        Self { start, unit_length }
-    }
-}
-fn base_farther_better(
-    mut q_behavior: Query<(&mut Weight, &BaseFartherBetter, &GlobalTransform)>,
-    average_position: Res<PlayerAveragePosition>,
-) {
-    q_behavior
-        .par_iter_mut()
-        .for_each(|(mut weight, modifier, global_transform)| {
-            let distance = global_transform
-                .translation()
-                .xy()
-                .distance(**average_position);
-            if distance >= modifier.start {
-                weight.base =
-                    1.0 - 1.0 / ((distance - modifier.start) / modifier.unit_length + 1.0);
-            } else {
-                weight.base = 0.0;
-            }
-        });
-}
-
-/// Add a manual multiplier to the behavior weight.
-#[derive(Component, Debug)]
-pub struct MultiplierManual(pub f32);
-impl Default for MultiplierManual {
-    fn default() -> Self {
-        Self(1.0)
-    }
-}
-fn multiplier_manual(mut q_behavior: Query<(&mut Weight, &MultiplierManual)>) {
-    q_behavior
-        .par_iter_mut()
-        .for_each(|(mut weight, modifier)| {
-            weight.multiplier *= modifier.0;
-        });
-}
-
-/// The faster(or slower) the player is, the more likely this will perform.
-///
-/// This changes by logarithm.
-#[derive(Component, Debug, Default)]
-pub struct MultiplierBySpeed {
-    pub speed_unit: f32,
-    pub speed_unit_log: f32,
-    pub log_base: f32,
-}
-impl MultiplierBySpeed {
-    pub fn new(speed_unit: f32, log_base: f32) -> Self {
-        Self {
-            speed_unit,
-            speed_unit_log: speed_unit.log(log_base),
-            log_base,
-        }
-    }
-}
-fn multiplier_by_speed(
-    mut q_behavior: Query<(&mut Weight, &MultiplierBySpeed)>,
-    player: Option<Res<crate::player::RandomPlayer>>,
-    q_velocity: Query<&LinearVelocity>,
-) {
-    let Some(player) = player else {
-        return;
-    };
-    let Ok(velocity) = q_velocity.get(player.0) else {
-        return;
-    };
-    let speed = velocity.length();
-    q_behavior
-        .par_iter_mut()
-        .for_each(|(mut weight, modifier)| {
-            let result =
-                (speed + modifier.speed_unit).log(modifier.log_base) - modifier.speed_unit_log;
-            weight.multiplier *= result;
-        });
-}
-
-/// Applies the corresponding multipliers when the resources are occupied.
-#[derive(Component, Debug, Default, Clone)]
-pub struct MultiplierWhenResourceOccupied(pub Vec<(String, f32)>);
-impl MultiplierWhenResourceOccupied {
-    pub fn new<S>(iter: impl IntoIterator<Item = (S, f32)>) -> Self
-    where
-        S: Into<String>,
-    {
-        Self(iter.into_iter().map(|(s, w)| (s.into(), w)).collect())
-    }
-}
-fn multiplier_when_resource_occupied(
-    mut q_behavior: Query<(&ChildOf, &mut Weight, &MultiplierWhenResourceOccupied)>,
-    q_manager_info: Query<&BehaviorManagerInfo>,
-) {
-    q_behavior
-        .par_iter_mut()
-        .for_each(|(parent, mut weight, modifier)| {
-            let Ok(info) = q_manager_info.get(parent.0) else {
-                return;
-            };
-            for (resource, multiplier) in modifier.0.iter() {
-                if info.occupied.contains_key(resource) {
-                    weight.multiplier *= *multiplier;
-                }
-            }
-        });
 }

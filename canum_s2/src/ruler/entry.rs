@@ -234,4 +234,9 @@ fn ruler_start(_event: On<RulerStart>, mut commands: Commands) {
         ))
         .id();
     commands.spawn((ChildOf(ruler), behaviors::phase1::RulerPhase1));
+    commands.spawn((
+        ChildOf(ruler),
+        enemy::health::EnemySensor,
+        Collider::rectangle(SIZE.x, SIZE.y),
+    ));
 }
