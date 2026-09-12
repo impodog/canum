@@ -2,6 +2,7 @@
   "sounds": {
     "Ruler_Intro": { "path": "ruler_intro.wav", "volume": -5.0 },
     "Ruler_Bgm": { "path": "ruler_bgm.ogg", "volume": -5.0 },
-    "Ruler_Laser": { "path": "ruler_laser.wav", "volume": -1.0, "loop_point": 0.0 }
+    "Ruler_Laser": { "path": "ruler_laser.wav", "volume": -1.0, "loop_point": 0.0 },
+    "Ruler_Bounce": { "path": "ruler_bounce.wav", "volume": 2.0 }
   }
 }

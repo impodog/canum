@@ -1,3 +1,5 @@
+use bevy::sprite::Anchor;
+
 use crate::prelude::*;
 use std::sync::Mutex;
 
@@ -59,6 +61,7 @@ pub struct LaserLike {
     pub length: f32,
     /// Bitmap to ignore certain entities that has one of these layers.
     pub ignore_layer: LaserLayer,
+    pub animation_kind: LaserAnimationKind,
 }
 impl Default for LaserLike {
     fn default() -> Self {
@@ -69,8 +72,19 @@ impl Default for LaserLike {
             collide_width: 1.0,
             length: 32.0,
             ignore_layer: LaserLayer(0),
+            animation_kind: LaserAnimationKind::Clipped,
         }
     }
+}
+
+/// In `LaserLike`, controls how to deal with the fraction part of the animation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum LaserAnimationKind {
+    /// Clip the terminal animation so that the length matches exactly where the hitbox ends.
+    #[default]
+    Clipped,
+    /// Ceil the number of animations to a integer. This may cause animations to be longer than the hitbox.
+    Integer,
 }
 
 #[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,7 +122,16 @@ fn laser_like_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCon
 
 /// Buffers laser animation updates to avoid blocking animation reads.
 #[derive(Resource, Default, Debug, Deref, DerefMut)]
-struct AnimationUpdateBuffer(Vec<(Entity, Animation)>);
+struct AnimationUpdateBuffer(Vec<(Entity, Animation, Option<f32>)>);
+
+fn calc_clipped_rect(animation: &Animation, length: f32) -> Rect {
+    Rect::new(
+        (animation.size.x - length).max(0.0),
+        0.0,
+        animation.size.x,
+        animation.size.y,
+    )
+}
 
 fn update_laser_like(
     mut q_laser: Query<(Entity, &LaserLike, &mut LaserLikeInfo, &RayHits)>,
@@ -129,6 +152,10 @@ fn update_laser_like(
             }) {
                 let target_size = (hit.distance / laser.length).ceil() as usize;
                 let current_len = info.children.len();
+                let last_length = match laser.animation_kind {
+                    LaserAnimationKind::Clipped => Some(hit.distance.rem_euclid(laser.length)),
+                    LaserAnimationKind::Integer => None,
+                };
                 if target_size < current_len {
                     commands.command_scope(|mut commands| {
                         for child in info.children.drain(target_size..current_len) {
@@ -136,35 +163,64 @@ fn update_laser_like(
                         }
                     });
                     if let Some(last_child) = info.children.last().copied() {
-                        buffer
-                            .lock()
-                            .unwrap()
-                            .push((last_child, laser.terminal.clone()));
+                        buffer.lock().unwrap().push((
+                            last_child,
+                            laser.terminal.clone(),
+                            last_length,
+                        ));
                     }
                 } else if target_size > current_len {
                     if let Some(last_child) = info.children.last().copied() {
                         buffer
                             .lock()
                             .unwrap()
-                            .push((last_child, laser.middle.clone()));
+                            .push((last_child, laser.middle.clone(), None));
                     }
                     for index in current_len..target_size {
-                        let distance = (index as f32 + 0.5) * laser.length;
+                        let distance = index as f32 * laser.length;
                         let position = distance * laser.base_direction;
                         let child = commands.command_scope(|mut commands| {
-                            commands
-                                .spawn((
-                                    ChildOf(entity),
-                                    Transform::from_translation(vec3(position.x, position.y, 0.0)),
-                                    if index == target_size - 1 {
-                                        laser.terminal.clone()
-                                    } else {
-                                        laser.middle.clone()
-                                    },
-                                ))
-                                .id()
+                            if index == target_size - 1 {
+                                let rect = last_length.map(|last_length| {
+                                    calc_clipped_rect(&laser.terminal, last_length)
+                                });
+                                commands
+                                    .spawn((
+                                        ChildOf(entity),
+                                        Transform::from_translation(vec3(
+                                            position.x, position.y, 0.0,
+                                        )),
+                                        laser
+                                            .terminal
+                                            .clone()
+                                            .with_size_if(rect.as_ref().map(Rect::size)),
+                                        Anchor::CENTER_LEFT,
+                                        Sprite { rect, ..default() },
+                                    ))
+                                    .id()
+                            } else {
+                                commands
+                                    .spawn((
+                                        ChildOf(entity),
+                                        Transform::from_translation(vec3(
+                                            position.x, position.y, 0.0,
+                                        )),
+                                        Anchor::CENTER_LEFT,
+                                        laser.middle.clone(),
+                                    ))
+                                    .id()
+                            }
                         });
                         info.children.push(child);
+                    }
+                } else if last_length.is_some() {
+                    // When laser kind is Clipped, we need to spend a overhead to always update the terminal child.
+                    if let Some(last_child) = info.children.last().copied() {
+                        buffer.lock().unwrap().push((
+                            last_child,
+                            laser.terminal.clone(),
+                            last_length,
+                        ));
                     }
                 }
                 if target_size != current_len {
@@ -179,12 +235,23 @@ fn update_laser_like(
 
 fn apply_laser_buffer(
     mut buffer: ResMut<AnimationUpdateBuffer>,
-    mut q_animation: Query<&mut Animation>,
+    mut q_animation: Query<(&mut Animation, &mut Sprite, &ChildOf)>,
+    q_parent: Query<&LaserLike>,
 ) {
-    for (entity, target_animation) in buffer.drain(..) {
-        let Ok(mut animation) = q_animation.get_mut(entity) else {
+    for (entity, target_animation, last_length) in buffer.drain(..) {
+        let Ok((mut animation, mut sprite, parent)) = q_animation.get_mut(entity) else {
             return;
         };
+        if let Some(last_length) = last_length {
+            animation.size.x = last_length;
+            sprite.rect = Some(calc_clipped_rect(&target_animation, last_length));
+        } else if sprite.rect.is_some() {
+            let Ok(laser) = q_parent.get(parent.0) else {
+                return;
+            };
+            animation.size.x = laser.terminal.size.x;
+            sprite.rect = None;
+        }
         *animation = target_animation;
     }
 }

@@ -310,14 +310,20 @@ fn laser_attack_start(
     let Ok(mut laser_attack) = q_laser_attack.get_mut(event.entity) else {
         return;
     };
-    laser_attack.target = Some(event.target);
-    laser_attack.x_direction = rand_sign();
-    laser_attack.state = LaserAttackState::ToCorner;
-
     let Ok(transform) = q_transform.get(event.entity) else {
         return;
     };
     let position = transform.translation().xy();
+
+    laser_attack.target = Some(event.target);
+    // The laser will likely go to opposite directions.
+    laser_attack.x_direction = if rand_bool(0.82) {
+        -position.y.signum()
+    } else {
+        rand_sign()
+    };
+    laser_attack.state = LaserAttackState::ToCorner;
+
     let target_position = vec2(
         (CONFIG.display.half_virtual_size.0 - SIZE.x * 0.5) * -laser_attack.x_direction,
         (CONFIG.display.half_virtual_size.1 - SIZE.y * 0.5) * rand_sign(),
@@ -453,7 +459,9 @@ struct Ball {
 }
 impl Default for Ball {
     fn default() -> Self {
-        Self { bounce_times: 2 }
+        Self {
+            bounce_times: if rand_bool(0.2) { 3 } else { 2 },
+        }
     }
 }
 
@@ -477,12 +485,13 @@ fn ball_bounce(
 ) {
     // If colliding only the down boundaries
     if let Ok(global_transform) = q_boundary.get(event.collider2)
-        && global_transform.translation().y.abs() > -1e-3
+        && global_transform.translation().y.abs() > 1e-3
     {
         let Ok(mut ball) = q_ball.get_mut(event.collider1) else {
             return;
         };
         ball.bounce_times = ball.bounce_times.saturating_sub(1);
+        commands.spawn(Sound::new("Ruler_Bounce"));
         if ball.bounce_times <= 0 {
             commands
                 .entity(event.collider1)
@@ -591,8 +600,8 @@ fn bounce_ball_shoot_ball(
                 commands.spawn((
                     Ball::default(),
                     Transform::from_translation(translation),
-                    LinearVelocity(vec2(rand_range(225.0..380.0) * rand_sign(), 0.0)),
-                    ConstantLinearAcceleration(vec2(0.0, 240.0 * -bounce_ball.sign)),
+                    LinearVelocity(vec2(rand_range(235.0..380.0) * rand_sign(), 0.0)),
+                    ConstantLinearAcceleration(vec2(0.0, 280.0 * -bounce_ball.sign)),
                 ));
                 bounce_ball.remaining_times -= 1;
             }

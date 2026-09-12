@@ -92,6 +92,17 @@ impl Animation {
         *self.inform.lock().unwrap() = Some(inform);
         self
     }
+    pub fn with_size(mut self, size: Vec2) -> Self {
+        self.size = size;
+        self
+    }
+    /// Replaces `Self::size` if `Some` is provided.
+    pub fn with_size_if(mut self, size: Option<Vec2>) -> Self {
+        if let Some(size) = size {
+            self.size = size;
+        }
+        self
+    }
 
     pub fn set_pause(&self, position: usize) {
         self.pause.store(position, Ordering::Release)
