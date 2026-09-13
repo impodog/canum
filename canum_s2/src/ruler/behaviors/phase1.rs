@@ -19,12 +19,16 @@ impl Plugin for Phase1Plugin {
         app.world_mut()
             .register_component_hooks::<Ball>()
             .on_add(ball_hook);
+        app.world_mut()
+            .register_component_hooks::<StrongLaser>()
+            .on_add(strong_laser_hook);
         app.add_systems(
             FixedUpdate,
             (
                 swipe_align_with_player,
                 laser_attack_platform,
                 bounce_ball_shoot_ball,
+                strong_laser_track_player,
             )
                 .in_set(RulerSet),
         );
@@ -40,6 +44,7 @@ fn ruler_phase1_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookC
     commands.spawn((ChildOf(entity), Swipe::default()));
     commands.spawn((ChildOf(entity), LaserAttack::default()));
     commands.spawn((ChildOf(entity), BounceBall::default()));
+    commands.spawn((ChildOf(entity), StrongLaser::default()));
 }
 
 #[derive(Component, Default)]
@@ -243,12 +248,13 @@ enum LaserAttackState {
 }
 
 #[derive(Component, Default)]
+#[require(SessionOnly)]
 struct LaserAttackSoundEffect;
 
 #[derive(Component)]
 #[require(
-    Animation::new("Wcat_Bar", vec2(104.0, 15.6)),
-    Collider::rectangle(104.0, 15.6),
+    Animation::new("Wcat_Bar", vec2(120.0, 18.0)),
+    Collider::rectangle(120.0, 18.0),
     RigidBody::Static,
     health::CollidePlayerOnly
 )]
@@ -444,14 +450,14 @@ struct BounceBall {
 const BALL_RADIUS: f32 = 20.0;
 #[derive(Component)]
 #[require(
-    Animation::new("Ruler_Ball", vec2(BALL_RADIUS, BALL_RADIUS)),
+    Animation::new("Ruler_Ball", vec2(BALL_RADIUS * 2.0, BALL_RADIUS * 2.0)),
     RigidBody::Dynamic,
     LockedAxes::ROTATION_LOCKED,
-    Collider::circle(BALL_RADIUS * 0.9),
+    Collider::circle(BALL_RADIUS * 0.8),
     Mass(10.0),
     Restitution {coefficient: 1.0, combine_rule: CoefficientCombine::Max},
     health::Friendly(false),
-    health::ContactDamage {value: 50, projectile: false, order: consts::order::ENEMY_PROJ},
+    health::ContactDamage {value: consts::damage::ONE_WEAK, projectile: false, order: consts::order::ENEMY_PROJ},
     CollisionEventsEnabled
 )]
 struct Ball {
@@ -460,7 +466,7 @@ struct Ball {
 impl Default for Ball {
     fn default() -> Self {
         Self {
-            bounce_times: if rand_bool(0.2) { 3 } else { 2 },
+            bounce_times: if rand_bool(0.05) { 3 } else { 2 },
         }
     }
 }
@@ -620,6 +626,183 @@ fn bounce_ball_shoot_ball(
                 cooldown: Duration::from_secs_f32(0.3),
                 occupies: occupies![("BounceBall", rand_normal(9.0, 0.5) + rand_sign() * 2.0)],
             });
+        }
+    }
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Ruler_StrongLaser", 0.6, ["Main", "StrongLaser"]))]
+pub struct StrongLaser {
+    target: Option<Entity>,
+    status: StrongLaserStatus,
+    wait: Timer,
+    sign: f32,
+    velocity: Option<Entity>,
+    laser: Option<Entity>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum StrongLaserStatus {
+    #[default]
+    ToBottom,
+    Warning,
+    Swipe,
+}
+#[derive(Component, Default)]
+struct StrongLaserChildMarker;
+
+fn strong_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+    world
+        .commands()
+        .entity(entity)
+        .observe(strong_laser_start)
+        .observe(strong_laser_displacement_complete);
+}
+
+fn strong_laser_start(
+    event: On<BehaveStart>,
+    mut q_strong_laser: Query<(&mut StrongLaser, &GlobalTransform)>,
+    mut commands: Commands,
+) {
+    let Ok((mut laser, global_transform)) = q_strong_laser.get_mut(event.entity) else {
+        return;
+    };
+    laser.target = Some(event.target);
+    laser.status = StrongLaserStatus::ToBottom;
+    laser.wait = Timer::from_seconds(rand_normal(1.3, 0.06), TimerMode::Once);
+
+    let position = global_transform.translation().xy();
+    laser.sign = if rand_bool(0.83) {
+        -position.y.signum()
+    } else {
+        rand_sign()
+    };
+
+    let displace = vec2(
+        0.0,
+        laser.sign * (CONFIG.display.half_virtual_size.1 - SIZE.y * 0.52) - position.y,
+    );
+    commands.spawn((
+        ChildOf(event.target),
+        enemy::movements::Displacement {
+            displace,
+            curve: |x| QuadraticInOutCurve.sample(x).unwrap(),
+            duration: Duration::from_secs_f32(0.8),
+            notify: Some(event.entity),
+        },
+        canum_fx::physics::ParentColliderDisabled,
+    ));
+}
+
+fn strong_laser_displacement_complete(
+    event: On<enemy::movements::DisplacementComplete>,
+    mut q_strong_laser: Query<(&mut StrongLaser, &GlobalTransform)>,
+    mut commands: Commands,
+) {
+    let Ok((mut strong_laser, global_transform)) = q_strong_laser.get_mut(event.entity) else {
+        return;
+    };
+    let Some(target) = strong_laser.target else {
+        return;
+    };
+    match strong_laser.status {
+        StrongLaserStatus::ToBottom => {
+            let mut new_transform = global_transform.compute_transform();
+            new_transform.translation.z -= 0.1;
+            commands.spawn((
+                ChildOf(event.entity),
+                new_transform,
+                Animation::new("Ruler_Ruler", SIZE),
+                canum_fx::emphasis::ExpandAndFadeOut::default().with_time(0.35),
+            ));
+            commands.spawn(Sound::new("Ruler_Warning"));
+
+            strong_laser.status = StrongLaserStatus::Warning;
+            if strong_laser.velocity.is_none() {
+                let velocity = commands
+                    .spawn((
+                        ChildOf(target),
+                        StrongLaserChildMarker,
+                        movements::PartialVelocity::linked(event.entity),
+                    ))
+                    .id();
+                strong_laser.velocity = Some(velocity);
+            }
+        }
+        StrongLaserStatus::Swipe => {
+            strong_laser.status = StrongLaserStatus::ToBottom;
+            if let Some(laser) = strong_laser.laser.take() {
+                commands.entity(laser).despawn();
+            }
+            commands.trigger(BehaveEnd {
+                entity: event.entity,
+                cooldown: Duration::from_secs_f32(rand_normal(0.6, 0.03).min(0.63)),
+                occupies: occupies![("StrongLaser", rand_normal(11.0, 1.0))],
+            });
+        }
+        _ => {}
+    }
+}
+
+fn strong_laser_track_player(
+    mut q_strong_laser: Query<(Entity, &mut StrongLaser, &GlobalTransform)>,
+    mut q_partial_velocity: Query<&mut movements::PartialVelocity, With<StrongLaserChildMarker>>,
+    mut commands: Commands,
+    player: Option<Res<player::PrimaryPlayer>>,
+    q_transform: Query<&GlobalTransform>,
+    time: Res<Time>,
+) {
+    let Some(player) = player else {
+        return;
+    };
+    let Ok(player_transform) = q_transform.get(player.0) else {
+        return;
+    };
+    let player_position = player_transform.translation().xy();
+    for (entity, mut strong_laser, global_transform) in q_strong_laser.iter_mut() {
+        if strong_laser.status != StrongLaserStatus::Warning {
+            continue;
+        };
+        let position = global_transform.translation().xy();
+        let Some(target) = strong_laser.target else {
+            continue;
+        };
+        let Some(velocity_entity) = strong_laser.velocity else {
+            continue;
+        };
+        let Ok(mut partial_velocity) = q_partial_velocity.get_mut(velocity_entity) else {
+            continue;
+        };
+        let player_diff = player_position.x - position.x;
+        let direction = player_diff.signum();
+        if strong_laser.wait.tick(time.delta()).just_finished() {
+            strong_laser.status = StrongLaserStatus::Swipe;
+            **partial_velocity = Vec2::ZERO;
+            let laser_entity = commands
+                .spawn((
+                    super::laser::RulerStrongLaser {
+                        direction: vec2(0.0, -strong_laser.sign),
+                        double: false,
+                    },
+                    Transform::from_translation(vec3(0.0, -strong_laser.sign * SIZE.y * 0.5, -0.1)),
+                    canum_fx::transform::Follow::new(target),
+                ))
+                .id();
+            strong_laser.laser = Some(laser_entity);
+            let max_x = CONFIG.display.half_virtual_size.0 - SIZE.x * 0.5;
+            let target_x = (direction * 100.0 + position.x).clamp(-max_x, max_x);
+            commands.spawn(Sound::new("Bread_Dash"));
+            commands.spawn((
+                ChildOf(target),
+                enemy::movements::Displacement {
+                    displace: vec2(target_x - position.x, 0.0),
+                    curve: |x| QuadraticOutCurve.sample(x).unwrap(),
+                    duration: Duration::from_secs_f32(0.25),
+                    notify: Some(entity),
+                },
+            ));
+        } else {
+            partial_velocity.x = (player_diff.abs() * 2.2).clamp(50.0, 250.0) * direction;
         }
     }
 }

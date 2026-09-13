@@ -238,18 +238,18 @@ fn apply_laser_buffer(
     mut q_animation: Query<(&mut Animation, &mut Sprite, &ChildOf)>,
     q_parent: Query<&LaserLike>,
 ) {
-    for (entity, target_animation, last_length) in buffer.drain(..) {
+    for (entity, mut target_animation, last_length) in buffer.drain(..) {
         let Ok((mut animation, mut sprite, parent)) = q_animation.get_mut(entity) else {
             return;
         };
         if let Some(last_length) = last_length {
-            animation.size.x = last_length;
+            target_animation.size.x = last_length;
             sprite.rect = Some(calc_clipped_rect(&target_animation, last_length));
         } else if sprite.rect.is_some() {
             let Ok(laser) = q_parent.get(parent.0) else {
                 return;
             };
-            animation.size.x = laser.terminal.size.x;
+            target_animation.size.x = laser.terminal.size.x;
             sprite.rect = None;
         }
         *animation = target_animation;

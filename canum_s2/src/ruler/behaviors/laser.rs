@@ -7,6 +7,9 @@ impl Plugin for LaserPlugin {
         app.world_mut()
             .register_component_hooks::<RulerLaser>()
             .on_add(ruler_laser_hook);
+        app.world_mut()
+            .register_component_hooks::<RulerStrongLaser>()
+            .on_add(ruler_strong_laser_hook);
     }
 }
 
@@ -45,7 +48,7 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
             Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
                 .with_rotation(Quat::from_rotation_z(-angle)),
             health::ContactDamage {
-                value: 50,
+                value: consts::damage::ONE_WEAK,
                 projectile: false,
                 order: consts::order::ENEMY_PROJ,
             },
@@ -58,7 +61,63 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
         Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
             .with_rotation(Quat::from_rotation_z(angle)),
         health::ContactDamage {
-            value: 50,
+            value: consts::damage::ONE_WEAK,
+            projectile: false,
+            order: consts::order::ENEMY_PROJ,
+        },
+        health::Friendly::UNFRIENDLY,
+    ));
+}
+
+#[derive(Component, Default, Debug, Clone, Copy)]
+#[require(Transform, Visibility)]
+pub struct RulerStrongLaser {
+    /// This doesn't have to be unit vector.
+    pub direction: Vec2,
+    pub double: bool,
+}
+
+fn ruler_strong_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+    use canum_tool::weapon::laser::*;
+
+    const LASER_SIZE: Vec2 = vec2(40.0, 40.0);
+    const COLLIDER_SIZE: Vec2 = vec2(40.0, 36.0);
+
+    let laser = *world
+        .get::<RulerStrongLaser>(entity)
+        .expect("RulerStrongLaser hook should get a entity with RulerStrongLaser");
+    let angle = laser.direction.normalize_or(vec2(1.0, 0.0)).to_angle();
+    let laser_like = LaserLike {
+        base_direction: Dir2::from_xy_unchecked(1.0, 0.0),
+        middle: Animation::new("Ruler_StrongLaser", LASER_SIZE),
+        terminal: Animation::new("Ruler_StrongLaser", LASER_SIZE),
+        length: COLLIDER_SIZE.x,
+        collide_width: COLLIDER_SIZE.y,
+        ignore_layer: LaserLayer::LASER_ENEMY | LaserLayer::LASER_PROJECTILE,
+        animation_kind: default(),
+    };
+
+    if laser.double {
+        world.commands().spawn((
+            laser_like.clone(),
+            ChildOf(entity),
+            Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
+                .with_rotation(Quat::from_rotation_z(-angle)),
+            health::ContactDamage {
+                value: consts::damage::TWO_MID,
+                projectile: false,
+                order: consts::order::ENEMY_PROJ,
+            },
+            health::Friendly::UNFRIENDLY,
+        ));
+    }
+    world.commands().spawn((
+        laser_like,
+        ChildOf(entity),
+        Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
+            .with_rotation(Quat::from_rotation_z(angle)),
+        health::ContactDamage {
+            value: consts::damage::TWO_MID,
             projectile: false,
             order: consts::order::ENEMY_PROJ,
         },

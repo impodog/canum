@@ -53,9 +53,15 @@ fn integer_take_damage(
     if health.frame_taken_damage {
         return Ok(());
     }
+    let damage_number = crate::consts::damage::damage_number(damage);
+
     health.frame_taken_damage = true;
-    health.count = health.count.saturating_sub(1);
-    commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
+    health.count = health.count.saturating_sub(damage_number).max(0);
+    if damage_number == 1 {
+        commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage"));
+    } else if damage_number >= 2 {
+        commands.spawn(canum_res::sound::Sound::new("BasicHp_Damage_2"));
+    }
     commands.trigger(ActuallyHit {
         entity: event.entity,
     });
@@ -64,14 +70,25 @@ fn integer_take_damage(
             ChildOf(event.entity),
             InvincibilityTimer::new(health.invinc_time, health.invinc_order),
         ));
-        commands.spawn((
-            ChildOf(event.entity),
-            canum_fx::splash::Splash {
-                color: Color::linear_rgba(0.0, 1.0, 1.0, 0.3),
-                duration: std::time::Duration::from_secs_f32(0.2),
-                number: 10,
-            },
-        ));
+        if damage_number == 1 {
+            commands.spawn((
+                ChildOf(event.entity),
+                canum_fx::splash::Splash {
+                    color: Color::linear_rgba(0.0, 1.0, 1.0, 0.3),
+                    duration: std::time::Duration::from_secs_f32(0.2),
+                    number: 10,
+                },
+            ));
+        } else if damage_number >= 2 {
+            commands.spawn((
+                ChildOf(event.entity),
+                canum_fx::splash::Splash {
+                    color: Color::linear_rgba(1.0, 0.12, 0.12, 0.35),
+                    duration: std::time::Duration::from_secs_f32(0.25),
+                    number: 12,
+                },
+            ));
+        }
     } else {
         commands.trigger(super::failure::PlayerFail);
     }
