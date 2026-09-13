@@ -358,6 +358,7 @@ fn laser_attack_start(
             rand_range(-y_lim..y_lim),
             0.0,
         )),
+        canum_fx::util::DespawnCheck::new(event.entity),
     ));
 }
 
@@ -387,6 +388,7 @@ fn laser_attack_go(
                     },
                     Transform::from_translation(vec3(current, 0.0, -0.1)),
                     canum_fx::transform::Follow::new(target),
+                    canum_fx::util::DespawnCheck::new(event.entity),
                 ));
                 batch.push((
                     super::laser::RulerLaser {
@@ -395,6 +397,7 @@ fn laser_attack_go(
                     },
                     Transform::from_translation(vec3(-current, 0.0, -0.1)),
                     canum_fx::transform::Follow::new(target),
+                    canum_fx::util::DespawnCheck::new(event.entity),
                 ));
                 current += 20.0;
             }
@@ -403,7 +406,11 @@ fn laser_attack_go(
                 (CONFIG.display.screen_size.x - SIZE.x) * laser_attack.x_direction,
                 0.0,
             );
-            commands.spawn((LaserAttackSoundEffect, Sound::new("Ruler_Laser")));
+            commands.spawn((
+                LaserAttackSoundEffect,
+                Sound::new("Ruler_Laser"),
+                canum_fx::util::DespawnCheck::new(event.entity),
+            ));
             commands.spawn((
                 ChildOf(target),
                 enemy::movements::Displacement {
@@ -566,6 +573,7 @@ fn bounce_ball_start_bouncing(
                         (CONFIG.display.half_virtual_size.1 - 17.0 * i as f32) * bounce_ball.sign,
                         0.0,
                     )),
+                    canum_fx::util::DespawnCheck::new(event.entity),
                 ))
                 .id();
             bounce_ball.related.push(child);
@@ -608,6 +616,7 @@ fn bounce_ball_shoot_ball(
                     Transform::from_translation(translation),
                     LinearVelocity(vec2(rand_range(235.0..380.0) * rand_sign(), 0.0)),
                     ConstantLinearAcceleration(vec2(0.0, 280.0 * -bounce_ball.sign)),
+                    canum_fx::util::DespawnCheck::new(entity),
                 ));
                 bounce_ball.remaining_times -= 1;
             }
@@ -739,6 +748,11 @@ fn strong_laser_displacement_complete(
                 cooldown: Duration::from_secs_f32(rand_normal(0.6, 0.03).min(0.63)),
                 occupies: occupies![("StrongLaser", rand_normal(11.0, 1.0))],
             });
+            if rand_bool(0.05) {
+                commands.trigger(BehaveQueue::new(event.entity, "Ruler_Swipe"));
+            } else if rand_bool(0.6) {
+                commands.trigger(BehaveQueue::new(event.entity, "Ruler_LaserAttack"));
+            }
         }
         _ => {}
     }
@@ -786,6 +800,7 @@ fn strong_laser_track_player(
                     },
                     Transform::from_translation(vec3(0.0, -strong_laser.sign * SIZE.y * 0.5, -0.1)),
                     canum_fx::transform::Follow::new(target),
+                    canum_fx::util::DespawnCheck::new(entity),
                 ))
                 .id();
             strong_laser.laser = Some(laser_entity);

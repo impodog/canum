@@ -22,6 +22,15 @@ pub const INITIAL_WIDTH: f32 = INITIAL_HEIGHT * LENGTH_RATIO;
 pub const INITIAL_HITBOX_HEIGHT: f32 = 18.0;
 pub const HITBOX_RATIO: f32 = INITIAL_HITBOX_HEIGHT / INITIAL_HEIGHT;
 pub const SIZE: Vec2 = vec2(LENGTH_RATIO * INITIAL_HEIGHT, INITIAL_HEIGHT);
+pub static PHASE2_SIZE: LazyLock<Vec2> = LazyLock::new(|| {
+    vec2(
+        CONFIG.display.screen_size.x,
+        CONFIG.display.screen_size.x / LENGTH_RATIO,
+    )
+});
+
+pub const PHASE1_HEALTH: i32 = 3300;
+pub const PHASE2_HEALTH: i32 = 4200;
 
 #[derive(Component)]
 #[require(
@@ -34,8 +43,9 @@ pub const SIZE: Vec2 = vec2(LENGTH_RATIO * INITIAL_HEIGHT, INITIAL_HEIGHT);
     health::Friendly(false),
     health::ContactDamage { value: consts::damage::ONE_STRONG, projectile: false, order: consts::order::ENEMY_BOSS },
     movements::SpeedDecay(0.8),
-    enemy::health::EnemyHealth::new(3300),
+    enemy::health::EnemyHealth::new(PHASE1_HEALTH),
     enemy::health::DamageSound::new("Wcat_Damage"),
     projectile::NoCollideBoundary,
+    behaviors::transition::RulerPhase::default(),
 )]
 pub struct RulerBoss;

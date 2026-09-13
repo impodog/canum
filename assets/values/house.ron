@@ -11,7 +11,10 @@
     ),
     "Projected": (
       gains: { "Completed": 3, "NoHits": 2 },
-    )
+    ),
+    "Ruler": (
+      gains: { "Completed": 4, "NoHits": 2 },
+    ),
   },
   stage: {
     "House": (

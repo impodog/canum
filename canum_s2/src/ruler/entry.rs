@@ -221,6 +221,10 @@ fn ruler_handle_title_fade_out(
     }
 }
 
+#[derive(Event, Default)]
+pub struct SpawnHealthBar;
+canum_fx::wait_then_trigger!(SpawnHealthBarTrigger, SpawnHealthBar, 0.1);
+
 fn ruler_start(_event: On<RulerStart>, mut commands: Commands) {
     commands.spawn((Music, Sound::new("Ruler_Bgm")));
     let ruler = commands
@@ -239,4 +243,7 @@ fn ruler_start(_event: On<RulerStart>, mut commands: Commands) {
         enemy::health::EnemySensor,
         Collider::rectangle(SIZE.x, SIZE.y),
     ));
+    commands
+        .spawn(SpawnHealthBarTrigger)
+        .observe(SpawnHealthBarTrigger::observer);
 }
