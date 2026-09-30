@@ -115,11 +115,11 @@ fn swipe_displacement_complete(
     let Ok(mut swipe) = q_swipe.get_mut(event.entity) else {
         return;
     };
+    let Some(target) = swipe.target else {
+        return;
+    };
     match swipe.status {
         SwipeStatus::GoToBottom => {
-            let Some(target) = swipe.target else {
-                return;
-            };
             let velocity = commands
                 .spawn((
                     ChildOf(target),
@@ -136,6 +136,7 @@ fn swipe_displacement_complete(
         }
         SwipeStatus::Swiping => {
             swipe.status = SwipeStatus::Inactive;
+            commands.trigger(canum_fx::emphasis::LeaveTrailSetting::disable(target));
             commands.trigger(BehaveEnd {
                 entity: event.entity,
                 cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.12)),
@@ -221,6 +222,7 @@ fn swipe_warning_complete(
         return;
     };
     swipe.status = SwipeStatus::Swiping;
+    commands.trigger(canum_fx::emphasis::LeaveTrailSetting::enable(target));
     commands.spawn((
         ChildOf(target),
         enemy::movements::Displacement {
@@ -743,6 +745,7 @@ fn strong_laser_displacement_complete(
             if let Some(laser) = strong_laser.laser.take() {
                 commands.entity(laser).despawn();
             }
+            commands.trigger(canum_fx::emphasis::LeaveTrailSetting::disable(target));
             commands.trigger(BehaveEnd {
                 entity: event.entity,
                 cooldown: Duration::from_secs_f32(rand_normal(0.6, 0.03).min(0.63)),
@@ -807,6 +810,7 @@ fn strong_laser_track_player(
             let max_x = CONFIG.display.half_virtual_size.0 - SIZE.x * 0.5;
             let target_x = (direction * 100.0 + position.x).clamp(-max_x, max_x);
             commands.spawn(Sound::new("Bread_Dash"));
+            commands.trigger(canum_fx::emphasis::LeaveTrailSetting::enable(target));
             commands.spawn((
                 ChildOf(target),
                 enemy::movements::Displacement {

@@ -47,5 +47,6 @@ pub const PHASE2_HEALTH: i32 = 4200;
     enemy::health::DamageSound::new("Wcat_Damage"),
     projectile::NoCollideBoundary,
     behaviors::transition::RulerPhase::default(),
+    canum_fx::emphasis::LeaveTrail::new(0.05, 0.12),
 )]
 pub struct RulerBoss;

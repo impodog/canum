@@ -4,7 +4,11 @@ pub(super) struct EmphasisPlugin;
 
 impl Plugin for EmphasisPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, expand_and_fade_out);
+        app.add_systems(
+            FixedUpdate,
+            (expand_and_fade_out, leave_trail, update_trail_sprite),
+        );
+        app.add_observer(leave_trail_setting);
     }
 }
 
@@ -73,5 +77,131 @@ fn expand_and_fade_out(
 
             let current_alpha_curve = QuadraticOutCurve.sample(fraction).unwrap();
             sprite.color.set_alpha(1.0 - current_alpha_curve);
+        });
+}
+
+/// Creates a visual effect for fast motion, leaving behind a trail of motion path.
+/// Note that this is disabled by default, and you must enable it before seeing pathes.
+#[derive(Component, Debug)]
+#[require(Transform, Visibility, Sprite)]
+#[non_exhaustive]
+pub struct LeaveTrail {
+    pub enabled: bool,
+    pub interval: Timer,
+    pub linger: std::time::Duration,
+    pub rotate_color: bool,
+}
+impl LeaveTrail {
+    pub fn new(interval: f32, linger: f32) -> Self {
+        Self {
+            enabled: false,
+            interval: Timer::from_seconds(interval, TimerMode::Repeating),
+            linger: std::time::Duration::from_secs_f32(linger),
+            rotate_color: false,
+        }
+    }
+
+    /// The color rotates for the lingering images.
+    pub fn rotate_color(mut self) -> Self {
+        self.rotate_color = true;
+        self
+    }
+
+    /// Enable lingering trails. This is disabled by default.
+    pub fn enabled(mut self) -> Self {
+        self.enabled = true;
+        self
+    }
+}
+
+/// Sets the state of `LeaveTrail`.
+#[derive(EntityEvent, Debug)]
+pub struct LeaveTrailSetting {
+    pub entity: Entity,
+    pub enabled: bool,
+}
+impl LeaveTrailSetting {
+    pub fn enable(entity: Entity) -> Self {
+        Self {
+            entity,
+            enabled: true,
+        }
+    }
+    pub fn disable(entity: Entity) -> Self {
+        Self {
+            entity,
+            enabled: false,
+        }
+    }
+}
+
+fn leave_trail_setting(event: On<LeaveTrailSetting>, mut q_effect: Query<&mut LeaveTrail>) {
+    let Ok(mut effect) = q_effect.get_mut(event.entity) else {
+        return;
+    };
+    effect.enabled = event.enabled;
+}
+
+#[derive(Component, Default)]
+#[require(Sprite)]
+struct TrailSprite {
+    time: Timer,
+    original_color: Hsla,
+    rotate: bool,
+}
+
+fn leave_trail(
+    mut q_effect: Query<(&mut LeaveTrail, &GlobalTransform, &Sprite)>,
+    time: Res<Time>,
+    commands: ParallelCommands,
+) {
+    q_effect
+        .par_iter_mut()
+        .for_each(|(mut effect, global_transform, sprite)| {
+            if !effect.enabled {
+                return;
+            }
+            if effect.interval.tick(time.delta()).just_finished() {
+                let mut transform = global_transform.compute_transform();
+                transform.translation.z -= 0.01;
+                commands.command_scope(|mut commands| {
+                    commands.spawn((
+                        sprite.clone(),
+                        transform,
+                        TrailSprite {
+                            time: Timer::new(effect.linger, TimerMode::Once),
+                            original_color: sprite.color.into(),
+                            rotate: effect.rotate_color,
+                        },
+                    ));
+                });
+            }
+        });
+}
+
+fn update_trail_sprite(
+    mut q_sprite: Query<(Entity, &mut Sprite, &mut TrailSprite, &mut Transform)>,
+    time: Res<Time>,
+    commands: ParallelCommands,
+) {
+    q_sprite
+        .par_iter_mut()
+        .for_each(|(entity, mut sprite, mut trail, mut transform)| {
+            if trail.time.tick(time.delta()).just_finished() {
+                commands.command_scope(|mut commands| {
+                    commands.entity(entity).despawn();
+                });
+            } else {
+                let fraction = trail.time.fraction();
+                transform.translation.z -=
+                    time.delta_secs() / trail.time.duration().as_secs_f32() * 0.1;
+                let mut new_color = trail
+                    .original_color
+                    .with_alpha(trail.original_color.alpha * (1.0 - fraction));
+                if trail.rotate {
+                    new_color = new_color.rotate_hue(360.0 * fraction);
+                }
+                sprite.color = Color::Hsla(new_color);
+            }
         });
 }
