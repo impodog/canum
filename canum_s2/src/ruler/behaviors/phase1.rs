@@ -456,7 +456,7 @@ struct BounceBall {
     related: Vec<Entity>,
 }
 
-const BALL_RADIUS: f32 = 20.0;
+pub(super) const BALL_RADIUS: f32 = 20.0;
 #[derive(Component)]
 #[require(
     Animation::new("Ruler_Ball", vec2(BALL_RADIUS * 2.0, BALL_RADIUS * 2.0)),
@@ -464,13 +464,14 @@ const BALL_RADIUS: f32 = 20.0;
     LockedAxes::ROTATION_LOCKED,
     Collider::circle(BALL_RADIUS * 0.8),
     Mass(10.0),
-    Restitution {coefficient: 1.0, combine_rule: CoefficientCombine::Max},
+    Restitution {coefficient: 0.95, combine_rule: CoefficientCombine::Max},
+    Friction {dynamic_coefficient: 0.1, static_coefficient: 0.15, combine_rule: CoefficientCombine::Min},
     health::Friendly(false),
     health::ContactDamage {value: consts::damage::ONE_WEAK, projectile: false, order: consts::order::ENEMY_PROJ},
     CollisionEventsEnabled
 )]
-struct Ball {
-    bounce_times: i8,
+pub(super) struct Ball {
+    pub(super) bounce_times: i8,
 }
 impl Default for Ball {
     fn default() -> Self {
@@ -498,6 +499,7 @@ fn ball_bounce(
     mut q_ball: Query<&mut Ball>,
     q_boundary: Query<&GlobalTransform, With<setup::Boundaries>>,
 ) {
+    commands.spawn(Sound::new("Ruler_Bounce"));
     // If colliding only the down boundaries
     if let Ok(global_transform) = q_boundary.get(event.collider2)
         && global_transform.translation().y.abs() > 1e-3
@@ -506,7 +508,6 @@ fn ball_bounce(
             return;
         };
         ball.bounce_times = ball.bounce_times.saturating_sub(1);
-        commands.spawn(Sound::new("Ruler_Bounce"));
         if ball.bounce_times <= 0 {
             commands
                 .entity(event.collider1)

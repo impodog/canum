@@ -300,7 +300,7 @@ struct TwoPolesMarker(f32);
 struct TwoPolesWarningComplete(Entity);
 canum_fx::wait_then_trigger!(
     TwoPolesWarningCompleteTrigger,
-    TwoPolesWarningComplete,
+    auto_new TwoPolesWarningComplete,
     Entity,
     1.0
 );

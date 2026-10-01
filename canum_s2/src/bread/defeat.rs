@@ -63,7 +63,7 @@ fn on_defeat(
 
 #[derive(Event)]
 struct DefeatTimer(Entity);
-canum_fx::wait_then_trigger!(DefeatTimerTrigger, DefeatTimer, Entity, 3.0);
+canum_fx::wait_then_trigger!(DefeatTimerTrigger, auto_new DefeatTimer, Entity, 3.0);
 
 fn on_displace_complete(
     event: On<enemy::movements::DisplacementComplete>,

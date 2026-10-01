@@ -190,3 +190,35 @@ mod perlin_noise {
         0x75,
     ];
 }
+
+/// Make a clone of the image where all opaque pixels are one solid color.
+pub fn pure_image(source: &Image, color: [u8; 3]) -> Option<Image> {
+    use bevy::render::render_resource::TextureFormat;
+
+    let mut image = source.clone();
+
+    // Bytes per pixel depends on the texture format
+    let bpp = match image.texture_descriptor.format {
+        TextureFormat::Rgba8UnormSrgb
+        | TextureFormat::Rgba8Unorm
+        | TextureFormat::Bgra8UnormSrgb => 4,
+        _ => return None, // compressed/unsupported formats need decoding first
+    };
+    let data = image.data.as_mut()?;
+    for px in data.chunks_exact_mut(bpp) {
+        // For Bgra8UnormSrgb, channel 0 is blue!
+        if px[3] >= 128 {
+            px[0] = color[0];
+            px[1] = color[1];
+            px[2] = color[2];
+            // px[3] (alpha) is left untouched
+        } else {
+            px[0] = 0;
+            px[1] = 0;
+            px[2] = 0;
+            px[3] = 0;
+        }
+    }
+
+    Some(image)
+}

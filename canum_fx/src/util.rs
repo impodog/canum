@@ -4,7 +4,8 @@ pub(super) struct UtilPlugin;
 
 impl Plugin for UtilPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedPreUpdate, (update_wait, check_despawn));
+        app.add_systems(Update, (update_wait,));
+        app.add_systems(FixedPreUpdate, (check_despawn,));
     }
 }
 
@@ -73,12 +74,6 @@ macro_rules! wait_then_trigger {
     };
 
     ($name: ident, $type: ty, $data: ty, $interval: expr) => {
-        impl $type {
-            fn new(value: $data) -> Self {
-                Self(value)
-            }
-        }
-
         #[derive(Component)]
         #[require($crate::util::WaitInterval::new(Duration::from_secs_f32($interval)))]
         struct $name($data);
@@ -95,6 +90,39 @@ macro_rules! wait_then_trigger {
             }
         }
     };
+
+    ($name: ident, auto_new $type: ty, $data: ty, $interval: expr) => {
+        impl $type {
+            fn new(value: $data) -> Self {
+                Self(value)
+            }
+        }
+        #[derive(Component)]
+        #[require($crate::util::WaitInterval::new(Duration::from_secs_f32($interval)))]
+        struct $name($data);
+        impl $name {
+            fn observer(
+                event: On<$crate::util::WaitComplete>,
+                mut commands: Commands,
+                query: Query<&$name>,
+            ) {
+                let Ok(value) = query.get(event.entity) else {
+                    return;
+                };
+                commands.trigger(<$type>::new(value.0.clone()));
+            }
+        }
+    };
+
+    (use $commands: expr, $type: ty, $interval: expr) => {{
+        $crate::wait_then_trigger!(Waiting, $type, $interval);
+        $commands.spawn(Waiting).observe(Waiting::observer);
+    }};
+
+    (use $commands: expr, $type: ty, $data: ty, $value: expr, $interval: expr) => {{
+        $crate::wait_then_trigger!(Waiting, $type, $data, $interval);
+        $commands.spawn(Waiting($value)).observe(Waiting::observer);
+    }};
 }
 
 #[macro_export]

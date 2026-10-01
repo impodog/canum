@@ -131,6 +131,7 @@ fn enemy_defeated(
             commands
                 .entity(event.entity)
                 .insert(TransitionTimer::default());
+            commands.trigger(canum_fx::emphasis::LeaveTrailSetting::disable(event.entity));
         }
         RulerPhase::Phase2 => {
             todo!("phase2 cinematic defeat animation")

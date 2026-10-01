@@ -1,0 +1,5 @@
+{
+  "sounds": {
+    "Gen_GrandDefeat": { "path": "grand_defeat.wav", "volume": 5.0 }
+  }
+}

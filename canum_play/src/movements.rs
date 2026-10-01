@@ -64,7 +64,12 @@ fn do_speed_shrink(
 }
 
 #[derive(Component, Debug, Clone)]
-#[require(ForcedVelocity, DashTimers, Shields)]
+#[require(
+    ForcedVelocity,
+    DashTimers,
+    Shields,
+    canum_fx::emphasis::LeaveTrail::new_rotate_color(0.04, 0.2)
+)]
 pub struct Dash {
     pub max_speed: f32,
     pub total_duration: f32,
@@ -130,21 +135,39 @@ fn start_dash(
         return;
     }
     commands.spawn(canum_res::sound::Sound::new(&dash.sound));
+    commands.trigger(canum_fx::emphasis::LeaveTrailSetting::enable(event.entity));
     refresh_dash_timers_with(dash, timers.as_mut());
     if dash.invincible_duration > 0.0 {
         shields.insert(crate::consts::order::DASH_INVINC, i32::MAX);
     }
     timers.target_velocity = event.base_velocity * dash.max_speed;
 }
-fn perform_dash(mut q_dash: Query<(&Dash, &mut DashTimers, &mut Shields)>, time: Res<Time>) {
+fn perform_dash(
+    mut q_dash: Query<(
+        Entity,
+        &Dash,
+        &mut DashTimers,
+        &mut Shields,
+        &canum_fx::emphasis::LeaveTrail,
+    )>,
+    time: Res<Time>,
+    commands: ParallelCommands,
+) {
     q_dash
         .par_iter_mut()
-        .for_each(|(_dash, mut timers, mut shields)| {
+        .for_each(|(entity, _dash, mut timers, mut shields, leave_trail)| {
             if !timers.total.is_finished() {
                 timers.total.tick(time.delta());
                 timers.invincible.tick(time.delta());
-            } else if !timers.cooldown.is_finished() {
-                timers.cooldown.tick(time.delta());
+            } else {
+                if leave_trail.enabled {
+                    commands.command_scope(|mut commands| {
+                        commands.trigger(canum_fx::emphasis::LeaveTrailSetting::disable(entity));
+                    });
+                }
+                if !timers.cooldown.is_finished() {
+                    timers.cooldown.tick(time.delta());
+                }
             }
             if timers.invincible.is_finished()
                 || timers.total.is_finished()

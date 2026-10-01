@@ -179,7 +179,9 @@ fn update_associated_health_bar(
                 timeout.reset();
             } else if timeout.is_finished() {
                 let diff = value - bar.linger;
-                let add = diff.signum() * (0.4f32 * bar.total * time.delta_secs()).min(diff.abs());
+                let add_ratio = (diff / bar.total * 1.1 + 0.2).clamp(0.4, 1.2);
+                let add =
+                    diff.signum() * (add_ratio * bar.total * time.delta_secs()).min(diff.abs());
                 bar.linger += add;
             }
         } else {

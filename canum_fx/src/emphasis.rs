@@ -5,7 +5,7 @@ pub(super) struct EmphasisPlugin;
 impl Plugin for EmphasisPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            FixedUpdate,
+            Update,
             (expand_and_fade_out, leave_trail, update_trail_sprite),
         );
         app.add_observer(leave_trail_setting);
@@ -90,6 +90,7 @@ pub struct LeaveTrail {
     pub interval: Timer,
     pub linger: std::time::Duration,
     pub rotate_color: bool,
+    pub pure_color: bool,
 }
 impl LeaveTrail {
     pub fn new(interval: f32, linger: f32) -> Self {
@@ -98,12 +99,21 @@ impl LeaveTrail {
             interval: Timer::from_seconds(interval, TimerMode::Repeating),
             linger: std::time::Duration::from_secs_f32(linger),
             rotate_color: false,
+            pure_color: false,
         }
+    }
+    pub fn new_rotate_color(interval: f32, linger: f32) -> Self {
+        Self::new(interval, linger).rotate_color()
     }
 
     /// The color rotates for the lingering images.
     pub fn rotate_color(mut self) -> Self {
         self.rotate_color = true;
+        self
+    }
+
+    pub fn pure_color(mut self) -> Self {
+        self.pure_color = true;
         self
     }
 
@@ -154,7 +164,10 @@ fn leave_trail(
     mut q_effect: Query<(&mut LeaveTrail, &GlobalTransform, &Sprite)>,
     time: Res<Time>,
     commands: ParallelCommands,
+    images: ResMut<Assets<Image>>,
 ) {
+    use std::sync::Mutex;
+    let images = Mutex::new(images);
     q_effect
         .par_iter_mut()
         .for_each(|(mut effect, global_transform, sprite)| {
@@ -164,13 +177,32 @@ fn leave_trail(
             if effect.interval.tick(time.delta()).just_finished() {
                 let mut transform = global_transform.compute_transform();
                 transform.translation.z -= 0.01;
+                let mut sprite = sprite.clone();
+                if effect.pure_color {
+                    let mut images = images.lock().unwrap();
+                    if let Some(image) = images.get(sprite.image.id())
+                        && let Some(new_image) = crate::visual::pure_image(image, [255, 255, 255])
+                    {
+                        let new_handle = images.add(new_image);
+                        sprite.image = new_handle;
+                    } else {
+                        warn!("Unable to create pure color leave-trail sprite");
+                    }
+                }
+                let original_color = if effect.rotate_color {
+                    Hsla::from(sprite.color)
+                        .with_saturation(1.0)
+                        .with_lightness(0.75)
+                } else {
+                    sprite.color.into()
+                };
                 commands.command_scope(|mut commands| {
                     commands.spawn((
                         sprite.clone(),
                         transform,
                         TrailSprite {
                             time: Timer::new(effect.linger, TimerMode::Once),
-                            original_color: sprite.color.into(),
+                            original_color,
                             rotate: effect.rotate_color,
                         },
                     ));
@@ -184,6 +216,8 @@ fn update_trail_sprite(
     time: Res<Time>,
     commands: ParallelCommands,
 ) {
+    use bevy::math::FloatPow;
+
     q_sprite
         .par_iter_mut()
         .for_each(|(entity, mut sprite, mut trail, mut transform)| {
@@ -197,11 +231,11 @@ fn update_trail_sprite(
                     time.delta_secs() / trail.time.duration().as_secs_f32() * 0.1;
                 let mut new_color = trail
                     .original_color
-                    .with_alpha(trail.original_color.alpha * (1.0 - fraction));
+                    .with_alpha(trail.original_color.alpha * (1.0 - fraction).squared());
                 if trail.rotate {
                     new_color = new_color.rotate_hue(360.0 * fraction);
                 }
-                sprite.color = Color::Hsla(new_color);
+                sprite.color = Color::LinearRgba(Color::Hsla(new_color).to_linear());
             }
         });
 }

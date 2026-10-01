@@ -142,9 +142,19 @@ impl Friendly {
     pub const UNFRIENDLY: Friendly = Friendly(false);
 }
 
+/// Collision is always enabled between this entity and the other.
+#[derive(Component, Default, Debug, Deref, DerefMut)]
+pub struct AlwaysCollide(pub BTreeSet<Entity>);
+impl AlwaysCollide {
+    pub fn new(iter: impl IntoIterator<Item = Entity>) -> Self {
+        Self(BTreeSet::from_iter(iter))
+    }
+}
+
 /// This prevents friendly objects from interacting with each other.
 #[derive(SystemParam)]
 pub struct PhysicsHooks<'w, 's> {
+    q_always_collide: Query<'w, 's, &'static AlwaysCollide>,
     q_friendly: Query<'w, 's, &'static Friendly>,
     q_disable_opposite: Query<'w, 's, &'static DisableOpposingCollision>,
     q_no: Query<'w, 's, &'static crate::projectile::NoCollideBoundary>,
@@ -157,6 +167,17 @@ pub struct PhysicsHooks<'w, 's> {
 }
 impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
     fn filter_pairs(&self, collider1: Entity, collider2: Entity, _commands: &mut Commands) -> bool {
+        if self
+            .q_always_collide
+            .get(collider1)
+            .is_ok_and(|always| always.contains(&collider2))
+            || self
+                .q_always_collide
+                .get(collider2)
+                .is_ok_and(|always| always.contains(&collider1))
+        {
+            return true;
+        }
         if self.q_projectile.get_many([collider1, collider2]).is_ok() {
             return false;
         }
@@ -213,6 +234,12 @@ pub struct ContactDamage {
 #[derive(Component, Debug, Deref, DerefMut, Default)]
 pub struct ProjectileContacted(BTreeSet<Entity>);
 
+/// Delays the actual effect of contact damage, so that physics system can respond before the player can get hit.
+#[derive(Component, Default)]
+struct ContactDamageInitDelay {
+    init_flag: bool,
+}
+
 fn init_contact_damage(
     commands: ParallelCommands,
     q_added: Query<(Entity, &ContactDamage), Added<ContactDamage>>,
@@ -225,6 +252,11 @@ fn init_contact_damage(
                     .insert(ProjectileContacted::default());
             });
         }
+        commands.command_scope(|mut commands| {
+            commands
+                .entity(entity)
+                .insert(ContactDamageInitDelay::default());
+        });
     });
 }
 
@@ -235,12 +267,17 @@ fn deal_contact_damage(
         &CollidingEntities,
         &Friendly,
         Option<&mut ProjectileContacted>,
+        &mut ContactDamageInitDelay,
     )>,
     q_friendly: Query<&Friendly>,
     q_no_dispose_projectile: Query<(), With<projectile::NoDisposeProjectile>>,
 ) {
     q_contact_damage.par_iter_mut().for_each(
-        |(contact_damage, colliding_entities, friendly, mut contacted)| {
+        |(contact_damage, colliding_entities, friendly, mut contacted, mut init_delay)| {
+            if !init_delay.init_flag {
+                init_delay.init_flag = true;
+                return;
+            }
             for entity in colliding_entities.iter() {
                 if q_no_dispose_projectile.get(*entity).is_err()
                     && contacted
