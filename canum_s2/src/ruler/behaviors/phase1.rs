@@ -637,7 +637,7 @@ fn bounce_ball_shoot_ball(
             commands.trigger(BehaveEnd {
                 entity,
                 cooldown: Duration::from_secs_f32(0.3),
-                occupies: occupies![("BounceBall", rand_normal(9.0, 0.5) + rand_sign() * 2.0)],
+                occupies: occupies![("BounceBall", rand_normal(8.0, 0.5) + rand_sign() * 2.0)],
             });
         }
     }
@@ -751,7 +751,7 @@ fn strong_laser_displacement_complete(
             commands.trigger(BehaveEnd {
                 entity: event.entity,
                 cooldown: Duration::from_secs_f32(rand_normal(0.6, 0.03).min(0.63)),
-                occupies: occupies![("StrongLaser", rand_normal(11.0, 1.0))],
+                occupies: occupies![("StrongLaser", rand_normal(10.0, 0.7))],
             });
             if rand_bool(0.05) {
                 commands.trigger(BehaveQueue::new(event.entity, "Ruler_Swipe"));

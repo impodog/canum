@@ -31,6 +31,14 @@ pub struct RulerStart;
 // This is only used when normal title is displayed.
 canum_fx::wait_then_trigger!(RulerStartTrigger, RulerStart, 1.0);
 
+/// Marks the upper layer of background, shown in phase1.
+#[derive(Component, Default)]
+pub struct TopBackground;
+
+/// Marks the lower layer of background, shown in phase2.
+#[derive(Component, Default)]
+pub struct UnderBackground;
+
 fn setup_ruler(
     mut commands: Commands,
     mut title: ResMut<canum_res::window::WindowTitle>,
@@ -39,6 +47,22 @@ fn setup_ruler(
     commands
         .spawn(RulerSpawnDialogueTrigger)
         .observe(RulerSpawnDialogueTrigger::observer);
+    commands.spawn((
+        SessionOnly,
+        TopBackground,
+        Transform::from_translation(vec3(0.0, 0.0, -14.37)),
+        Animation::new("Ruler_Back_Table", CONFIG.display.screen_size)
+            .with_color(Color::default().with_alpha(0.6)),
+    ));
+    let expand_ratio = CONFIG.display.screen_size.x / CONFIG.display.screen_size.y;
+    commands.spawn((
+        SessionOnly,
+        UnderBackground,
+        Transform::from_translation(vec3(0.0, 0.0, -14.47)),
+        Animation::new("Ruler_Back_Pure", CONFIG.display.screen_size * expand_ratio)
+            .with_color(Color::default().with_alpha(0.7))
+            .with_visibility(Visibility::Hidden),
+    ));
     canum_fx::session_observers!(
         commands,
         ruler_spawn_dialogue,

@@ -17,6 +17,10 @@
     "Ruler_StrongLaser": [
       {"path": "ruler_strong_laser.png", "size": [40, 40], "offset": [0, 0]},
       {"path": "ruler_strong_laser.png", "size": [40, 40], "offset": [10, 0]}
-    ]
+    ],
+    "Ruler_Back_Table": [{"path": "ruler_back.png", "size": [400, 225], "offset": [0, 0]}],
+    "Ruler_Back_Pure": [{"path": "ruler_back.png", "size": [400, 225], "offset": [400, 0]}],
+    "Ruler_Breaks": [{"path": "ruler_breaks.png", "size": [128, 32]}],
+    "Ruler_Dialogue_Icon": [{"path": "ruler_icon.png"}]
   }
 }

@@ -4,7 +4,7 @@ pub(super) struct UtilPlugin;
 
 impl Plugin for UtilPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (update_wait,));
+        app.add_systems(FixedPreUpdate, (update_wait,));
         app.add_systems(FixedPreUpdate, (check_despawn,));
     }
 }

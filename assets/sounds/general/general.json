@@ -1,5 +1,6 @@
 {
   "sounds": {
-    "Gen_GrandDefeat": { "path": "grand_defeat.wav", "volume": 5.0 }
+    "Gen_GrandDefeat": { "path": "grand_defeat.wav", "volume": 6.0 },
+    "Gen_MajorVictory": { "path": "major_victory.wav", "volume": -3.0 }
   }
 }

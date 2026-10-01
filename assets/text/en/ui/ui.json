@@ -4,8 +4,10 @@
       "Ui_ShopIndicator_Keyboard": "Press <S> to enter the shop; Press <E> to equip purchased items",
       "Ui_ShopIndicator_Gamepad": "Press <R3> to enter the shop; Press <L3> to equip purchased items",
 
-      "Ui_GetDash_Keyboard": "You have obtained the ability to dash.\nPress <X> to dash.\nPress <ESC> to exit.",
-      "Ui_GetDash_Gamepad": "You have obtained the ability to dash.\nPress <R2> to dash.\nPress <EAST> to exit."
+      "Ui_GetDash_Keyboard": "You have obtained the ability to dash.\nPress <X> to dash.\n\nPress <ESC> to exit.",
+      "Ui_GetDash_Gamepad": "You have obtained the ability to dash.\nPress <R2> to dash.\n\nPress <EAST> to exit.",
+      "Ui_GetSecondaryWeapon_Keyboard": "You have obtained several weapon upgrades:\n1. One extra weapon slot;\n2. A free charged weapon \"Laser Gun\".\n3. An extra OFFENSIVE charm slot.\nSee them in your equip menu!\n\nPress <ESC> to exit.",
+      "Ui_GetSecondaryWeapon_Gamepad": "You have obtained several weapon upgrades:\n1. One extra weapon slot;\n2. A free charged weapon \"Laser Gun\".\n3. An extra OFFENSIVE charm slot.\n See them in your equip menu!\n\nPress <EAST> to exit."
     }
   }
 }

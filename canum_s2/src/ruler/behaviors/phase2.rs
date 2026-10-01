@@ -92,8 +92,8 @@ fn horiz_laser_acc_start(event: On<BehaveStart>, mut commands: Commands) {
         cooldown: Duration::from_secs_f32(rand_normal(4.75, 0.5)),
         occupies: occupies![("HorizLaserAcc", rand_normal(6.0, 0.32))],
     });
-    if rand_bool(0.4) {
-        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLaser"));
+    if rand_bool(0.2) {
+        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLasers"));
     }
 }
 
@@ -119,7 +119,11 @@ struct HorizLaser {
     acc: f32,
 }
 
-fn horiz_laser_observe(event: On<HorizLaserAccSpawnLaser>, mut commands: Commands) {
+fn horiz_laser_observe(
+    event: On<HorizLaserAccSpawnLaser>,
+    mut commands: Commands,
+    entity: Single<Entity, With<RulerPhase2>>,
+) {
     let position = vec3(
         event.0 * (CONFIG.display.half_virtual_size.0 + 10.0),
         CONFIG.display.half_virtual_size.1 - 1.0,
@@ -130,6 +134,7 @@ fn horiz_laser_observe(event: On<HorizLaserAccSpawnLaser>, mut commands: Command
             HorizLaser {
                 acc: 310.0 * event.0,
             },
+            canum_fx::util::DespawnCheck::new(entity.entity()),
             Transform::from_translation(position),
             RigidBody::Kinematic,
             LinearVelocity(vec2(-event.0 * 550.0, 0.0)),
@@ -185,8 +190,8 @@ fn many_balls_fall_start(event: On<BehaveStart>, mut commands: Commands) {
         cooldown: Duration::from_secs_f32(3.0),
         occupies: occupies![("ManyBallsFall", rand_normal(6.0, 0.7))],
     });
-    if rand_bool(0.2) {
-        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLaser"));
+    if rand_bool(0.1) {
+        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLasers"));
     }
 }
 
@@ -309,8 +314,8 @@ fn platforms_start(
         cooldown: Duration::from_secs_f32(rand_normal(5.5, 0.35)),
         occupies: occupies![("Platforms", rand_normal(8.5, 1.0).min(10.0))],
     });
-    if rand_bool(0.5) {
-        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLaser"));
+    if rand_bool(0.2) {
+        commands.trigger(BehaveQueue::new(event.entity, "Ruler_BigLasers"));
     }
 }
 
@@ -327,11 +332,11 @@ impl PlatformsDespawnChild {
 struct PlatformsBar;
 
 fn platforms_spawn(
-    mut q_platforms: Query<&mut Platforms>,
+    mut q_platforms: Query<(Entity, &mut Platforms)>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for mut platforms in q_platforms.iter_mut() {
+    for (entity, mut platforms) in q_platforms.iter_mut() {
         let sign = platforms.sign;
         if platforms.order.is_empty() && !platforms.child.is_empty() {
             for spike in platforms.child.iter() {
@@ -357,6 +362,7 @@ fn platforms_spawn(
             let height = length * 3.0 / 20.0;
             commands.spawn((
                 PlatformsBar,
+                canum_fx::util::DespawnCheck::new(entity),
                 Animation::new("Wcat_Bar", vec2(length, height)),
                 Collider::rectangle(length, height),
                 Transform::from_translation(vec3(
@@ -399,7 +405,7 @@ fn big_lasers_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCon
 
 const LASER_COUNT: usize = 6;
 const HALF_LASER_COUNT: usize = LASER_COUNT / 2;
-const BIG_LASER_GAP: f32 = 64.0;
+const BIG_LASER_GAP: f32 = 60.0;
 
 #[derive(Event)]
 struct BigLasersSpawn(bool);
@@ -446,12 +452,16 @@ fn big_lasers_start(event: On<BehaveStart>, mut commands: Commands) {
 
     commands.trigger(BehaveEnd {
         entity: event.entity,
-        cooldown: Duration::from_secs_f32(rand_normal(1.0, 0.2)),
+        cooldown: Duration::from_secs_f32(rand_normal(1.8, 0.2)),
         occupies: occupies![("BigLasers", 20.0)],
     });
 }
 
-fn big_lasers_spawn(event: On<BigLasersSpawn>, mut commands: Commands) {
+fn big_lasers_spawn(
+    event: On<BigLasersSpawn>,
+    mut commands: Commands,
+    entity: Single<Entity, With<RulerPhase2>>,
+) {
     let mut entities = Vec::new();
     for index in 0..HALF_LASER_COUNT {
         let x = if event.0 {
@@ -465,6 +475,7 @@ fn big_lasers_spawn(event: On<BigLasersSpawn>, mut commands: Commands) {
                     direction: vec2(0.0, -1.0),
                     double: false,
                 },
+                canum_fx::util::DespawnCheck::new(entity.entity()),
                 Transform::from_translation(vec3(x, CONFIG.display.half_virtual_size.1 - 1.0, 5.0)),
             ))
             .id();

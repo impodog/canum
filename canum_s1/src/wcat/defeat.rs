@@ -13,10 +13,6 @@ impl Plugin for DefeatPlugin {
             commands.spawn((SessionOnly, Observer::new(on_transition)));
         });
         app.add_systems(OnEnter(GET_DASH_STATE.clone()), init_get_dash);
-        app.add_systems(
-            FixedPreUpdate,
-            listen_get_dash_input.run_if(in_state(GET_DASH_STATE.clone())),
-        );
     }
 }
 
@@ -53,7 +49,7 @@ fn on_defeat(
 }
 
 fn on_transition(_event: On<DefeatInform>, mut commands: Commands) {
-    commands.spawn(Sound::new("Wcat_Defeat"));
+    commands.spawn(Sound::new("Gen_MajorVictory"));
     commands.spawn(setup::cutscene::PureColorCutscene {
         transition: canum_fx::transition::PureColor {
             destroy: None,
@@ -101,21 +97,20 @@ fn init_get_dash(
             ..default()
         },
     ));
+    commands.spawn((SessionOnly, Observer::new(listen_get_dash_input)));
 }
 
-fn listen_get_dash_input(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
-    if keyboard.any_just_pressed([KeyCode::Escape, KeyCode::Backspace, KeyCode::Enter]) {
-        commands.trigger(player::victory::UpdateTasks {
-            fight: "Wcat".to_owned(),
-        });
-        commands.spawn(setup::cutscene::PureColorCutscene {
-            transition: canum_fx::transition::PureColor {
-                destroy: None,
-                duration: Duration::from_secs_f32(2.0),
-                color: Color::BLACK,
-                remove_self: true,
-            },
-            fight: "LobbySelect".to_owned(),
-        });
-    }
+fn listen_get_dash_input(_event: On<setup::lobby::LobbyQuit>, mut commands: Commands) {
+    commands.trigger(player::victory::UpdateTasks {
+        fight: "Wcat".to_owned(),
+    });
+    commands.spawn(setup::cutscene::PureColorCutscene {
+        transition: canum_fx::transition::PureColor {
+            destroy: None,
+            duration: Duration::from_secs_f32(2.0),
+            color: Color::BLACK,
+            remove_self: true,
+        },
+        fight: "LobbySelect".to_owned(),
+    });
 }
