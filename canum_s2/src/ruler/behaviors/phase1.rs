@@ -255,6 +255,7 @@ struct LaserAttackSoundEffect;
 
 #[derive(Component)]
 #[require(
+    SessionOnly,
     Animation::new("Wcat_Bar", vec2(120.0, 18.0)),
     Collider::rectangle(120.0, 18.0),
     RigidBody::Static,

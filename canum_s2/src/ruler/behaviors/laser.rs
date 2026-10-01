@@ -14,7 +14,7 @@ impl Plugin for LaserPlugin {
 }
 
 #[derive(Component, Default, Debug, Clone, Copy)]
-#[require(Transform, Visibility)]
+#[require(Transform, Visibility, SessionOnly, projectile::RemoveOutOfBounds {distance_scale: 1.2})]
 pub struct RulerLaser {
     /// This doesn't have to be unit vector.
     pub direction: Vec2,
@@ -70,7 +70,7 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
 }
 
 #[derive(Component, Default, Debug, Clone, Copy)]
-#[require(Transform, Visibility)]
+#[require(Transform, Visibility, SessionOnly, projectile::RemoveOutOfBounds {distance_scale: 1.2})]
 pub struct RulerStrongLaser {
     /// This doesn't have to be unit vector.
     pub direction: Vec2,

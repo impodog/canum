@@ -68,7 +68,7 @@ fn bump_away(
                         .id();
                     commands
                         .entity(*entity)
-                        .insert(health::DisableOpposingCollision);
+                        .try_insert(health::DisableOpposingCollision);
                     commands.spawn((
                         ChildOf(*entity),
                         crate::enemy::movements::Displacement {

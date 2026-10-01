@@ -1,6 +1,6 @@
 mod behaviors;
 mod entry;
-mod obstacles;
+pub(crate) mod obstacles;
 mod wind;
 
 use crate::prelude::*;
