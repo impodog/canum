@@ -6,8 +6,8 @@
 
       "Ui_GetDash_Keyboard": "You have obtained the ability to dash.\nPress <X> to dash.\n\nPress <ESC> to exit.",
       "Ui_GetDash_Gamepad": "You have obtained the ability to dash.\nPress <R2> to dash.\n\nPress <EAST> to exit.",
-      "Ui_GetSecondaryWeapon_Keyboard": "You have obtained several weapon upgrades:\n1. One extra weapon slot;\n2. A free charged weapon \"Laser Gun\".\n3. An extra OFFENSIVE charm slot.\nSee them in your equip menu!\n\nPress <ESC> to exit.",
-      "Ui_GetSecondaryWeapon_Gamepad": "You have obtained several weapon upgrades:\n1. One extra weapon slot;\n2. A free charged weapon \"Laser Gun\".\n3. An extra OFFENSIVE charm slot.\n See them in your equip menu!\n\nPress <EAST> to exit."
+      "Ui_GetSecondaryWeapon_Keyboard": "You have obtained several weapon upgrades:\n1. A secondary weapon slot (press <Z> to use).\n2. A free charged weapon \"Laser Blast\".\n3. An extra OFFENSIVE charm slot.\nSee them in your equip menu!\n\nPress <ESC> to exit.",
+      "Ui_GetSecondaryWeapon_Gamepad": "You have obtained several weapon upgrades:\n1. A secondary weapon slot (press <NORTH> to use).\n2. A free charged weapon \"Laser Blast\".\n3. An extra OFFENSIVE charm slot.\n See them in your equip menu!\n\nPress <EAST> to exit."
     }
   }
 }

@@ -1,6 +1,7 @@
 mod achievements;
 mod charms;
 mod healths;
+mod misc;
 mod weapons;
 
 use canum_play::prelude::*;
@@ -14,6 +15,7 @@ impl Plugin for CanumAddonsPlugin {
             weapons::WeaponsPlugin,
             achievements::AchievementsPlugin,
             healths::HealthsPlugin,
+            misc::MiscPlugin,
         ));
     }
 }

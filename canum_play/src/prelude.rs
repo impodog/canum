@@ -6,7 +6,8 @@ pub use std::time::Duration;
 
 pub use canum_fx::math::*;
 pub use canum_res::{
-    Animation, AnimationComplete, AnimationInform, config::CONFIG, sound::Music, sound::Sound,
+    Animation, AnimationComplete, AnimationInform, SpriteSheet, SpriteSheetIndex, SpriteSheetMeta,
+    config::CONFIG, sound::Music, sound::Sound,
 };
 pub use canum_save::{Lang, Save};
 

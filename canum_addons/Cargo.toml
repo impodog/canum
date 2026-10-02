@@ -10,3 +10,4 @@ canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
 canum_ui = { path = "../canum_ui" }
 canum_fx = { path = "../canum_fx" }
+canum_tool = { path = "../canum_tool" }

@@ -29,6 +29,9 @@ impl Plugin for WindyPlugin {
             commands.spawn((SessionOnly, Observer::new(end_all_attack)));
             commands.insert_resource(WindyCurrentStage(1));
         });
+        app.add_systems(OnExit(WINDY_STATE.clone()), |mut commands: Commands| {
+            commands.remove_resource::<WindyCurrentStage>();
+        });
     }
 }
 

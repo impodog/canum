@@ -9,17 +9,108 @@ use std::{
     time::Duration,
 };
 
+/// A cut-down version of `Animation` that does not roll frames itself. You have the freedom over the sprite sheet.
+///
+/// To make common modifications like in `Animation`, you need to set values in the `Sprite`. The sprite sheet only modifies the sprite's image and texture atlas.
+#[derive(Debug, Component, Default)]
+#[require(Sprite, SpriteSheetIndex, SpriteSheetMeta)]
+pub struct SpriteSheet {
+    pub name: String,
+}
+impl SpriteSheet {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { name: name.into() }
+    }
+}
+
+/// Stores the shown index of the sprite sheet. You can optionally add this when spawning, or leave it default to shown the first frame.
+#[derive(Debug, Clone, Copy, Deref, DerefMut, Component, Default)]
+pub struct SpriteSheetIndex(pub usize);
+
+/// This is initialized after the sprite sheet runs rhrough `First` once.
+#[derive(Debug, Component, Default, Deref, DerefMut)]
+pub struct SpriteSheetMeta(pub Option<&'static config::SpriteAtlas>);
+
+pub(super) fn update_sprite_sheet_meta(
+    mut q_sprite_sheet: Query<
+        (
+            &SpriteSheet,
+            &SpriteSheetIndex,
+            &mut SpriteSheetMeta,
+            &mut Sprite,
+        ),
+        Changed<SpriteSheet>,
+    >,
+    asset_server: Res<AssetServer>,
+    layouts: ResMut<Assets<TextureAtlasLayout>>,
+    atlas_handles: ResMut<AnimationAtlasHandles>,
+    image_handles: ResMut<AnimationImageHandles>,
+    default_sprite: Res<DefaultSprite>,
+) {
+    let mutex = Mutex::new((layouts, atlas_handles, image_handles));
+    q_sprite_sheet
+        .par_iter_mut()
+        .for_each(|(sheet, index, mut meta, mut sprite)| {
+            let Some(config) = config::CONFIG.assets.sprites.get(&sheet.name) else {
+                *sprite = default_sprite.clone();
+                return;
+            };
+            if config.is_empty() {
+                *sprite = default_sprite.clone();
+                return;
+            }
+            let atlas_index = rand::random_range(0..config.len());
+            let atlas = &config[atlas_index];
+            let atlas_name = format!("{}{atlas_index}", sheet.name);
+
+            meta.0 = Some(atlas);
+
+            let mut guard = mutex.lock().unwrap();
+            let (layouts, atlas_handles, image_handles) = &mut *guard;
+            convert_to_sprite(
+                sprite.as_mut(),
+                sheet.name.clone(),
+                &asset_server,
+                atlas_name.clone(),
+                atlas,
+                index.0,
+                layouts,
+                atlas_handles,
+                image_handles,
+            );
+        });
+}
+
+pub(super) fn update_sprite_sheet_index(
+    mut q_sheet: Query<(&mut Sprite, Ref<SpriteSheetIndex>, Ref<SpriteSheet>)>,
+) {
+    q_sheet
+        .par_iter_mut()
+        .for_each(|(mut sprite, index, sheet)| {
+            if index.is_changed()
+                && !sheet.is_changed()
+                && let Some(atlas) = sprite.texture_atlas.as_mut()
+            {
+                atlas.index = index.0;
+            }
+        });
+}
+
 #[derive(Debug, Component)]
 #[require(AnimationClock, Sprite)]
+#[non_exhaustive]
 pub struct Animation {
     pub name: String,
     pub size: Vec2,
     pub scale: Vec2,
     /// Instruct the animation to pause before a certain frame index. Set to 0 to play the animation once.
+    /// Set to `Animation::ALWAYS_PAUSE` to do what it says.
     pub pause: AtomicUsize,
     pub color: Color,
     pub visibility: Visibility,
     pub inform: Mutex<Option<AnimationInform>>,
+    /// Override its interval if a finite float, otherwise use configured interval(default NaN).
+    pub interval_override: f32,
     pub starting_index: usize,
     pub self_despawn: bool,
 }
@@ -33,6 +124,7 @@ impl Clone for Animation {
             color: self.color,
             visibility: self.visibility,
             inform: Mutex::new(self.inform.lock().unwrap().clone()),
+            interval_override: self.interval_override,
             starting_index: 0,
             self_despawn: self.self_despawn,
         }
@@ -65,6 +157,7 @@ impl Animation {
             color: Color::default(),
             visibility: Visibility::default(),
             inform: Mutex::new(None),
+            interval_override: f32::NAN,
             starting_index: 0,
             self_despawn: false,
         }
@@ -92,6 +185,12 @@ impl Animation {
         *self.inform.lock().unwrap() = Some(inform);
         self
     }
+    /// Changes the playback interval to another value, instead of the configured one.
+    pub fn with_interval_override(mut self, interval: f32) -> Self {
+        self.interval_override = interval;
+        self
+    }
+    /// Changes the displayed size of the animation by scaling the original size.
     pub fn with_size(mut self, size: Vec2) -> Self {
         self.size = size;
         self
@@ -134,6 +233,38 @@ pub struct AnimationAtlasHandles(HashMap<String, Handle<TextureAtlasLayout>>);
 
 #[derive(Resource, Default, Debug, Deref, DerefMut)]
 pub struct AnimationImageHandles(HashMap<String, Handle<Image>>);
+
+#[derive(Resource, Default, Debug, Deref, DerefMut)]
+pub struct DefaultSprite(Sprite);
+
+pub(super) fn init_default_sprite(
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut atlas_handles: ResMut<AnimationAtlasHandles>,
+    mut image_handles: ResMut<AnimationImageHandles>,
+    mut commands: Commands,
+) {
+    let mut default_sprite = Sprite::default();
+    config::CONFIG
+        .assets
+        .sprites
+        .get("Empty")
+        .and_then(|sprites| sprites.first())
+        .inspect(|sprite_atlas| {
+            convert_to_sprite(
+                &mut default_sprite,
+                "Empty".to_owned(),
+                &asset_server,
+                "Empty".to_owned(),
+                sprite_atlas,
+                0,
+                &mut layouts,
+                &mut atlas_handles,
+                &mut image_handles,
+            )
+        });
+    commands.insert_resource(DefaultSprite(default_sprite));
+}
 
 #[allow(clippy::too_many_arguments)]
 fn convert_to_sprite(
@@ -188,30 +319,12 @@ pub(crate) fn modify_animation(
         Changed<Animation>,
     >,
     asset_server: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-    mut atlas_handles: ResMut<AnimationAtlasHandles>,
-    mut image_handles: ResMut<AnimationImageHandles>,
+    layouts: ResMut<Assets<TextureAtlasLayout>>,
+    atlas_handles: ResMut<AnimationAtlasHandles>,
+    image_handles: ResMut<AnimationImageHandles>,
+    default_sprite: Res<DefaultSprite>,
     commands: ParallelCommands,
 ) {
-    let mut default_sprite = Sprite::default();
-    config::CONFIG
-        .assets
-        .sprites
-        .get("Empty")
-        .and_then(|sprites| sprites.first())
-        .inspect(|sprite_atlas| {
-            convert_to_sprite(
-                &mut default_sprite,
-                "Empty".to_owned(),
-                &asset_server,
-                "Empty".to_owned(),
-                sprite_atlas,
-                0,
-                &mut layouts,
-                &mut atlas_handles,
-                &mut image_handles,
-            )
-        });
     let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     query
         .par_iter_mut()
@@ -250,10 +363,12 @@ pub(crate) fn modify_animation(
             }
             sprite.color = animation.color;
             sprite.custom_size = Some(animation.size * animation.scale);
-            clock.timer = Timer::new(
-                Duration::from_millis(atlas.interval as u64),
-                TimerMode::Repeating,
-            );
+            let interval = if animation.interval_override.is_finite() {
+                Duration::from_secs_f32(animation.interval_override)
+            } else {
+                Duration::from_millis(atlas.interval as u64)
+            };
+            clock.timer = Timer::new(interval, TimerMode::Repeating);
             clock.total = atlas.count as usize;
             commands.command_scope(|mut commands| {
                 commands.trigger(UpdateSpriteHandle(animation.name.clone()));

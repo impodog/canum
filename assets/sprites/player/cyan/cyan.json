@@ -1,12 +1,9 @@
 {
   "sprites": {
     "Cyan": [{ "path": "cyan.png" }],
-    "Cyan_Equip_Full": [
-      { "path": "equip.png", "size": [100, 150], "offset": [0, 0] }
-    ],
-    "Cyan_Equip_S1": [
-      { "path": "equip.png", "size": [100, 150], "offset": [100, 0] }
-    ],
+    "Cyan_Equip_Full": [{"path": "equip.png", "size": [100, 150], "offset": [0, 0]}],
+    "Cyan_Equip_S1": [{"path": "equip.png", "size": [100, 150], "offset": [100, 0]}],
+    "Cyan_Equip_S3": [{"path": "equip.png", "size": [100, 150], "offset": [200, 0]}],
     "Cyan_Equip_Charm_Select": [
       { "path": "charms.png", "size": [100, 150], "offset": [0, 0] }
     ],

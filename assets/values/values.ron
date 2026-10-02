@@ -1,9 +1,10 @@
 (
   include: [
-  "levels.ron",
-  "gate.ron",
-  "charms.ron",
-  "achievements.ron",
-  "house.ron"
+    "levels.ron",
+    "gate.ron",
+    "charms.ron",
+    "achievements.ron",
+    "house.ron",
+    "weapons.ron"
   ],
 )

@@ -30,6 +30,10 @@ impl Plugin for CanumResPlugin {
             .init_resource::<sound::LoadedSounds>();
         app.add_systems(First, (tick_animation, modify_animation).chain());
         app.add_systems(
+            First,
+            (update_sprite_sheet_meta, update_sprite_sheet_index).chain(),
+        );
+        app.add_systems(
             Last,
             (
                 sprite::update_handle_strong,
@@ -40,7 +44,12 @@ impl Plugin for CanumResPlugin {
         );
         app.add_systems(
             Startup,
-            (camera::setup_camera, window::setup_window, font::setup_font),
+            (
+                sprite::init_default_sprite,
+                camera::setup_camera,
+                window::setup_window,
+                font::setup_font,
+            ),
         );
         app.add_systems(Update, (window::update_window, camera::update_camera));
         app.add_systems(

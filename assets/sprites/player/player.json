@@ -4,6 +4,7 @@
     "filed/filed.json",
     "basichp/basichp.json",
     "spread/spread.json",
-    "tracking/tracking.json"
+    "tracking/tracking.json",
+    "indic/indic.json"
   ]
 }

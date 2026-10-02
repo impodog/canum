@@ -50,11 +50,14 @@ pub enum EquipLevel {
     /// Nothing is unlocked in S1.
     #[default]
     S1,
+    /// A secondary weapon and OG slots are unlocked by S3.
+    S3,
 }
 impl EquipLevel {
     pub const fn as_name(self) -> &'static str {
         match self {
             Self::S1 => "S1",
+            Self::S3 => "S3",
         }
     }
 }
@@ -210,7 +213,11 @@ fn setup_equip_menu(
         return;
     }
     let kind = save.appearance.player.clone();
-    let level = EquipLevel::S1;
+    let level = if save.progress.weapon_slots == 2 {
+        EquipLevel::S3
+    } else {
+        EquipLevel::S1
+    };
     commands.spawn(equip_menu(kind, level, &fonts));
     commands.trigger(UpdateCharms::NoAction);
     commands.trigger(UpdateWeapons::NoAction);
@@ -407,6 +414,9 @@ fn update_charms(
                 save.progress.selected_effects.insert(effect);
             }
         }
+        if save.options.always_show_health {
+            save.progress.selected_effects.insert("ShowHealth");
+        }
         save.progress.charms = new_charms;
         if let Some(is_equip) = is_equip {
             if is_equip {
@@ -470,6 +480,7 @@ fn update_weapons(
         commands.spawn((
             ChildOf(menu),
             Node {
+                position_type: PositionType::Absolute,
                 width: px(SIZE.x),
                 height: px(SIZE.y),
                 left: px(position.x - SIZE.x * 0.5),

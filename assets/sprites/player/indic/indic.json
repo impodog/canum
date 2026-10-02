@@ -1,0 +1,6 @@
+{
+  "sprites": {
+    "Player_Indic_Aim": [{"path": "aim.png", "count": 2, "interval": 500}],
+    "Player_Indic_Charge": [{"path": "charge.png", "count": 17, "interval": 100}]
+  }
+}

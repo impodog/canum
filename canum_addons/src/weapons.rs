@@ -1,4 +1,5 @@
 mod filed;
+mod laser;
 mod spread;
 mod tracking;
 
@@ -14,6 +15,7 @@ impl Plugin for WeaponsPlugin {
             filed::FiledPlugin,
             spread::SpreadPlugin,
             tracking::TrackingPlugin,
+            laser::LaserPlugin,
         ));
         app.add_observer(init_weapon_values)
             .add_observer(apply_weapon_effects)
@@ -95,6 +97,13 @@ fn spawn_weapons(
                     commands
                         .spawn((ChildOf(event.player_entity), tracking))
                         .id(),
+                ));
+            }
+            "D_Laser" => {
+                let mut laser = laser::Laser::default();
+                laser.damage = laser.damage.mul(total_damage_multiplier);
+                weapons.push(Some(
+                    commands.spawn((ChildOf(event.player_entity), laser)).id(),
                 ));
             }
             _ => {

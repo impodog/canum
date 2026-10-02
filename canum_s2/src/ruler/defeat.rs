@@ -111,7 +111,7 @@ fn init_get_secondary_waepon(
         return;
     }
     save.progress.weapon_slots = 2;
-    save.progress.gained_weapons.insert("Laser".to_owned());
+    save.progress.gained_weapons.insert("D_Laser".to_owned());
     save.progress.charms.has_offensive = true;
     commands.spawn((
         SessionOnly,

@@ -8,6 +8,7 @@ pub(crate) use serde::{Deserialize, Serialize};
 
 mod appearance;
 mod controls;
+mod options;
 mod progress;
 pub mod util;
 
@@ -37,6 +38,7 @@ pub struct Save {
     pub gamepad: controls::Gamepad,
     pub appearance: appearance::Appearance,
     pub progress: progress::Progress,
+    pub options: options::Options,
 }
 
 fn read_save(mut commands: Commands) -> Result<()> {

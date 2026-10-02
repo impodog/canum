@@ -8,10 +8,10 @@ impl Plugin for AdvancementPlugin {
     }
 }
 
-#[allow(clippy::single_match)]
 fn stage_complete(event: On<player::victory::CompletedTasks>, mut commands: Commands) {
     match event.fight.as_str() {
         "Wcat" => commands.trigger(GetAchievement::new("Stage1Complete")),
+        "Ruler" => commands.trigger(GetAchievement::new("Stage2Complete")),
         _ => {}
     }
 }

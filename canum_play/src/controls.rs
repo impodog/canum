@@ -84,8 +84,10 @@ fn keyboard_controls(
                 })
             }
         }
+        let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
             if key.pressed(save.keyboard.primary_attack) {
+                any_weapon_used = true;
                 commands.trigger(crate::player::attack::Attack {
                     entity: primary_weapon,
                 });
@@ -95,7 +97,8 @@ fn keyboard_controls(
                 });
             }
         }
-        if weapons.len() >= 2
+        if !any_weapon_used
+            && weapons.len() >= 2
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
             if key.pressed(save.keyboard.secondary_attack) {
@@ -248,9 +251,10 @@ fn gamepad_controls(
                 })
             }
         }
-
+        let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
             if gamepad.pressed(save.gamepad.primary_attack) {
+                any_weapon_used = true;
                 commands.trigger(crate::player::attack::Attack {
                     entity: primary_weapon,
                 });
@@ -260,7 +264,8 @@ fn gamepad_controls(
                 });
             }
         }
-        if weapons.len() >= 2
+        if !any_weapon_used
+            && weapons.len() >= 2
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
             if gamepad.pressed(save.gamepad.secondary_attack) {

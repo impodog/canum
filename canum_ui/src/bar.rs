@@ -42,7 +42,7 @@ struct AssociatedBossLingerTimeout {
 }
 impl Default for AssociatedBossLingerTimeout {
     fn default() -> Self {
-        let mut timeout = Timer::from_seconds(1.75, TimerMode::Once);
+        let mut timeout = Timer::from_seconds(1.5, TimerMode::Once);
         timeout.finish();
         Self { timeout }
     }
