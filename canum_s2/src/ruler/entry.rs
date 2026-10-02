@@ -60,8 +60,8 @@ fn setup_ruler(
         UnderBackground,
         Transform::from_translation(vec3(0.0, 0.0, -14.47)),
         Animation::new("Ruler_Back_Pure", CONFIG.display.screen_size * expand_ratio)
-            .with_color(Color::default().with_alpha(0.7))
-            .with_visibility(Visibility::Hidden),
+            .with_color(Color::default().with_alpha(0.7)),
+        Visibility::Hidden,
     ));
     canum_fx::session_observers!(
         commands,

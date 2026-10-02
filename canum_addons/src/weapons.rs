@@ -5,7 +5,6 @@ mod tracking;
 
 use crate::prelude::*;
 use canum_play::player::attack::*;
-use canum_play::player::*;
 
 pub(super) struct WeaponsPlugin;
 

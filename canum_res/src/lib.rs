@@ -15,7 +15,7 @@ pub mod camera;
 pub mod sound;
 pub mod window;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::RenderSystems};
 
 pub struct CanumResPlugin;
 
@@ -28,10 +28,17 @@ impl Plugin for CanumResPlugin {
             .init_resource::<camera::VirtualResolution>()
             .init_resource::<window::WindowTitle>()
             .init_resource::<sound::LoadedSounds>();
-        app.add_systems(First, (tick_animation, modify_animation).chain());
         app.add_systems(
-            First,
-            (update_sprite_sheet_meta, update_sprite_sheet_index).chain(),
+            PostUpdate,
+            (tick_animation, modify_animation)
+                .chain()
+                .before(RenderSystems::ExtractCommands),
+        );
+        app.add_systems(
+            PostUpdate,
+            (update_sprite_sheet_meta, update_sprite_sheet_index)
+                .chain()
+                .before(RenderSystems::ExtractCommands),
         );
         app.add_systems(
             Last,

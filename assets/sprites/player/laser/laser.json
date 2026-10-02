@@ -1,0 +1,6 @@
+{
+  "sprites": {
+    "Player_Laser_Middle": [{"path": "laser.png", "count": 2, "offset": [0, 0], "interval": 100}],
+    "Player_Laser_Terminal": [{"path": "laser.png", "count": 2, "offset": [64, 0], "interval": 100}]
+  }
+}

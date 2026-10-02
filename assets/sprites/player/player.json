@@ -5,6 +5,7 @@
     "basichp/basichp.json",
     "spread/spread.json",
     "tracking/tracking.json",
+    "laser/laser.json",
     "indic/indic.json"
   ]
 }

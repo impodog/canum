@@ -21,7 +21,7 @@ impl Plugin for TrackingPlugin {
                 world.commands().spawn((
                     ChildOf(entity),
                     WeaponSoundCue,
-                    Sound::new("Tracking").paused(),
+                    Sound::new("Player_Tracking").paused(),
                 ));
             });
         app.add_systems(FixedUpdate, (tracking_work, tracking_play_effect));
@@ -75,7 +75,7 @@ fn tracking_shoot(
     event: On<Attack>,
     mut commands: Commands,
     mut q_tracking: Query<(&Tracking, &mut TrackingArgs, &GlobalTransform, &ChildOf)>,
-    q_player_shoot: Query<&PlayerShoot>,
+    q_player_shoot: Query<&player::PlayerShoot>,
     time: Res<Time>,
 ) {
     let Ok((tracking, mut args, global_transform, parent)) = q_tracking.get_mut(event.entity)
@@ -100,7 +100,7 @@ fn tracking_shoot(
                 order: tracking.order,
             },
             transform,
-            Animation::new("Tracking", tracking.size),
+            Animation::new("Player_Tracking", tracking.size),
             Collider::circle(tracking.size.x * 0.5),
             Mass(0.2),
             LinearVelocity(Vec2::from_angle(player_shoot.0) * tracking.speed),
@@ -184,7 +184,7 @@ fn tracking_play_effect(
             commands.command_scope(|mut commands| {
                 commands.spawn((
                     ChildOf(*contacted),
-                    Animation::new("Tracking_Splash", vec2(16.0, 16.0)).once_then_despawn(),
+                    Animation::new("Player_Tracking_Splash", vec2(16.0, 16.0)).once_then_despawn(),
                     transform,
                 ));
             });

@@ -1,8 +1,8 @@
 {
   "sprites": {
-    "Filed": [
+    "Player_Filed": [
       { "path": "filed.png", "size": [5, 10], "count": 4, "interval": 75 }
     ],
-    "Filed_Splash": [{ "path": "filed_splash.png", "count": 3, "interval": 50 }]
+    "Player_Filed_Splash": [{ "path": "filed_splash.png", "count": 3, "interval": 50 }]
   }
 }

@@ -24,12 +24,14 @@ impl Plugin for TransformPlugin {
 #[non_exhaustive]
 pub struct Follow {
     pub target: Entity,
+    pub follow_behavior: FollowBehavior,
     pub despawn_behavior: DespawnBehavior,
 }
 impl Follow {
     pub fn new(target: Entity) -> Self {
         Self {
             target,
+            follow_behavior: default(),
             despawn_behavior: default(),
         }
     }
@@ -37,12 +39,24 @@ impl Follow {
         self.despawn_behavior = despawn_behavior;
         self
     }
+    pub fn with_follow_behavior(mut self, follow_behavior: FollowBehavior) -> Self {
+        self.follow_behavior = follow_behavior;
+        self
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum FollowBehavior {
+    #[default]
+    All,
+    NoRotation,
 }
 
 #[derive(Component)]
 #[require(Transform, Visibility)]
 struct DummyParent {
     copy_from: Entity,
+    follow_behavior: FollowBehavior,
 }
 
 /// Runs in PostUpdate, before Bevy's transform propagation.
@@ -82,6 +96,7 @@ pub fn spawn_parent(
                     let parent = commands
                         .spawn(DummyParent {
                             copy_from: follow.target,
+                            follow_behavior: follow.follow_behavior,
                         })
                         .id();
                     commands.entity(entity).insert(ChildOf(parent));
@@ -98,6 +113,15 @@ fn update_parent(
         let Ok(global_transform) = q_transform.get(dummy.copy_from) else {
             return;
         };
-        *transform = global_transform.compute_transform();
+        match dummy.follow_behavior {
+            FollowBehavior::All => {
+                *transform = global_transform.compute_transform();
+            }
+            FollowBehavior::NoRotation => {
+                *transform = global_transform
+                    .compute_transform()
+                    .with_rotation(Quat::default());
+            }
+        }
     });
 }

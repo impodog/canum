@@ -30,7 +30,7 @@ fn spawn_aim_indic(event: On<setup::StartSessionAction>, mut commands: Commands,
 
 /// A ring that indicates the charge weapon's status. You need to update by querying `ChangeIndicValue`.
 #[derive(Component, Default)]
-#[require(SpriteSheet::new("Player_Indic_Charge"), ChargeIndicValue, ChargeIndicParent, Sprite {custom_size: Some(vec2(16.0, 16.0)), ..default()})]
+#[require(SessionOnly, SpriteSheet::new("Player_Indic_Charge"), ChargeIndicValue, ChargeIndicParent, Sprite {custom_size: Some(vec2(20.0, 20.0)), ..default()})]
 pub struct ChargeIndic;
 #[derive(Component, Default)]
 pub struct ChargeIndicValue(pub f32);
@@ -42,23 +42,19 @@ pub struct ChargeIndicChild(pub Entity);
 pub struct ChargeIndicParent(pub Option<Entity>);
 
 fn update_charge_indic(
-    mut q_charge_indic: Query<
-        (&ChargeIndicValue, &mut SpriteSheetIndex, &SpriteSheetMeta),
+    q_charge_indic: Query<
+        (&ChargeIndicValue, &SpriteSheetIndex, &SpriteSheetMeta),
         Changed<ChargeIndicValue>,
     >,
 ) {
-    q_charge_indic
-        .par_iter_mut()
-        .for_each(|(value, mut index, meta)| {
-            let Some(meta) = meta.0 else {
-                return;
-            };
-            let new_index = (value.0 * meta.count as f32).floor() as u32;
-            let new_index = new_index.min(meta.count.saturating_sub(1)) as usize;
-            if index.0 != new_index {
-                index.0 = new_index;
-            }
-        });
+    q_charge_indic.par_iter().for_each(|(value, index, meta)| {
+        let Some(meta) = meta.0 else {
+            return;
+        };
+        let new_index = (value.0 * meta.count as f32).floor() as u32;
+        let new_index = new_index.min(meta.count.saturating_sub(1)) as usize;
+        index.set(new_index);
+    });
 }
 
 #[derive(Resource, Default, Deref)]

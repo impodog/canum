@@ -4,7 +4,7 @@ use std::{
     collections::HashMap,
     sync::{
         Mutex,
-        atomic::{AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -12,7 +12,7 @@ use std::{
 /// A cut-down version of `Animation` that does not roll frames itself. You have the freedom over the sprite sheet.
 ///
 /// To make common modifications like in `Animation`, you need to set values in the `Sprite`. The sprite sheet only modifies the sprite's image and texture atlas.
-#[derive(Debug, Component, Default)]
+#[derive(Debug, Component, Default, Clone)]
 #[require(Sprite, SpriteSheetIndex, SpriteSheetMeta)]
 pub struct SpriteSheet {
     pub name: String,
@@ -24,10 +24,25 @@ impl SpriteSheet {
 }
 
 /// Stores the shown index of the sprite sheet. You can optionally add this when spawning, or leave it default to shown the first frame.
-#[derive(Debug, Clone, Copy, Deref, DerefMut, Component, Default)]
-pub struct SpriteSheetIndex(pub usize);
+#[derive(Debug, Component, Default)]
+pub struct SpriteSheetIndex {
+    pub value: AtomicUsize,
+    pub dirty: AtomicBool,
+}
+impl SpriteSheetIndex {
+    /// This automatically sets the dirty bit if a new value is given.
+    pub fn set(&self, value: usize) {
+        let old = self.value.swap(value, Ordering::AcqRel);
+        if old != value {
+            self.dirty.store(true, Ordering::Release);
+        }
+    }
+    pub fn get(&self) -> usize {
+        self.value.load(Ordering::Acquire)
+    }
+}
 
-/// This is initialized after the sprite sheet runs rhrough `First` once.
+/// This is initialized after the sprite sheet runs rhrough `PostUpdate` once.
 #[derive(Debug, Component, Default, Deref, DerefMut)]
 pub struct SpriteSheetMeta(pub Option<&'static config::SpriteAtlas>);
 
@@ -73,7 +88,7 @@ pub(super) fn update_sprite_sheet_meta(
                 &asset_server,
                 atlas_name.clone(),
                 atlas,
-                index.0,
+                index.value.load(Ordering::Acquire),
                 layouts,
                 atlas_handles,
                 image_handles,
@@ -82,16 +97,17 @@ pub(super) fn update_sprite_sheet_meta(
 }
 
 pub(super) fn update_sprite_sheet_index(
-    mut q_sheet: Query<(&mut Sprite, Ref<SpriteSheetIndex>, Ref<SpriteSheet>)>,
+    mut q_sheet: Query<(&mut Sprite, &SpriteSheetIndex, Ref<SpriteSheet>)>,
 ) {
     q_sheet
         .par_iter_mut()
         .for_each(|(mut sprite, index, sheet)| {
-            if index.is_changed()
-                && !sheet.is_changed()
+            if !sheet.is_changed()
+                && index.dirty.load(Ordering::Acquire)
                 && let Some(atlas) = sprite.texture_atlas.as_mut()
             {
-                atlas.index = index.0;
+                index.dirty.store(false, Ordering::Release);
+                atlas.index = index.value.load(Ordering::Acquire);
             }
         });
 }
@@ -107,7 +123,6 @@ pub struct Animation {
     /// Set to `Animation::ALWAYS_PAUSE` to do what it says.
     pub pause: AtomicUsize,
     pub color: Color,
-    pub visibility: Visibility,
     pub inform: Mutex<Option<AnimationInform>>,
     /// Override its interval if a finite float, otherwise use configured interval(default NaN).
     pub interval_override: f32,
@@ -122,7 +137,6 @@ impl Clone for Animation {
             scale: self.scale,
             pause: AtomicUsize::new(self.pause.load(Ordering::Acquire)),
             color: self.color,
-            visibility: self.visibility,
             inform: Mutex::new(self.inform.lock().unwrap().clone()),
             interval_override: self.interval_override,
             starting_index: 0,
@@ -155,7 +169,6 @@ impl Animation {
             scale: Vec2::new(1.0, 1.0),
             pause: AtomicUsize::new(usize::MAX),
             color: Color::default(),
-            visibility: Visibility::default(),
             inform: Mutex::new(None),
             interval_override: f32::NAN,
             starting_index: 0,
@@ -174,10 +187,6 @@ impl Animation {
     }
     pub fn with_color(mut self, color: Color) -> Self {
         self.color = color;
-        self
-    }
-    pub fn with_visibility(mut self, visibility: Visibility) -> Self {
-        self.visibility = visibility;
         self
     }
     /// Informs this entity with `AnimationComplete` after the animation is played at a specific index.
@@ -309,15 +318,7 @@ fn convert_to_sprite(
 }
 
 pub(crate) fn modify_animation(
-    mut query: Query<
-        (
-            &Animation,
-            &mut Sprite,
-            &mut AnimationClock,
-            &mut Visibility,
-        ),
-        Changed<Animation>,
-    >,
+    mut query: Query<(&Animation, &mut Sprite, &mut AnimationClock), Changed<Animation>>,
     asset_server: Res<AssetServer>,
     layouts: ResMut<Assets<TextureAtlasLayout>>,
     atlas_handles: ResMut<AnimationAtlasHandles>,
@@ -328,12 +329,7 @@ pub(crate) fn modify_animation(
     let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     query
         .par_iter_mut()
-        .for_each(|(animation, mut sprite, mut clock, mut visibility)| {
-            if animation.name.is_empty() {
-                *visibility = Visibility::Hidden;
-            } else if *visibility != animation.visibility {
-                *visibility = animation.visibility;
-            }
+        .for_each(|(animation, mut sprite, mut clock)| {
             let Some(config) = config::CONFIG.assets.sprites.get(&animation.name) else {
                 *sprite = default_sprite.clone();
                 return;

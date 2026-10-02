@@ -10,12 +10,13 @@ impl Plugin for LaserPlugin {
         app.world_mut()
             .register_component_hooks::<LaserLike>()
             .on_add(laser_like_hook);
-        app.init_resource::<AnimationUpdateBuffer>();
+        app.init_resource::<SpriteUpdateBuffer>();
         app.add_systems(
             FixedUpdate,
             (update_laser_like, (apply_laser_buffer, apply_length_change)).chain(),
         );
         app.add_systems(FixedPreUpdate, add_for_friendly);
+        app.add_systems(FixedUpdate, sprite_playback);
         app.register_required_components_with::<projectile::Projectile, _>(|| {
             LaserLayer::LASER_PROJECTILE
         });
@@ -55,10 +56,13 @@ fn add_for_friendly(
 )]
 pub struct LaserLike {
     pub base_direction: Dir2,
-    pub middle: Animation,
-    pub terminal: Animation,
+    pub middle: SpriteSheet,
+    pub terminal: SpriteSheet,
+    pub playback_interval: f32,
     pub collide_width: f32,
     pub length: f32,
+    /// This is not collider width. It is the width of the sprite.
+    pub width: f32,
     /// Bitmap to ignore certain entities that has one of these layers.
     pub ignore_layer: LaserLayer,
     pub animation_kind: LaserAnimationKind,
@@ -69,8 +73,10 @@ impl Default for LaserLike {
             base_direction: Dir2::new_unchecked(vec2(1.0, 0.0)),
             middle: default(),
             terminal: default(),
+            playback_interval: 1.0,
             collide_width: 1.0,
             length: 32.0,
+            width: 32.0,
             ignore_layer: LaserLayer(0),
             animation_kind: LaserAnimationKind::Clipped,
         }
@@ -108,34 +114,44 @@ struct LaserLikeInfo {
     children: Vec<Entity>,
     total_length: f32,
     total_length_changed: bool,
+    playback: Timer,
 }
 
 fn laser_like_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
-    let base_direction = world.get::<LaserLike>(entity).unwrap().base_direction;
+    let laser = world.get::<LaserLike>(entity).unwrap();
+    let base_direction = laser.base_direction;
+    let playback_interval = laser.playback_interval;
     world.commands().entity(entity).insert((
         RayCaster::new(vec2(0.0, 0.0), base_direction)
             .with_max_distance(CONFIG.display.screen_size.length())
             .with_solidness(true),
         RayHits::default(),
     ));
+    if let Some(mut info) = world.get_mut::<LaserLikeInfo>(entity) {
+        info.playback = Timer::from_seconds(playback_interval, TimerMode::Repeating);
+    }
 }
 
 /// Buffers laser animation updates to avoid blocking animation reads.
+/// 0 - The sprite sheet entity.
+/// 1 - New sprite sheet.
+/// 2 - If Some, the truncated length, or the sprite will be fully shown.
+/// 3 - The original size of the sprite.
 #[derive(Resource, Default, Debug, Deref, DerefMut)]
-struct AnimationUpdateBuffer(Vec<(Entity, Animation, Option<f32>)>);
+struct SpriteUpdateBuffer(Vec<(Entity, SpriteSheet, Option<f32>, Vec2)>);
 
-fn calc_clipped_rect(animation: &Animation, length: f32) -> Rect {
+fn calc_clipped_rect(original_size: Vec2, length: f32) -> Rect {
     Rect::new(
-        (animation.size.x - length).max(0.0),
+        (original_size.x - length).max(0.0),
         0.0,
-        animation.size.x,
-        animation.size.y,
+        original_size.x,
+        original_size.y,
     )
 }
 
 fn update_laser_like(
     mut q_laser: Query<(Entity, &LaserLike, &mut LaserLikeInfo, &RayHits)>,
-    buffer: ResMut<AnimationUpdateBuffer>,
+    buffer: ResMut<SpriteUpdateBuffer>,
     q_no_dispose_projectile: Query<&projectile::NoDisposeProjectile>,
     q_layer: Query<&LaserLayer>,
     commands: ParallelCommands,
@@ -167,14 +183,17 @@ fn update_laser_like(
                             last_child,
                             laser.terminal.clone(),
                             last_length,
+                            vec2(laser.length, laser.width),
                         ));
                     }
                 } else if target_size > current_len {
                     if let Some(last_child) = info.children.last().copied() {
-                        buffer
-                            .lock()
-                            .unwrap()
-                            .push((last_child, laser.middle.clone(), None));
+                        buffer.lock().unwrap().push((
+                            last_child,
+                            laser.middle.clone(),
+                            None,
+                            vec2(laser.length, laser.width),
+                        ));
                     }
                     for index in current_len..target_size {
                         let distance = index as f32 * laser.length;
@@ -182,20 +201,26 @@ fn update_laser_like(
                         let child = commands.command_scope(|mut commands| {
                             if index == target_size - 1 {
                                 let rect = last_length.map(|last_length| {
-                                    calc_clipped_rect(&laser.terminal, last_length)
+                                    calc_clipped_rect(vec2(laser.length, laser.width), last_length)
                                 });
+                                let custom_size = if let Some(rect) = rect {
+                                    rect.size()
+                                } else {
+                                    vec2(laser.length, laser.width)
+                                };
                                 commands
                                     .spawn((
                                         ChildOf(entity),
                                         Transform::from_translation(vec3(
                                             position.x, position.y, 0.0,
                                         )),
-                                        laser
-                                            .terminal
-                                            .clone()
-                                            .with_size_if(rect.as_ref().map(Rect::size)),
+                                        laser.terminal.clone(),
                                         Anchor::CENTER_LEFT,
-                                        Sprite { rect, ..default() },
+                                        Sprite {
+                                            custom_size: Some(custom_size),
+                                            rect,
+                                            ..default()
+                                        },
                                     ))
                                     .id()
                             } else {
@@ -207,6 +232,10 @@ fn update_laser_like(
                                         )),
                                         Anchor::CENTER_LEFT,
                                         laser.middle.clone(),
+                                        Sprite {
+                                            custom_size: Some(vec2(laser.length, laser.width)),
+                                            ..default()
+                                        },
                                     ))
                                     .id()
                             }
@@ -220,6 +249,7 @@ fn update_laser_like(
                             last_child,
                             laser.terminal.clone(),
                             last_length,
+                            vec2(laser.length, laser.width),
                         ));
                     }
                 }
@@ -234,25 +264,21 @@ fn update_laser_like(
 }
 
 fn apply_laser_buffer(
-    mut buffer: ResMut<AnimationUpdateBuffer>,
-    mut q_animation: Query<(&mut Animation, &mut Sprite, &ChildOf)>,
-    q_parent: Query<&LaserLike>,
+    mut buffer: ResMut<SpriteUpdateBuffer>,
+    mut q_sprite: Query<(&mut SpriteSheet, &mut Sprite)>,
 ) {
-    for (entity, mut target_animation, last_length) in buffer.drain(..) {
-        let Ok((mut animation, mut sprite, parent)) = q_animation.get_mut(entity) else {
+    for (entity, target_sprite_sheet, last_length, original_size) in buffer.drain(..) {
+        let Ok((mut sprite_sheet, mut sprite)) = q_sprite.get_mut(entity) else {
             return;
         };
         if let Some(last_length) = last_length {
-            target_animation.size.x = last_length;
-            sprite.rect = Some(calc_clipped_rect(&target_animation, last_length));
+            sprite.rect = Some(calc_clipped_rect(original_size, last_length));
+            sprite.custom_size = sprite.rect.map(|rect| rect.size());
         } else if sprite.rect.is_some() {
-            let Ok(laser) = q_parent.get(parent.0) else {
-                return;
-            };
-            target_animation.size.x = laser.terminal.size.x;
             sprite.rect = None;
+            sprite.custom_size = Some(original_size);
         }
-        *animation = target_animation;
+        *sprite_sheet = target_sprite_sheet;
     }
 }
 
@@ -270,4 +296,25 @@ fn apply_length_change(mut q_laser: Query<(&LaserLike, &LaserLikeInfo, &mut Coll
                 )])
             }
         });
+}
+
+fn sprite_playback(
+    mut q_laser: Query<(&mut LaserLikeInfo, &Children)>,
+    q_sprite_sheet: Query<(&SpriteSheetIndex, &SpriteSheetMeta)>,
+    time: Res<Time>,
+) {
+    q_laser.par_iter_mut().for_each(|(mut info, children)| {
+        if info.playback.tick(time.delta()).just_finished() {
+            for child in children.iter() {
+                let Ok((index, meta)) = q_sprite_sheet.get(child) else {
+                    continue;
+                };
+                let Some(meta) = meta.0 else {
+                    return;
+                };
+                let new_index = (index.get() + 1) % meta.count as usize;
+                index.set(new_index);
+            }
+        }
+    });
 }

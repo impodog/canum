@@ -52,7 +52,7 @@ fn init_filed(
             .observe(filed_shoot)
             .insert(children![(
                 WeaponSoundCue,
-                canum_res::sound::Sound::new("Filed").paused(),
+                canum_res::sound::Sound::new("Player_Filed").paused(),
             )]);
     }
 }
@@ -60,7 +60,7 @@ fn filed_shoot(
     event: On<Attack>,
     mut commands: Commands,
     mut q_filed: Query<(&Filed, &mut FiledTimer, &GlobalTransform, &ChildOf)>,
-    q_player: Query<&PlayerShoot>,
+    q_player: Query<&player::PlayerShoot>,
     time: Res<Time>,
 ) {
     let Ok((filed, mut filed_timer, global_transform, parent)) = q_filed.get_mut(event.entity)
@@ -87,7 +87,7 @@ fn filed_shoot(
                 order: filed.order,
             },
             transform,
-            Animation::new("Filed", filed.size),
+            Animation::new("Player_Filed", filed.size),
             Collider::rectangle(filed.size.x, filed.size.y),
             Mass(0.25),
             LinearVelocity(direction * filed.speed),
@@ -113,7 +113,7 @@ fn filed_play_effect(
             commands.command_scope(|mut commands| {
                 commands.spawn((
                     ChildOf(*contacted),
-                    Animation::new("Filed_Splash", vec2(16.0, 16.0)).once_then_despawn(),
+                    Animation::new("Player_Filed_Splash", vec2(16.0, 16.0)).once_then_despawn(),
                     transform,
                 ));
             });

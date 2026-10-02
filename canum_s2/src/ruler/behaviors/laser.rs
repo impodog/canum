@@ -33,9 +33,11 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
     let angle = laser.direction.normalize_or(vec2(1.0, 0.0)).to_angle();
     let laser_like = LaserLike {
         base_direction: Dir2::from_xy_unchecked(1.0, 0.0),
-        middle: Animation::new("Ruler_Laser_Middle", LASER_SIZE),
-        terminal: Animation::new("Ruler_Laser_Terminal", LASER_SIZE),
+        middle: SpriteSheet::new("Ruler_Laser_Middle"),
+        terminal: SpriteSheet::new("Ruler_Laser_Terminal"),
         length: COLLIDER_SIZE.x,
+        width: LASER_SIZE.y,
+        playback_interval: 0.09,
         collide_width: COLLIDER_SIZE.y,
         ignore_layer: LaserLayer::LASER_ENEMY | LaserLayer::LASER_PROJECTILE,
         animation_kind: default(),
@@ -43,6 +45,7 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
 
     if laser.double {
         world.commands().spawn((
+            SessionOnly,
             laser_like.clone(),
             ChildOf(entity),
             Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
@@ -56,6 +59,7 @@ fn ruler_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookCo
         ));
     }
     world.commands().spawn((
+        SessionOnly,
         laser_like,
         ChildOf(entity),
         Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
@@ -89,9 +93,11 @@ fn ruler_strong_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }:
     let angle = laser.direction.normalize_or(vec2(1.0, 0.0)).to_angle();
     let laser_like = LaserLike {
         base_direction: Dir2::from_xy_unchecked(1.0, 0.0),
-        middle: Animation::new("Ruler_StrongLaser", LASER_SIZE),
-        terminal: Animation::new("Ruler_StrongLaser", LASER_SIZE),
+        middle: SpriteSheet::new("Ruler_StrongLaser"),
+        terminal: SpriteSheet::new("Ruler_StrongLaser"),
         length: COLLIDER_SIZE.x,
+        width: LASER_SIZE.y,
+        playback_interval: 0.09,
         collide_width: COLLIDER_SIZE.y,
         ignore_layer: LaserLayer::LASER_ENEMY | LaserLayer::LASER_PROJECTILE,
         animation_kind: default(),
@@ -99,6 +105,7 @@ fn ruler_strong_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }:
 
     if laser.double {
         world.commands().spawn((
+            SessionOnly,
             laser_like.clone(),
             ChildOf(entity),
             Transform::from_translation(vec3(0.0, 0.0, rand_offset()))
@@ -112,6 +119,7 @@ fn ruler_strong_laser_hook(mut world: DeferredWorld, HookContext { entity, .. }:
         ));
     }
     world.commands().spawn((
+        SessionOnly,
         laser_like,
         ChildOf(entity),
         Transform::from_translation(vec3(0.0, 0.0, rand_offset()))

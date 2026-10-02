@@ -68,7 +68,7 @@ fn spread_shoot(
     event: On<Attack>,
     mut commands: Commands,
     mut q_spread: Query<(&Spread, &mut SpreadArgs, &GlobalTransform, &ChildOf)>,
-    q_player: Query<&PlayerShoot>,
+    q_player: Query<&player::PlayerShoot>,
     time: Res<Time>,
 ) {
     let Ok((spread, mut spread_args, global_transform, parent)) = q_spread.get_mut(event.entity)
@@ -94,13 +94,13 @@ fn spread_shoot(
                     order: spread.order,
                 },
                 transform,
-                Animation::new("Spread", spread.size),
+                Animation::new("Player_Spread", spread.size),
                 Collider::rectangle(spread.size.x, spread.size.y + 1.0),
                 Mass(0.37),
                 LinearVelocity(direction * spread.speed),
             ));
         }
-        commands.spawn(Sound::new("Spread"));
+        commands.spawn(Sound::new("Player_Spread"));
     }
 }
 
@@ -147,7 +147,7 @@ fn spread_play_effect(
             commands.command_scope(|mut commands| {
                 commands.spawn((
                     ChildOf(*contacted),
-                    Animation::new("Spread_Splash", vec2(16.0, 16.0)).once_then_despawn(),
+                    Animation::new("Player_Spread_Splash", vec2(16.0, 16.0)).once_then_despawn(),
                     transform,
                 ));
             });

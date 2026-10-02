@@ -56,8 +56,8 @@ fn change_background_apple_tree(
         commands.spawn((
             Background::new(CONFIG.display.screen_size),
             Animation::new("Apple_TreeBoss", CONFIG.display.screen_size)
-                .with_color(Color::default().with_alpha(0.6))
-                .with_visibility(Visibility::Hidden),
+                .with_color(Color::default().with_alpha(0.6)),
+            Visibility::Hidden,
             canum_fx::transition::PureColor {
                 destroy: Some(previous),
                 color: Color::linear_rgb(0.5, 0.5, 0.5),

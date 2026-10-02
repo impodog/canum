@@ -235,9 +235,14 @@ pub struct ContactDamage {
 pub struct ProjectileContacted(BTreeSet<Entity>);
 
 /// Delays the actual effect of contact damage, so that physics system can respond before the player can get hit.
-#[derive(Component, Default)]
+#[derive(Component)]
 struct ContactDamageInitDelay {
-    init_flag: bool,
+    init_flag: i8,
+}
+impl Default for ContactDamageInitDelay {
+    fn default() -> Self {
+        Self { init_flag: 2 }
+    }
 }
 
 fn init_contact_damage(
@@ -270,26 +275,30 @@ fn deal_contact_damage(
         &mut ContactDamageInitDelay,
     )>,
     q_friendly: Query<&Friendly>,
+    q_parent: Query<&ChildOf, With<Collider>>,
     q_no_dispose_projectile: Query<(), With<projectile::NoDisposeProjectile>>,
 ) {
     q_contact_damage.par_iter_mut().for_each(
         |(contact_damage, colliding_entities, friendly, mut contacted, mut init_delay)| {
-            if !init_delay.init_flag {
-                init_delay.init_flag = true;
+            if init_delay.init_flag > 0 {
+                init_delay.init_flag = init_delay.init_flag.saturating_sub(1);
                 return;
             }
-            for entity in colliding_entities.iter() {
-                if q_no_dispose_projectile.get(*entity).is_err()
+            for mut entity in colliding_entities.iter().copied() {
+                while let Ok(parent) = q_parent.get(entity) {
+                    entity = parent.0;
+                }
+                if q_no_dispose_projectile.get(entity).is_err()
                     && contacted
                         .as_mut()
-                        .is_none_or(|contacted| contacted.insert(*entity))
+                        .is_none_or(|contacted| contacted.insert(entity))
                     && q_friendly
-                        .get(*entity)
+                        .get(entity)
                         .is_ok_and(|target_friendly| target_friendly.0 ^ friendly.0)
                 {
                     commands.command_scope(|mut commands| {
                         commands.trigger(Damage {
-                            entity: *entity,
+                            entity,
                             order: contact_damage.order,
                             value: contact_damage.value,
                         });

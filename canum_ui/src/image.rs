@@ -1,3 +1,5 @@
+use bevy::ui::UiSystems;
+
 use crate::prelude::*;
 use std::{sync::Mutex, time::Duration};
 
@@ -5,7 +7,10 @@ pub(super) struct SpritePlugin;
 
 impl Plugin for SpritePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (modify_animation, tick_animation));
+        app.add_systems(
+            PostUpdate,
+            (modify_animation, tick_animation).before(UiSystems::Prepare),
+        );
     }
 }
 
@@ -98,15 +103,7 @@ fn convert_to_image_node(
 }
 
 fn modify_animation(
-    mut query: Query<
-        (
-            &Animation,
-            &mut ImageNode,
-            &mut AnimationClock,
-            &mut Visibility,
-        ),
-        Changed<Animation>,
-    >,
+    mut query: Query<(&Animation, &mut ImageNode, &mut AnimationClock), Changed<Animation>>,
     asset_server: Res<AssetServer>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut atlas_handles: ResMut<canum_res::AnimationAtlasHandles>,
@@ -137,12 +134,7 @@ fn modify_animation(
     let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     query
         .par_iter_mut()
-        .for_each(|(animation, mut image_node, mut clock, mut visibility)| {
-            if animation.name.is_empty() {
-                *visibility = Visibility::Hidden;
-            } else {
-                *visibility = Visibility::Inherited;
-            }
+        .for_each(|(animation, mut image_node, mut clock)| {
             let Some(config) = CONFIG.assets.sprites.get(&animation.name) else {
                 *image_node = default_image.clone();
                 return;
