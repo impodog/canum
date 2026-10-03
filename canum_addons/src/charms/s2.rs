@@ -39,7 +39,7 @@ fn central_play_work(
     } else {
         MAX_ADDITION * (625.0 / (distance + 200.0) - 1.5)
     } as f64;
-    args.damage_addition = addition - central_play.1.prev_addition;
+    args.damage_addition += addition - central_play.1.prev_addition;
     central_play.1.prev_addition = addition;
 
     ui.current = addition as f32;

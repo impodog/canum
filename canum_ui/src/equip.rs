@@ -1,3 +1,4 @@
+use canum_play::controls::{LobbyQuit, MenuSelect, ShiftMenuNumber, ToggleEquipMenu};
 use std::collections::{HashSet, VecDeque};
 
 use crate::prelude::*;
@@ -17,10 +18,6 @@ impl Plugin for EquipPlugin {
             weapons::WeaponsPlugin,
         ));
         app.init_resource::<CurrentMenuNumber>();
-        app.add_systems(
-            FixedUpdate,
-            (listen_equip_input_keyboard, listen_equip_input_gamepad),
-        );
         app.add_observer(exit_equip_menu)
             .add_observer(setup_equip_menu)
             .add_observer(update_charms)
@@ -182,63 +179,8 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
     )
 }
 
-/// Event to start the equip menu
-#[derive(Default, Event)]
-struct CallEquipMenu;
-
-#[derive(Default, Event)]
-struct ExitEquipMenu;
-
-fn listen_equip_input_keyboard(
-    key: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
-    q_menu: Query<(), With<EquipMenu>>,
-    save: Res<Save>,
-) {
-    if key.just_pressed(save.keyboard.equip) {
-        if q_menu.iter().next().is_some() {
-            commands.trigger(ExitEquipMenu);
-        } else {
-            commands.trigger(CallEquipMenu);
-        }
-    }
-    if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
-        commands.trigger(ExitEquipMenu);
-    }
-    if key.just_pressed(save.keyboard.move_right) {
-        commands.trigger(ShiftMenuNumber(1));
-    }
-    if key.just_pressed(save.keyboard.move_left) {
-        commands.trigger(ShiftMenuNumber(-1));
-    }
-}
-
-fn listen_equip_input_gamepad(
-    gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
-    mut commands: Commands,
-    q_menu: Query<(), With<EquipMenu>>,
-    save: Res<Save>,
-) {
-    if gamepad.just_pressed(save.gamepad.equip) {
-        if q_menu.iter().next().is_some() {
-            commands.trigger(ExitEquipMenu);
-        } else {
-            commands.trigger(CallEquipMenu);
-        }
-    }
-    if gamepad.just_pressed(save.gamepad.cancel) {
-        commands.trigger(ExitEquipMenu);
-    }
-    if gamepad.just_pressed(GamepadButton::DPadRight) {
-        commands.trigger(ShiftMenuNumber(1));
-    }
-    if gamepad.just_pressed(GamepadButton::DPadLeft) {
-        commands.trigger(ShiftMenuNumber(-1));
-    }
-}
-
 fn exit_equip_menu(
-    _event: On<ExitEquipMenu>,
+    _event: On<LobbyQuit>,
     mut commands: Commands,
     q_menu: Query<Entity, With<EquipMenu>>,
     camera: Single<Entity, With<canum_res::camera::PixelCamera>>,
@@ -264,7 +206,7 @@ fn exit_equip_menu(
 }
 
 fn setup_equip_menu(
-    _event: On<CallEquipMenu>,
+    _event: On<ToggleEquipMenu>,
     state: Res<State<canum_play::setup::PlayState>>,
     q_menu: Query<(), With<EquipMenu>>,
     mut commands: Commands,
@@ -275,6 +217,8 @@ fn setup_equip_menu(
         return;
     }
     if q_menu.iter().next().is_some() {
+        // When there is an equip menu, close it instead.
+        commands.trigger(LobbyQuit);
         return;
     }
     let kind = save.appearance.player.clone();
@@ -286,7 +230,7 @@ fn setup_equip_menu(
     commands.spawn(equip_menu(kind, level, &fonts));
     commands.trigger(UpdateCharms::NoAction);
     commands.trigger(UpdateWeapons::NoAction);
-    commands.trigger(menu::SelectInput::Update);
+    commands.trigger(MenuSelect::Update);
 }
 
 fn show_charms(charms: &Charms) -> Option<impl Bundle> {
@@ -559,9 +503,6 @@ fn update_weapons(
 struct CurrentMenuNumber(i8);
 const TOTAL_MENUS: i8 = 2;
 
-#[derive(Event, Deref, DerefMut)]
-struct ShiftMenuNumber(i8);
-
 fn change_select_menu(
     event: On<ShiftMenuNumber>,
     mut commands: Commands,
@@ -610,5 +551,5 @@ fn change_select_menu(
     }
     select_menu.options.clear();
     commands.trigger(menu::UpdateMenuStyle);
-    commands.trigger(menu::SelectInput::Update);
+    commands.trigger(MenuSelect::Update);
 }

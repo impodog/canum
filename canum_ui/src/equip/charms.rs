@@ -20,7 +20,7 @@ impl Plugin for CharmsPlugin {
 pub struct CharmSelectMenu;
 
 fn update_charm_select(
-    event: On<SelectInput>,
+    event: On<MenuSelect>,
     mut q_menu: Query<(Entity, &mut SelectMenu)>,
     q_charm_select: Query<(), With<CharmSelectMenu>>,
     mut commands: Commands,
@@ -42,19 +42,19 @@ fn update_charm_select(
         }
     }
     match *event {
-        SelectInput::Next => {
+        MenuSelect::Next => {
             let next_element =
                 next_cyclic(&save.progress.gained_charms, menu.options.back().unwrap()).clone();
             menu.options.pop_front();
             menu.options.push_back(next_element);
         }
-        SelectInput::Prev => {
+        MenuSelect::Prev => {
             let prev_element =
                 prev_cyclic(&save.progress.gained_charms, menu.options.front().unwrap()).clone();
             menu.options.pop_back();
             menu.options.push_front(prev_element);
         }
-        SelectInput::NextPage => {
+        MenuSelect::NextPage => {
             let next_elements = next_n_cyclic(
                 &save.progress.gained_charms,
                 menu.options.back().unwrap(),
@@ -64,7 +64,7 @@ fn update_charm_select(
             .collect::<VecDeque<_>>();
             menu.options = next_elements;
         }
-        SelectInput::PrevPage => {
+        MenuSelect::PrevPage => {
             let prev_elements = prev_n_cyclic(
                 &save.progress.gained_charms,
                 menu.options.front().unwrap(),
@@ -77,8 +77,8 @@ fn update_charm_select(
             .collect::<VecDeque<_>>();
             menu.options = prev_elements;
         }
-        SelectInput::Update => {}
-        SelectInput::Toggle => {
+        MenuSelect::Update => {}
+        MenuSelect::Toggle => {
             let Some(selected) = menu.options.front() else {
                 return;
             };

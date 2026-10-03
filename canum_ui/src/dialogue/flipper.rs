@@ -1,3 +1,5 @@
+use canum_play::controls::FlipperInput;
+
 use super::*;
 
 pub(super) struct FlipperPlugin;
@@ -30,7 +32,6 @@ impl Plugin for FlipperPlugin {
                     }
                 },
             );
-        app.add_systems(FixedPreUpdate, (handle_keyboard, handle_gamepad));
         app.add_systems(FixedUpdate, roll_text);
         app.add_observer(handle_input);
     }
@@ -93,129 +94,59 @@ fn handle_input(
     mut q_flipper: Query<(Entity, &Flipper, &mut FlipperCursor, &ChildOf)>,
     mut commands: Commands,
 ) {
-    let Ok((entity, flipper, mut cursor, parent)) = q_flipper.get_mut(event.entity) else {
-        return;
-    };
-    if cursor.page_completed >= flipper.text.len() {
-        return;
-    }
-    if cursor.page > cursor.page_completed {
-        cursor.page = cursor.page_completed;
-    }
-    let target_text = &flipper.text[cursor.page];
-    match event.kind {
-        FlipperInputKind::NextPage => {
-            if cursor.page == cursor.page_completed {
-                if cursor.cursor < target_text.len() {
-                    commands.trigger(canum_fx::text::MultilineTextClear { entity });
-                    commands.trigger(canum_fx::text::MultilineTextAppend {
-                        entity,
-                        append: target_text.clone(),
-                    });
-                    cursor.cursor = target_text.len();
+    for (entity, flipper, mut cursor, parent) in q_flipper.iter_mut() {
+        if cursor.page_completed >= flipper.text.len() {
+            return;
+        }
+        if cursor.page > cursor.page_completed {
+            cursor.page = cursor.page_completed;
+        }
+        let target_text = &flipper.text[cursor.page];
+        match *event {
+            FlipperInput::NextPage => {
+                if cursor.page == cursor.page_completed {
+                    if cursor.cursor < target_text.len() {
+                        commands.trigger(canum_fx::text::MultilineTextClear { entity });
+                        commands.trigger(canum_fx::text::MultilineTextAppend {
+                            entity,
+                            append: target_text.clone(),
+                        });
+                        cursor.cursor = target_text.len();
+                    } else {
+                        cursor.cursor = 0;
+                        cursor.page += 1;
+                        cursor.page_completed += 1;
+                        commands.trigger(canum_fx::text::MultilineTextClear { entity });
+                        commands.spawn(canum_res::sound::Sound::new("Ui_TextNext"));
+                        if cursor.page_completed == flipper.text.len() {
+                            commands.trigger(FlipperComplete { entity: parent.0 });
+                        }
+                    }
                 } else {
-                    cursor.cursor = 0;
                     cursor.page += 1;
-                    cursor.page_completed += 1;
                     commands.trigger(canum_fx::text::MultilineTextClear { entity });
-                    commands.spawn(canum_res::sound::Sound::new("Ui_TextNext"));
-                    if cursor.page_completed == flipper.text.len() {
-                        commands.trigger(FlipperComplete { entity: parent.0 });
+                    if cursor.page == cursor.page_completed {
+                        commands.trigger(canum_fx::text::MultilineTextAppend {
+                            entity,
+                            append: flipper.text[cursor.page][..cursor.cursor].to_owned(),
+                        });
+                    } else {
+                        commands.trigger(canum_fx::text::MultilineTextAppend {
+                            entity,
+                            append: flipper.text[cursor.page].to_owned(),
+                        });
                     }
                 }
-            } else {
-                cursor.page += 1;
-                commands.trigger(canum_fx::text::MultilineTextClear { entity });
-                if cursor.page == cursor.page_completed {
-                    commands.trigger(canum_fx::text::MultilineTextAppend {
-                        entity,
-                        append: flipper.text[cursor.page][..cursor.cursor].to_owned(),
-                    });
-                } else {
+            }
+            FlipperInput::PrevPage => {
+                if cursor.page > 0 {
+                    cursor.page -= 1;
                     commands.trigger(canum_fx::text::MultilineTextAppend {
                         entity,
                         append: flipper.text[cursor.page].to_owned(),
                     });
                 }
             }
-        }
-        FlipperInputKind::PrevPage => {
-            if cursor.page > 0 {
-                cursor.page -= 1;
-                commands.trigger(canum_fx::text::MultilineTextAppend {
-                    entity,
-                    append: flipper.text[cursor.page].to_owned(),
-                });
-            }
-        }
-    }
-}
-
-#[derive(EntityEvent)]
-struct FlipperInput {
-    entity: Entity,
-    kind: FlipperInputKind,
-}
-
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
-enum FlipperInputKind {
-    NextPage,
-    PrevPage,
-}
-
-fn handle_keyboard(
-    mut commands: Commands,
-    key: Res<ButtonInput<KeyCode>>,
-    q_flipper: Query<Entity, With<Flipper>>,
-    save: Res<Save>,
-) {
-    if key.any_just_pressed([
-        KeyCode::Enter,
-        save.keyboard.confirm,
-        save.keyboard.move_down,
-        save.keyboard.move_right,
-    ]) {
-        for entity in q_flipper.iter() {
-            commands.trigger(FlipperInput {
-                entity,
-                kind: FlipperInputKind::NextPage,
-            });
-        }
-    }
-    if key.any_just_pressed([save.keyboard.move_up, save.keyboard.move_left]) {
-        for entity in q_flipper.iter() {
-            commands.trigger(FlipperInput {
-                entity,
-                kind: FlipperInputKind::PrevPage,
-            });
-        }
-    }
-}
-
-fn handle_gamepad(
-    mut commands: Commands,
-    gamepad: Single<&Gamepad, With<canum_play::controls::MainGamepad>>,
-    q_flipper: Query<Entity, With<Flipper>>,
-    save: Res<Save>,
-) {
-    if gamepad.any_just_pressed([
-        save.gamepad.confirm,
-        GamepadButton::DPadDown,
-        GamepadButton::DPadRight,
-    ]) {
-        for entity in q_flipper.iter() {
-            commands.trigger(FlipperInput {
-                entity,
-                kind: FlipperInputKind::NextPage,
-            });
-        }
-    }
-    if gamepad.any_just_pressed([GamepadButton::DPadUp, GamepadButton::DPadLeft]) {
-        for entity in q_flipper.iter() {
-            commands.trigger(FlipperInput {
-                entity,
-                kind: FlipperInputKind::PrevPage,
-            });
         }
     }
 }

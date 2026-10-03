@@ -13,8 +13,8 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ScreenBounds>();
         app.add_observer(respond_player_move);
-        app.add_systems(FixedPreUpdate, init_player_acc);
-        app.add_systems(FixedPostUpdate, (decay_player_acc, rotate_player).chain());
+        app.add_observer(respond_player_stop_move);
+        app.add_systems(FixedUpdate, (decay_player_acc, rotate_player).chain());
         app.add_systems(FixedFirst, (randomize_player, move_me_back));
         app.add_plugins((
             attack::PlayerAttackPlugin,
@@ -34,7 +34,7 @@ impl Plugin for PlayerPlugin {
                     .id();
                 commands.entity(entity).insert(PlayerAcc {
                     linear: 0.0,
-                    changed: false,
+                    has_input: false,
                     partial_velocity: player_control,
                 });
             },
@@ -88,26 +88,26 @@ impl Default for PlayerMoveSpeed {
 #[derive(Component, Debug)]
 pub struct PlayerAcc {
     pub linear: f32,
-    pub changed: bool,
+    pub has_input: bool,
     pub partial_velocity: Entity,
 }
 
 /// Instructs the player to move in a direction, with a multiplier.
 /// The actual velocity is affected friction and acceleration.
-#[derive(EntityEvent, Debug)]
+#[derive(EntityEvent, Debug, Clone, Copy)]
 pub struct PlayerMove {
     pub entity: Entity,
     pub rot: f32,
     pub mult: f32,
 }
 
-/// Resets `changed` flag.
-fn init_player_acc(mut q_player: Query<&mut PlayerAcc>) {
-    for mut acc in q_player.iter_mut() {
-        acc.changed = false;
-    }
+/// The released version of `PlayerMove`.
+#[derive(EntityEvent, Debug, Clone, Copy)]
+pub struct PlayerStopMove {
+    pub entity: Entity,
 }
-/// If acc is not changed, acc and velocity decays over time.
+
+/// If acc has no input, acc and velocity decays over time.
 fn decay_player_acc(
     mut q_player: Query<(
         &mut PlayerAcc,
@@ -121,7 +121,7 @@ fn decay_player_acc(
         let Ok(mut partial_velocity) = q_velocity.get_mut(acc.partial_velocity) else {
             return;
         };
-        if !acc.changed {
+        if !acc.has_input {
             dash_timers.total.finish();
             acc.linear = (acc.linear - 0.05).max(0.0);
             if rotation.cos < 0.99 {
@@ -205,7 +205,7 @@ fn respond_player_move(
 ) -> Result<()> {
     let (mut acc, dash_timers, move_speed) = q_player.get_mut(event.entity)?;
     let mut linear_velocity = q_velocity.get_mut(acc.partial_velocity)?;
-    acc.changed = true;
+    acc.has_input = true;
     acc.linear += (1.0 - acc.linear) * 0.333;
     {
         let original_speed = linear_velocity.length();
@@ -223,6 +223,13 @@ fn respond_player_move(
         }
     }
     Ok(())
+}
+
+fn respond_player_stop_move(event: On<PlayerStopMove>, mut q_player: Query<&mut PlayerAcc>) {
+    let Ok(mut acc) = q_player.get_mut(event.entity) else {
+        return;
+    };
+    acc.has_input = false;
 }
 
 #[derive(Deref, DerefMut)]

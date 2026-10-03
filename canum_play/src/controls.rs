@@ -1,17 +1,33 @@
+use bevy::input::InputSystems;
+use std::collections::VecDeque;
+
+pub use crate::setup::lobby::{LobbyQuit, LobbySelect, LobbyShop};
+
 use crate::prelude::*;
 
 pub(super) struct ControlsPlugin;
 
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
+        app.init_resource::<QueuedInput>();
+        app.configure_sets(PreUpdate, (InputSystems, CustomInputSystems).chain());
         app.add_systems(
-            FixedPreUpdate,
-            (keyboard_controls, connect_gamepads, gamepad_controls),
+            PreUpdate,
+            (keyboard_controls, connect_gamepads, gamepad_controls).in_set(CustomInputSystems),
         );
+        app.add_systems(FixedPreUpdate, apply_queued_input);
         app.init_resource::<GamepadArrowEmulate>()
             .init_resource::<ControllerSuffix>();
+        app.add_observer(
+            |_event: On<crate::setup::lobby::LobbySelect>, mut counter: Local<u32>| {
+                *counter += 1;
+            },
+        );
     }
 }
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CustomInputSystems;
 
 /// For some UI text related to controllers, this suffix is added to display different content accordingly.
 /// e.g. "Keyboard" "Gamepad"
@@ -39,14 +55,84 @@ pub enum ChangeStageLobby {
     Next,
 }
 
+/// In uis, event to toggle the equip menu
+#[derive(Default, Event)]
+pub struct ToggleEquipMenu;
+
+/// In uis, event to shift up/down the menu.
+#[derive(Event, Deref, DerefMut)]
+pub struct ShiftMenuNumber(pub i8);
+
+/// In equip menus, specific menus only need to respond to this.
+#[derive(Event, Clone, Copy)]
+pub enum MenuSelect {
+    Next,
+    NextPage,
+    Prev,
+    PrevPage,
+    Update,
+    Toggle,
+}
+
+/// In UI flipper, these two kinds control how player can view the dialogue.
+#[derive(Event, PartialEq, Eq, Debug, Clone, Copy)]
+pub enum FlipperInput {
+    NextPage,
+    PrevPage,
+}
+
+pub type BoxCommand = Box<dyn FnOnce(&mut World) + Sync + Send + 'static>;
+pub type QueuedInputItem = (BoxCommand, QueuedInputKind);
+
+#[derive(Resource, Default, Deref, DerefMut)]
+pub struct QueuedInput(VecDeque<QueuedInputItem>);
+
+#[derive(Debug, Clone, Default)]
+pub enum QueuedInputKind {
+    #[default]
+    None,
+}
+
+fn make_command(command: impl FnOnce(&mut World) + Send + Sync + 'static) -> BoxCommand {
+    Box::new(command)
+}
+fn trigger(event: impl for<'a> Event<Trigger<'a>: Default> + 'static) -> BoxCommand {
+    make_command(move |world: &mut World| {
+        world.trigger(event);
+    })
+}
+fn basic(event: impl for<'a> Event<Trigger<'a>: Default> + 'static) -> QueuedInputItem {
+    (trigger(event), QueuedInputKind::None)
+}
+
+fn apply_queued_input(world: &mut World) {
+    let mut queue = world
+        .get_resource_mut::<QueuedInput>()
+        .expect("QueuedInput should be initialized");
+    if !queue.is_empty() {
+        let queue = std::mem::take(queue.as_mut());
+        for (command, kind) in queue.0.into_iter() {
+            command(world);
+            match kind {
+                QueuedInputKind::None => {}
+            }
+        }
+    }
+}
+
 fn keyboard_controls(
-    mut commands: Commands,
+    mut queue: ResMut<QueuedInput>,
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     save: Res<Save>,
     key: Res<ButtonInput<KeyCode>>,
     q_player: Query<(&GlobalTransform, &crate::player::attack::Weapons)>,
     override_main_controls: Query<(), With<OverrideMainControls>>,
+    controller_suffix: Res<ControllerSuffix>,
 ) {
+    if **controller_suffix != "Keyboard" {
+        return;
+    }
+
     let override_main_controls = override_main_controls.iter().next().is_some();
 
     let Some(primary_player) = primary_player.map(|player| **player) else {
@@ -56,6 +142,8 @@ fn keyboard_controls(
         return;
     };
     let position = transform.translation().xy();
+
+    // - Movements/attack keys -
 
     let mut direction = Vec2::default();
     if key.pressed(save.keyboard.move_right) {
@@ -72,29 +160,33 @@ fn keyboard_controls(
     }
     if !override_main_controls {
         if direction.length_squared() > 1e-8 {
-            commands.trigger(crate::player::PlayerMove {
+            queue.push_back(basic(crate::player::PlayerMove {
                 entity: primary_player,
                 rot: direction.to_angle(),
                 mult: 1.0,
-            });
+            }));
             if save.progress.unlocked_dash && key.pressed(save.keyboard.dash) {
-                commands.trigger(crate::movements::StartDash {
+                queue.push_back(basic(crate::movements::StartDash {
                     entity: primary_player,
                     base_velocity: direction.normalize(),
-                })
+                }));
             }
+        } else {
+            queue.push_back(basic(crate::player::PlayerStopMove {
+                entity: primary_player,
+            }));
         }
         let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
             if key.pressed(save.keyboard.primary_attack) {
                 any_weapon_used = true;
-                commands.trigger(crate::player::attack::Attack {
+                queue.push_back(basic(crate::player::attack::Attack {
                     entity: primary_weapon,
-                });
+                }));
             } else if key.just_released(save.keyboard.primary_attack) {
-                commands.trigger(crate::player::attack::AttackRelease {
+                queue.push_back(basic(crate::player::attack::AttackRelease {
                     entity: primary_weapon,
-                });
+                }));
             }
         }
         if !any_weapon_used
@@ -102,32 +194,73 @@ fn keyboard_controls(
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
             if key.pressed(save.keyboard.secondary_attack) {
-                commands.trigger(crate::player::attack::Attack {
+                queue.push_back(basic(crate::player::attack::Attack {
                     entity: secondary_weapon,
-                });
+                }));
             } else if key.just_released(save.keyboard.secondary_attack) {
-                commands.trigger(crate::player::attack::AttackRelease {
+                queue.push_back(basic(crate::player::attack::AttackRelease {
                     entity: secondary_weapon,
-                });
+                }));
             }
         }
         if key.just_pressed(save.keyboard.confirm) {
-            commands.trigger(crate::setup::lobby::LobbySelect { position });
+            queue.push_back(basic(crate::setup::lobby::LobbySelect { position }));
         }
     }
 
+    // - Lobby keys -
+
     if key.just_pressed(KeyCode::KeyS) {
-        commands.trigger(crate::setup::lobby::LobbyShop { position });
+        queue.push_back(basic(crate::setup::lobby::LobbyShop { position }));
     }
     if key.any_just_pressed([KeyCode::Escape, KeyCode::Backspace]) {
-        commands.trigger(crate::setup::lobby::LobbyQuit);
+        queue.push_back(basic(crate::setup::lobby::LobbyQuit));
     }
     if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
         if key.just_pressed(save.keyboard.move_left) {
-            commands.trigger(ChangeStageLobby::Prev);
+            queue.push_back(basic(ChangeStageLobby::Prev));
         } else if key.just_pressed(save.keyboard.move_right) {
-            commands.trigger(ChangeStageLobby::Next);
+            queue.push_back(basic(ChangeStageLobby::Next));
         }
+    }
+
+    // - UI keys -
+    if key.just_pressed(save.keyboard.equip) {
+        queue.push_back(basic(ToggleEquipMenu));
+    }
+    if key.just_pressed(save.keyboard.move_right) {
+        queue.push_back(basic(ShiftMenuNumber(1)));
+    }
+    if key.just_pressed(save.keyboard.move_left) {
+        queue.push_back(basic(ShiftMenuNumber(-1)));
+    }
+    if key.just_pressed(save.keyboard.move_up) {
+        if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+            queue.push_back(basic(MenuSelect::PrevPage));
+        } else {
+            queue.push_back(basic(MenuSelect::Prev));
+        }
+    }
+    if key.just_pressed(save.keyboard.move_down) {
+        if key.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+            queue.push_back(basic(MenuSelect::NextPage));
+        } else {
+            queue.push_back(basic(MenuSelect::Next));
+        }
+    }
+    if key.any_just_pressed([save.keyboard.confirm, save.keyboard.primary_attack]) {
+        queue.push_back(basic(MenuSelect::Toggle));
+    }
+    if key.any_just_pressed([
+        KeyCode::Enter,
+        save.keyboard.confirm,
+        save.keyboard.move_down,
+        save.keyboard.move_right,
+    ]) {
+        queue.push_back(basic(FlipperInput::NextPage));
+    }
+    if key.any_just_pressed([save.keyboard.move_up, save.keyboard.move_left]) {
+        queue.push_back(basic(FlipperInput::PrevPage));
     }
 }
 
@@ -168,7 +301,7 @@ impl Default for GamepadTriggerInterval {
 
 #[allow(clippy::too_many_arguments)]
 fn gamepad_controls(
-    mut commands: Commands,
+    mut queue: ResMut<QueuedInput>,
     primary_player: Option<Res<crate::player::PrimaryPlayer>>,
     q_player: Query<(&GlobalTransform, &crate::player::attack::Weapons)>,
     save: Res<Save>,
@@ -179,8 +312,16 @@ fn gamepad_controls(
     override_main_controls: Query<(), With<OverrideMainControls>>,
     time: Res<Time>,
     mut interval: Local<GamepadTriggerInterval>,
+
+    controller_suffix: Res<ControllerSuffix>,
 ) {
     const HOLD_DURATION: Duration = Duration::from_millis(500);
+
+    if **controller_suffix != "Gamepad" {
+        return;
+    }
+
+    // Main control keys
 
     let override_main_controls = override_main_controls.iter().next().is_some();
     let Some(primary_player) = primary_player.map(|player| **player) else {
@@ -239,29 +380,33 @@ fn gamepad_controls(
 
     if !override_main_controls {
         if direction_length_sq >= 1e-2 {
-            commands.trigger(crate::player::PlayerMove {
+            queue.push_back(basic(crate::player::PlayerMove {
                 entity: primary_player,
                 rot: direction.to_angle(),
                 mult: direction.length(),
-            });
+            }));
             if save.progress.unlocked_dash && gamepad.pressed(save.gamepad.dash) {
-                commands.trigger(crate::movements::StartDash {
+                queue.push_back(basic(crate::movements::StartDash {
                     entity: primary_player,
                     base_velocity: direction.normalize(),
-                })
+                }));
             }
+        } else {
+            queue.push_back(basic(crate::player::PlayerStopMove {
+                entity: primary_player,
+            }));
         }
         let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
             if gamepad.pressed(save.gamepad.primary_attack) {
                 any_weapon_used = true;
-                commands.trigger(crate::player::attack::Attack {
+                queue.push_back(basic(crate::player::attack::Attack {
                     entity: primary_weapon,
-                });
+                }));
             } else if gamepad.just_released(save.gamepad.primary_attack) {
-                commands.trigger(crate::player::attack::AttackRelease {
+                queue.push_back(basic(crate::player::attack::AttackRelease {
                     entity: primary_weapon,
-                });
+                }));
             }
         }
         if !any_weapon_used
@@ -269,29 +414,69 @@ fn gamepad_controls(
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
             if gamepad.pressed(save.gamepad.secondary_attack) {
-                commands.trigger(crate::player::attack::Attack {
+                queue.push_back(basic(crate::player::attack::Attack {
                     entity: secondary_weapon,
-                });
+                }));
             } else if gamepad.just_released(save.gamepad.secondary_attack) {
-                commands.trigger(crate::player::attack::AttackRelease {
+                queue.push_back(basic(crate::player::attack::AttackRelease {
                     entity: secondary_weapon,
-                });
+                }));
             }
         }
         if gamepad.just_pressed(save.gamepad.confirm) {
-            commands.trigger(crate::setup::lobby::LobbySelect { position });
+            queue.push_back(basic(crate::setup::lobby::LobbySelect { position }));
         }
         if gamepad.just_pressed(GamepadButton::LeftTrigger) {
-            commands.trigger(ChangeStageLobby::Prev);
+            queue.push_back(basic(ChangeStageLobby::Prev));
         } else if gamepad.just_pressed(GamepadButton::RightTrigger) {
-            commands.trigger(ChangeStageLobby::Next);
+            queue.push_back(basic(ChangeStageLobby::Next));
         }
     }
 
+    // - Lobby non-main control keys -
+
     if gamepad.just_pressed(save.gamepad.shop) {
-        commands.trigger(crate::setup::lobby::LobbyShop { position });
+        queue.push_back(basic(crate::setup::lobby::LobbyShop { position }));
     }
     if gamepad.just_pressed(save.gamepad.cancel) {
-        commands.trigger(crate::setup::lobby::LobbyQuit);
+        queue.push_back(basic(crate::setup::lobby::LobbyQuit));
+    }
+
+    // - UI keys -
+    if gamepad.just_pressed(save.gamepad.equip) {
+        queue.push_back(basic(ToggleEquipMenu));
+    }
+    if gamepad.just_pressed(GamepadButton::DPadRight) {
+        queue.push_back(basic(ShiftMenuNumber(1)));
+    }
+    if gamepad.just_pressed(GamepadButton::DPadLeft) {
+        queue.push_back(basic(ShiftMenuNumber(-1)));
+    }
+    if gamepad.just_pressed(GamepadButton::DPadUp) {
+        if gamepad.pressed(save.gamepad.dash) {
+            queue.push_back(basic(MenuSelect::PrevPage));
+        } else {
+            queue.push_back(basic(MenuSelect::Prev));
+        }
+    }
+    if gamepad.just_pressed(GamepadButton::DPadDown) {
+        if gamepad.pressed(save.gamepad.dash) {
+            queue.push_back(basic(MenuSelect::NextPage));
+        } else {
+            queue.push_back(basic(MenuSelect::Next));
+        }
+    }
+    if gamepad.just_pressed(save.gamepad.confirm) {
+        queue.push_back(basic(MenuSelect::Toggle));
+    }
+    if gamepad.any_just_pressed([
+        save.gamepad.confirm,
+        GamepadButton::DPadDown,
+        GamepadButton::DPadRight,
+    ]) {
+        queue.push_back(basic(FlipperInput::NextPage));
+    }
+    if gamepad.any_just_pressed([GamepadButton::DPadUp, GamepadButton::DPadLeft]) {
+        queue.push_back(basic(FlipperInput::PrevPage));
     }
 }
