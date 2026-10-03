@@ -4,6 +4,7 @@
     "Charm_S1B_RedHeart": [{ "path": "charms1.png", "offset": [32, 0] }],
     "Charm_S1C_Exoskeleton": [{ "path": "charms1.png", "offset": [64, 0] }],
     "Charm_S2A_Thermostat": [{ "path": "charms1.png", "offset": [96, 0] }],
-    "Charm_S2B_Aerodynamics": [{ "path": "charms1.png", "offset": [128, 0] }]
+    "Charm_S2B_Aerodynamics": [{ "path": "charms1.png", "offset": [128, 0] }],
+    "Charm_S2C_CentralPlay": [{ "path": "charms1.png", "offset": [160, 0] }]
   }
 }

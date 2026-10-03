@@ -1,5 +1,6 @@
 {
   "sprites": {
-    "Achievement_Stage1Complete": [{"path": "advancement.png", "offset": [0, 0]}]
+    "Achievement_Stage1Complete": [{"path": "advancement.png", "offset": [0, 0]}],
+    "Achievement_Stage2Complete": [{"path": "advancement.png", "offset": [32, 0]}]
   }
 }

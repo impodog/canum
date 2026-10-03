@@ -4,9 +4,14 @@ pub(super) struct PlayerStatsPlugin;
 
 impl Plugin for PlayerStatsPlugin {
     fn build(&self, app: &mut App) {
+        app.init_resource::<DynamicPlayerArguments>();
         app.add_observer(init_player_arguments)
             .add_observer(query_player_effects)
             .add_observer(apply_effects_to_player);
+        app.add_systems(
+            FixedPreUpdate,
+            apply_dynamic_player_damage.before(health::DamageApplicationSet),
+        );
     }
 }
 
@@ -24,6 +29,7 @@ impl Default for PlayerArguments {
 
 fn init_player_arguments(_event: On<setup::StartSessionFirst>, mut commands: Commands) {
     commands.insert_resource(PlayerArguments::default());
+    commands.insert_resource(DynamicPlayerArguments::default());
 }
 
 fn query_player_effects(
@@ -58,4 +64,32 @@ fn apply_effects_to_player(
     for mut move_speed in player.iter_mut() {
         move_speed.0 *= total_move_speed_multiplier;
     }
+}
+
+/// These arguments are re-applied each fixed frame. They are updated by other effects dynamically.
+#[derive(Resource)]
+pub struct DynamicPlayerArguments {
+    pub damage_addition: f64,
+    pub damage_multiplier: f64,
+}
+impl Default for DynamicPlayerArguments {
+    fn default() -> Self {
+        Self {
+            damage_addition: 0.0,
+            damage_multiplier: 1.0,
+        }
+    }
+}
+
+fn apply_dynamic_player_damage(
+    mut q_proj: Query<
+        &mut health::ContactDamageModifier,
+        (With<health::PlayerRelated>, Added<health::ContactDamage>),
+    >,
+    args: Res<DynamicPlayerArguments>,
+) {
+    q_proj.par_iter_mut().for_each(|mut modifier| {
+        modifier.multiplier_addition += args.damage_addition;
+        modifier.multiplier_multiply *= args.damage_multiplier;
+    })
 }

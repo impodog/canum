@@ -18,7 +18,7 @@
   },
   stage: {
     "House": (
-      complete_prereqs: ["TODO"],
+      complete_prereqs: ["Laser", "Bread", "Ruler"],
       full_size: (4800.0, 450.0),
       prev_stage: Some("Gate"),
       locks: [
@@ -41,6 +41,7 @@
         (price: 5, item: Weapon("C_Tracking")),
         (price: 3, item: Charm("S2A_Thermostat")),
         (price: 3, item: Charm("S2B_Aerodynamics")),
+        (price: 3, item: Charm("S2C_CentralPlay")),
       ],
       background: "House_Shop",
     )

@@ -62,6 +62,10 @@ const fn return_to_position() -> Vec2 {
 pub struct CharmCost(u8);
 
 impl CharmCost {
+    pub const NONE: Self = Self(0);
+    pub const DEFENSIVE: Self = Self(0x1);
+    pub const OFFENSIVE: Self = Self(0x2);
+    pub const GENERAL: Self = Self(0x4);
     /// If the charm costs a defensive slot.
     pub const fn defensive(self) -> bool {
         (self.0 & 0x1) != 0
@@ -73,6 +77,10 @@ impl CharmCost {
     /// If the charm costs a general slot.
     pub const fn general(self) -> bool {
         (self.0 & 0x4) != 0
+    }
+    /// Gets its bitset for bit operations.
+    pub const fn bitset(self) -> u8 {
+        self.0
     }
 }
 impl<'de> Deserialize<'de> for CharmCost {

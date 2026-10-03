@@ -11,10 +11,16 @@ impl Plugin for HealthPlugin {
             .register_component_hooks::<Friendly>()
             .on_insert(friendly_change_hook);
         app.add_systems(FixedPostUpdate, (work_invincibility_timer,));
-        app.add_systems(FixedPreUpdate, deal_contact_damage);
+        app.add_systems(
+            FixedPreUpdate,
+            deal_contact_damage.in_set(DamageApplicationSet),
+        );
         app.add_systems(FixedPostUpdate, init_contact_damage);
     }
 }
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct DamageApplicationSet;
 
 /// Sends an event to damage the entity, and what exactly to do depends on health implementation.
 #[derive(EntityEvent, Debug)]
@@ -223,12 +229,32 @@ impl<'w, 's> CollisionHooks for PhysicsHooks<'w, 's> {
 
 /// Marks an entity to deal contact damage. This can either be used on enemies or projectiles.
 #[derive(Component, Debug, Default)]
-#[require(Friendly, CollidingEntities)]
+#[require(Friendly, CollidingEntities, ContactDamageModifier)]
 pub struct ContactDamage {
     pub value: i32,
     /// Prevents multiple hits.
     pub projectile: bool,
     pub order: u8,
+}
+/// Add this alongside `ContactDamage` to change its value. Defaults to do nothing.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct ContactDamageModifier {
+    /// Applied before multiplying.
+    pub base_addition: i32,
+    /// Applied after multiplying.
+    pub fixed_addition: i32,
+    pub multiplier_addition: f64,
+    pub multiplier_multiply: f64,
+}
+impl Default for ContactDamageModifier {
+    fn default() -> Self {
+        Self {
+            base_addition: 0,
+            fixed_addition: 0,
+            multiplier_addition: 0.0,
+            multiplier_multiply: 1.0,
+        }
+    }
 }
 /// Stores the projectile's contact history, preventing multiple hits.
 #[derive(Component, Debug, Deref, DerefMut, Default)]
@@ -273,6 +299,7 @@ fn deal_contact_damage(
         &CollidingEntities,
         &Friendly,
         Option<&mut ProjectileContacted>,
+        Option<&ContactDamageModifier>,
         &mut ContactDamageInitDelay,
     )>,
     q_friendly: Query<&Friendly>,
@@ -286,11 +313,29 @@ fn deal_contact_damage(
     q_no_dispose_projectile: Query<(), With<projectile::NoDisposeProjectile>>,
 ) {
     q_contact_damage.par_iter_mut().for_each(
-        |(contact_damage, colliding_entities, friendly, mut contacted, mut init_delay)| {
+        |(
+            contact_damage,
+            colliding_entities,
+            friendly,
+            mut contacted,
+            modifier,
+            mut init_delay,
+        )| {
             if init_delay.init_flag > 0 {
                 init_delay.init_flag = init_delay.init_flag.saturating_sub(1);
                 return;
             }
+            let value = std::cell::LazyCell::new(|| {
+                if let Some(modifier) = modifier {
+                    let multiplier =
+                        (1.0 + modifier.multiplier_addition) * modifier.multiplier_multiply;
+                    let multiplied =
+                        (contact_damage.value + modifier.base_addition) as f64 * multiplier;
+                    multiplied.floor() as i32 + modifier.fixed_addition
+                } else {
+                    contact_damage.value
+                }
+            });
             for mut entity in colliding_entities.iter().copied() {
                 while let Ok(parent) = q_parent.get(entity) {
                     entity = parent.0;
@@ -307,7 +352,7 @@ fn deal_contact_damage(
                         commands.trigger(Damage {
                             entity,
                             order: contact_damage.order,
-                            value: contact_damage.value,
+                            value: *value,
                         });
                     })
                 }

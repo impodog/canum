@@ -2,19 +2,19 @@
   "text": {
     "en": {
       "Weapon_A_Filed_Title": "Filed Bullets",
-      "Weapon_A_Filed_Desc": "Rapidly fires in a straight ray in front of Player.\n\nDeals average damage.",
+      "Weapon_A_Filed_Desc": "Rapidly fires in a straight ray in front of Player.\n\nDeals 100 DPS.",
       "Weapon_A_Filed_Short": "Filed Bullets",
 
       "Weapon_B_Spread_Title": "Spread Gun",
-      "Weapon_B_Spread_Desc": "Fires three bullets in an angle, which expands by speed.\n\nDeals high damage, if all can hit.",
+      "Weapon_B_Spread_Desc": "Fires three bullets in an angle, which expands by speed. With higher damage comes harder aiming.\n\nDeals 3*40=120 DPS.",
       "Weapon_B_Spread_Short": "Spread Gun",
 
       "Weapon_C_Tracking_Title": "Tracking",
-      "Weapon_C_Tracking_Desc": "Rapidly fires bullets that auto home in on the nearest enemy.\n\nDeals very low damage, but you rarely miss.",
+      "Weapon_C_Tracking_Desc": "Rapidly fires bullets that auto home in on the nearest enemy.\n\nDeals 38 DPS, but you rarely miss.",
       "Weapon_C_Tracking_Short": "Tracking",
 
       "Weapon_D_Laser_Title": "Laser Blast",
-      "Weapon_D_Laser_Desc": "Hold to charge, release to emit a strong ray of laser.\n\nDeals high damage, with quick releases.",
+      "Weapon_D_Laser_Desc": "Hold to charge, release to emit a strong ray of laser. Can be paired with either rapid or slow weapons.`\n\nDeals 130 DPS optimally.",
       "Weapon_D_Laser_Short": "Laser Blast"
     }
   }

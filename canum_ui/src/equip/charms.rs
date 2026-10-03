@@ -6,8 +6,12 @@ pub(super) struct CharmsPlugin;
 
 impl Plugin for CharmsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedPostUpdate, update_charm_used);
-        app.add_observer(update_charm_select);
+        app.add_systems(
+            FixedPostUpdate,
+            (update_charm_used, update_charm_requirements),
+        );
+        app.add_observer(update_charm_select)
+            .add_observer(clear_indicators);
     }
 }
 
@@ -100,4 +104,59 @@ fn update_charm_used(
                 }
             }
         });
+}
+
+#[derive(Event)]
+struct ClearRequirementIndicators;
+
+fn update_charm_requirements(
+    q_menu: Query<&SelectMenu>,
+    mut q_indicator: Query<(&mut Visibility, &CharmOccupiesIndicator)>,
+    q_charm_select: Query<(), With<CharmSelectMenu>>,
+    mut commands: Commands,
+) {
+    // First check if is in equipment mode.
+    let Ok(menu) = q_menu.single() else {
+        return;
+    };
+    if q_charm_select.single().is_err() {
+        commands.trigger(ClearRequirementIndicators);
+        return;
+    };
+    let Some(current) = menu.options.front() else {
+        commands.trigger(ClearRequirementIndicators);
+        return;
+    };
+    if let Some(details) = CONFIG.values.charm.get(current) {
+        // This shows a corresponding indicator if available, or it will show the general slot.
+        let mut ok = false;
+        for (mut visibility, indicator) in q_indicator.iter_mut() {
+            if (indicator.slot.to_cost().bitset() & details.cost.bitset()) != 0 {
+                *visibility = Visibility::Inherited;
+                ok = true;
+                break;
+            } else {
+                *visibility = Visibility::Hidden;
+            }
+        }
+        if !ok {
+            for (mut visibility, indicator) in q_indicator.iter_mut() {
+                if indicator.slot == Slot::General {
+                    *visibility = Visibility::Inherited;
+                    break;
+                }
+            }
+        }
+    } else {
+        commands.trigger(ClearRequirementIndicators);
+    }
+}
+
+fn clear_indicators(
+    _event: On<ClearRequirementIndicators>,
+    mut q_indicator: Query<&mut Visibility, With<CharmOccupiesIndicator>>,
+) {
+    for mut visibility in q_indicator.iter_mut() {
+        *visibility = Visibility::Hidden;
+    }
 }

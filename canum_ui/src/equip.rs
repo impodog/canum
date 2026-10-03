@@ -67,9 +67,73 @@ impl std::fmt::Display for EquipLevel {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+enum Slot {
+    #[default]
+    None,
+    Defensive,
+    Offensive,
+    General,
+}
+impl Slot {
+    pub fn to_cost(self) -> canum_res::config::CharmCost {
+        use canum_res::config::CharmCost;
+        match self {
+            Self::None => CharmCost::NONE,
+            Self::Defensive => CharmCost::DEFENSIVE,
+            Self::Offensive => CharmCost::OFFENSIVE,
+            Self::General => CharmCost::GENERAL,
+        }
+    }
+}
+
+#[derive(Component, Default)]
+struct CharmOccupiesIndicator {
+    slot: Slot,
+}
+
 const EQUIP_MENU_SIZE: Vec2 = vec2(200.0, 300.0);
 
 fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bundle {
+    const BOX_SIZE: Vec2 = vec2(40.0, 40.0);
+    let slots = match level {
+        EquipLevel::S1 => vec![Slot::None, Slot::General, Slot::None],
+        EquipLevel::S3 => vec![Slot::Offensive, Slot::General, Slot::None],
+    };
+    let mut indicators = Vec::new();
+    let mut position = vec2(50.0, 50.0);
+    for slot in slots {
+        if slot != Slot::None {
+            indicators.push((
+                Node {
+                    position_type: PositionType::Absolute,
+                    justify_content: JustifyContent::Center,
+                    align_content: AlignContent::Center,
+                    margin: UiRect::all(Val::Auto),
+                    left: px(position.x - BOX_SIZE.x * 0.5),
+                    top: px(position.y - BOX_SIZE.y * 0.5),
+                    width: px(BOX_SIZE.x),
+                    height: px(BOX_SIZE.y),
+                    ..default()
+                },
+                CharmOccupiesIndicator { slot },
+                Animation::new("Box40", BOX_SIZE),
+                Visibility::Hidden,
+            ));
+        }
+        position.x += 50.0;
+    }
+    let charm_indicators = (
+        Node {
+            position_type: PositionType::Absolute,
+            margin: UiRect::all(Val::Auto),
+            left: px(-EQUIP_MENU_SIZE.x * 0.5),
+            top: px(-EQUIP_MENU_SIZE.y * 0.5),
+            ..default()
+        },
+        ZIndex(1),
+        Children::spawn(indicators),
+    );
     (
         Node {
             align_content: AlignContent::Center,
@@ -106,7 +170,8 @@ fn equip_menu(kind: String, level: EquipLevel, fonts: &crate::Fonts) -> impl Bun
                             ..default()
                         },
                         WeaponStatus,
-                    )
+                    ),
+                    charm_indicators,
                 ]
             ),
             (
@@ -225,13 +290,6 @@ fn setup_equip_menu(
 }
 
 fn show_charms(charms: &Charms) -> Option<impl Bundle> {
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    enum Slot {
-        None,
-        Defensive,
-        Offensive,
-        General,
-    }
     fn find_first_slot(charm: &str, slots: &[Slot], slot_occupy: &mut [Option<String>]) -> bool {
         let Some(details) = CONFIG.values.charm.get(charm) else {
             return false;
@@ -306,14 +364,14 @@ fn show_charms(charms: &Charms) -> Option<impl Bundle> {
     }
 
     let mut slots = Vec::new();
-    slots.push(if charms.has_defensive {
-        Slot::Defensive
+    slots.push(if charms.has_offensive {
+        Slot::Offensive
     } else {
         Slot::None
     });
     slots.push(Slot::General);
     slots.push(if charms.has_defensive {
-        Slot::Offensive
+        Slot::Defensive
     } else {
         Slot::None
     });

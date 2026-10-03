@@ -3,6 +3,8 @@
     "Shadow": [{"path": "shadow.png", "size": [32, 16]}],
     "Circle30": [{"path": "circle30.png", "size": [30, 30]}],
     "Circle32": [{"path": "circle32.png", "size": [32, 32]}],
-    "Circle64": [{"path": "circle64.png", "size": [64, 64]}]
+    "Circle64": [{"path": "circle64.png", "size": [64, 64]}],
+    "Box40": [{"path": "box40.png", "size": [40, 40]}],
+    "Box45": [{"path": "box45.png", "size": [45, 45]}]
   }
 }

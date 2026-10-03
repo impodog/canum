@@ -2,21 +2,24 @@
   "text": {
     "en": {
       "Charm_S1A_SharpLeaf_Title": "Sharp Leaf",
-      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nSlightly increases weapon damage.",
+      "Charm_S1A_SharpLeaf_Desc": "A sharp leaf plucked by Ant Colony.\n\nDamage increases by 10%.",
       "Charm_S1A_SharpLeaf_Short": "Sharp Leaf",
       "Charm_S1B_RedHeart_Title": "Red Heart",
-      "Charm_S1B_RedHeart_Desc": "A red, lively heart.\n\nGrants one extra health limit.",
+      "Charm_S1B_RedHeart_Desc": "A red, lively heart.\n\nGrants 1 extra health limit.",
       "Charm_S1B_RedHeart_Short": "Red Heart",
       "Charm_S1C_Exoskeleton_Title": "Exoskeleton",
-      "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants.\n\nGain exoskeleton charges by staying close to enemy projectiles. When charging is completed, the exoskeleton can absorb one damage at the cost of all charges.",
+      "Charm_S1C_Exoskeleton_Desc": "A defensive armor used by the ants and insects alike.\n\nGain exoskeleton charges by staying close to enemy projectiles. When charging is completed, the exoskeleton can absorb one damage at the cost of all charges.",
       "Charm_S1C_Exoskeleton_Short": "Exoskeleton",
 
       "Charm_S2A_Thermostat_Title": "Thermostat",
       "Charm_S2A_Thermostat_Desc": "A cooking device that also measures the enemy.\n\nShow the bosses' remaining health.",
       "Charm_S2A_Thermostat_Short": "Thermostat",
       "Charm_S2B_Aerodynamics_Title": "Aerodynamics",
-      "Charm_S2B_Aerodynamics_Desc": "Learn the art of aerodynamics.\n\nMove faster and shoot faster projectiles.",
-      "Charm_S2B_Aerodynamics_Short": "Aerodyna."
+      "Charm_S2B_Aerodynamics_Desc": "Learn the art of aerodynamics.\n\nMove 17% faster and shoot 20% faster projectiles.",
+      "Charm_S2B_Aerodynamics_Short": "Aerodyna.",
+      "Charm_S2C_CentralPlay_Title": "Central Play",
+      "Charm_S2C_CentralPlay_Desc": "In chess, you should fight for the center.\n\nWhen close to the center, gain up to 15% damage increase.",
+      "Charm_S2C_CentralPlay_Short": "Central Play"
     }
   }
 }
