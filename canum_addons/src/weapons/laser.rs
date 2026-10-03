@@ -32,8 +32,8 @@ impl Default for Laser {
     fn default() -> Self {
         Self {
             charge_time: 1.0,
-            linger_time: 0.3,
-            damage: math::ApproxFloat::from(110),
+            linger_time: 0.4,
+            damage: math::ApproxFloat::from(132),
             order: consts::order::PLAYER_PROJ_STRONG,
         }
     }

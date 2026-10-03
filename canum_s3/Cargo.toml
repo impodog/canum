@@ -1,0 +1,17 @@
+[package]
+name = "canum_s3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+avian2d = "0.7"
+bevy = { version = "0.19", default-features = false }
+canum_fx = { path = "../canum_fx" }
+canum_play = { path = "../canum_play" }
+canum_res = { path = "../canum_res" }
+canum_save = { path = "../canum_save" }
+canum_ui = { path = "../canum_ui" }
+canum_tool = { path = "../canum_tool" }
+rand = "0.10.1"
+ron = "0.12.1"
+serde = { version = "1.0.228", features = ["derive"] }

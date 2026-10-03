@@ -34,7 +34,7 @@ fn handle_lobby_select(
     mut commands: Commands,
     q_panel: Query<(), With<canum_ui::lobby::boss::BossPanel>>,
     q_center: Query<Entity, With<canum_ui::Center>>,
-    _q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
+    q_camera: Query<Entity, With<canum_res::camera::PixelCamera>>,
     fonts: Res<canum_ui::Fonts>,
     lang: Res<Lang>,
     save: Res<Save>,
@@ -121,6 +121,23 @@ fn handle_lobby_select(
                     },
                     time,
                 ),
+            ));
+        }
+        5 => {
+            let Ok(camera) = q_camera.single() else {
+                return;
+            };
+            commands.spawn((
+                ChildOf(camera),
+                setup::cutscene::PureColorCutscene {
+                    transition: canum_fx::transition::PureColor {
+                        color: Color::BLACK,
+                        destroy: None,
+                        duration: Duration::from_secs(5),
+                        remove_self: true,
+                    },
+                    fight: "Cyber".to_owned(),
+                },
             ));
         }
         _ => {}

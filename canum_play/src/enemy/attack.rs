@@ -25,6 +25,6 @@ pub struct EnemyProjectile;
     LockedAxes::ROTATION_LOCKED,
     projectile::NoCollideBoundary,
     crate::health::Friendly(false),
-    crate::health::ContactDamage {value: 200, projectile: true, order: crate::consts::order::ENEMY_MINION},
+    crate::health::ContactDamage {value: crate::consts::damage::ONE_MID, projectile: true, order: crate::consts::order::ENEMY_MINION},
 )]
 pub struct Minion;

@@ -52,6 +52,7 @@ impl Plugin for PlayerPlugin {
     Restitution::new(1.0),
     CollisionEventsEnabled,
     PlayerShoot,
+    PlayerMoveSpeed,
     MoveMeBack,
     attack::Weapons,
     crate::movements::SpeedShrink(800.0),
@@ -73,6 +74,15 @@ pub struct RandomPlayer(pub Entity);
 /// Stores the shooting direction the player is facing.
 #[derive(Component, Default, Debug)]
 pub struct PlayerShoot(pub f32);
+
+/// How fast the player moves when holding one direction.
+#[derive(Component, Debug, Deref, DerefMut)]
+pub struct PlayerMoveSpeed(pub f32);
+impl Default for PlayerMoveSpeed {
+    fn default() -> Self {
+        Self(200.0)
+    }
+}
 
 /// Tweaks the player control experience with acceleration.
 #[derive(Component, Debug)]
@@ -186,21 +196,23 @@ fn rotate_player(
 
 fn respond_player_move(
     event: On<PlayerMove>,
-    mut q_player: Query<(&mut PlayerAcc, &crate::movements::DashTimers)>,
+    mut q_player: Query<(
+        &mut PlayerAcc,
+        &crate::movements::DashTimers,
+        &PlayerMoveSpeed,
+    )>,
     mut q_velocity: Query<&mut movements::PartialVelocity>,
 ) -> Result<()> {
-    const PLAYER_SPEED: f32 = 200.0;
-
-    let (mut acc, dash_timers) = q_player.get_mut(event.entity)?;
+    let (mut acc, dash_timers, move_speed) = q_player.get_mut(event.entity)?;
     let mut linear_velocity = q_velocity.get_mut(acc.partial_velocity)?;
     acc.changed = true;
     acc.linear += (1.0 - acc.linear) * 0.333;
     {
         let original_speed = linear_velocity.length();
         let target_speed = if dash_timers.total.is_finished() {
-            PLAYER_SPEED
+            move_speed.0
         } else {
-            PLAYER_SPEED.max(original_speed)
+            move_speed.0.max(original_speed)
         };
         let target_velocity =
             Vec2::new(event.rot.cos(), event.rot.sin()) * event.mult * target_speed;

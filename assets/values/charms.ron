@@ -4,5 +4,6 @@
     "S1B_RedHeart": (cost: "D", effects: ["Health+1:Hp_RedHeart"]),
     "S1C_Exoskeleton": (cost: "D", effects: ["Exoskeleton"]),
     "S2A_Thermostat": (cost: "D", effects: ["ShowHealth"]),
+    "S2B_Aerodynamics": (cost: "D", effects: ["ProjSpeed+%20", "MoveSpeed+%17"])
   }
 )

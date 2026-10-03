@@ -165,6 +165,7 @@ fn high_lunge_smash_accelerate(
                     commands.trigger(canum_fx::visual::ShakeCamera(0.4));
                     commands.spawn((
                         ChildOf(entity),
+                        SessionOnly,
                         Animation::new("Wcat_Shockwave", vec2(175.0, 175.0)).once(),
                         Transform::from_translation(vec3(0.0, -10.0, -0.1)),
                         RigidBody::Kinematic,
@@ -172,7 +173,7 @@ fn high_lunge_smash_accelerate(
                         projectile::NoCollideBoundary,
                         health::Friendly::UNFRIENDLY,
                         health::ContactDamage {
-                            value: 200,
+                            value: consts::damage::ONE_STRONG,
                             projectile: false,
                             order: consts::order::ENEMY_BOSS,
                         },

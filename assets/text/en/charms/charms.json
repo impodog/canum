@@ -12,8 +12,11 @@
       "Charm_S1C_Exoskeleton_Short": "Exoskeleton",
 
       "Charm_S2A_Thermostat_Title": "Thermostat",
-      "Charm_S2A_Thermostat_Desc": "A cooking device that also measures the enemy\n\nAlways show the bosses' remaining health.",
-      "Charm_S2A_Thermostat_Short": "Thermostat"
+      "Charm_S2A_Thermostat_Desc": "A cooking device that also measures the enemy.\n\nShow the bosses' remaining health.",
+      "Charm_S2A_Thermostat_Short": "Thermostat",
+      "Charm_S2B_Aerodynamics_Title": "Aerodynamics",
+      "Charm_S2B_Aerodynamics_Desc": "Learn the art of aerodynamics.\n\nMove faster and shoot faster projectiles.",
+      "Charm_S2B_Aerodynamics_Short": "Aerodyna."
     }
   }
 }

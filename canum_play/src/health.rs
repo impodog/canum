@@ -265,6 +265,7 @@ fn init_contact_damage(
     });
 }
 
+#[allow(clippy::type_complexity)]
 fn deal_contact_damage(
     commands: ParallelCommands,
     mut q_contact_damage: Query<(
@@ -275,7 +276,13 @@ fn deal_contact_damage(
         &mut ContactDamageInitDelay,
     )>,
     q_friendly: Query<&Friendly>,
-    q_parent: Query<&ChildOf, With<Collider>>,
+    q_parent: Query<
+        &ChildOf,
+        (
+            With<Collider>,
+            Or<(With<enemy::health::EnemySensor>, Without<Sensor>)>,
+        ),
+    >,
     q_no_dispose_projectile: Query<(), With<projectile::NoDisposeProjectile>>,
 ) {
     q_contact_damage.par_iter_mut().for_each(

@@ -26,12 +26,14 @@ impl Plugin for WeaponsPlugin {
 pub struct WeaponArguments {
     pub damage_addition: f64,
     pub damage_multiplier: f64,
+    pub proj_speed_addition: f32,
 }
 impl Default for WeaponArguments {
     fn default() -> Self {
         Self {
             damage_addition: 0.0,
             damage_multiplier: 1.0,
+            proj_speed_addition: 0.0,
         }
     }
 }
@@ -53,10 +55,26 @@ fn apply_weapon_effects(
         if let Some(value) = effect.strip_prefix("Damage+%") {
             match value.parse::<i32>() {
                 Ok(percent) => {
-                    args.damage_addition += percent as f64 / 100.0;
+                    args.damage_addition += percent as f64 * 0.01;
                 }
                 Err(err) => {
                     error!("Invalid damage addition effect: {value}, {err}");
+                }
+            }
+        }
+    }
+    for effect in save
+        .progress
+        .selected_effects
+        .range_starting_with("ProjSpeed+%")
+    {
+        if let Some(value) = effect.strip_prefix("ProjSpeed+%") {
+            match value.parse::<i32>() {
+                Ok(percent) => {
+                    args.proj_speed_addition += percent as f32 * 0.01;
+                }
+                Err(err) => {
+                    error!("Invalid projectile speed addition effect: {value}, {err}");
                 }
             }
         }
@@ -72,12 +90,14 @@ fn spawn_weapons(
     let mut weapons = Vec::new();
 
     let total_damage_multiplier = (1.0 + args.damage_addition) * args.damage_multiplier;
+    let total_proj_speed_multiplier = 1.0 + args.proj_speed_addition;
 
     for weapon in save.progress.selected_weapons.iter() {
         match weapon.as_str() {
             "A_Filed" => {
                 let mut filed = filed::Filed::default();
                 filed.damage = filed.damage.mul(total_damage_multiplier);
+                filed.speed *= total_proj_speed_multiplier;
                 weapons.push(Some(
                     commands.spawn((ChildOf(event.player_entity), filed)).id(),
                 ));
@@ -85,6 +105,7 @@ fn spawn_weapons(
             "B_Spread" => {
                 let mut spread = spread::Spread::default();
                 spread.damage = spread.damage.mul(total_damage_multiplier);
+                spread.speed *= total_proj_speed_multiplier;
                 weapons.push(Some(
                     commands.spawn((ChildOf(event.player_entity), spread)).id(),
                 ));
@@ -92,6 +113,7 @@ fn spawn_weapons(
             "C_Tracking" => {
                 let mut tracking = tracking::Tracking::default();
                 tracking.damage = tracking.damage.mul(total_damage_multiplier);
+                tracking.speed *= total_proj_speed_multiplier;
                 weapons.push(Some(
                     commands
                         .spawn((ChildOf(event.player_entity), tracking))
