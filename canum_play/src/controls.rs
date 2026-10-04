@@ -15,14 +15,14 @@ impl Plugin for ControlsPlugin {
             PreUpdate,
             (keyboard_controls, connect_gamepads, gamepad_controls).in_set(CustomInputSystems),
         );
-        app.add_systems(FixedPreUpdate, apply_queued_input);
+        app.add_systems(
+            FixedPreUpdate,
+            (apply_queued_input, emulate_attack_event).chain(),
+        );
+        app.register_required_components::<crate::player::attack::Weapon, AttackState>();
+        app.add_observer(respond_attack_event);
         app.init_resource::<GamepadArrowEmulate>()
             .init_resource::<ControllerSuffix>();
-        app.add_observer(
-            |_event: On<crate::setup::lobby::LobbySelect>, mut counter: Local<u32>| {
-                *counter += 1;
-            },
-        );
     }
 }
 
@@ -81,6 +81,18 @@ pub enum FlipperInput {
     PrevPage,
 }
 
+/// This is used to translate direct events into fixed-step attacking loop.
+#[derive(EntityEvent, PartialEq, Eq, Hash, Debug, Clone, Copy)]
+pub struct EmulateAttack {
+    pub entity: Entity,
+    pub kind: EmulateAttackKind,
+}
+#[derive(Event, PartialEq, Eq, Hash, Debug, Clone, Copy)]
+pub enum EmulateAttackKind {
+    Begin,
+    End,
+}
+
 pub type BoxCommand = Box<dyn FnOnce(&mut World) + Sync + Send + 'static>;
 pub type QueuedInputItem = (BoxCommand, QueuedInputKind);
 
@@ -118,6 +130,44 @@ fn apply_queued_input(world: &mut World) {
             }
         }
     }
+}
+
+#[derive(Component, Default)]
+struct AttackState {
+    previous: bool,
+    current: bool,
+}
+fn respond_attack_event(event: On<EmulateAttack>, mut q_state: Query<&mut AttackState>) {
+    let Ok(mut state) = q_state.get_mut(event.entity) else {
+        return;
+    };
+    match event.kind {
+        EmulateAttackKind::Begin => {
+            state.current = true;
+        }
+        EmulateAttackKind::End => {
+            state.current = false;
+        }
+    }
+}
+fn emulate_attack_event(
+    mut q_weapon: Query<(Entity, &mut AttackState)>,
+    commands: ParallelCommands,
+) {
+    q_weapon.par_iter_mut().for_each(|(entity, mut state)| {
+        if state.current != state.previous {
+            if !state.current {
+                commands.command_scope(|mut commands| {
+                    commands.trigger(crate::player::attack::AttackRelease { entity })
+                });
+            }
+            state.previous = state.current;
+        } else if state.current {
+            commands.command_scope(|mut commands| {
+                commands.trigger(crate::player::attack::Attack { entity })
+            });
+        }
+    });
 }
 
 fn keyboard_controls(
@@ -178,14 +228,16 @@ fn keyboard_controls(
         }
         let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
-            if key.pressed(save.keyboard.primary_attack) {
+            if key.just_pressed(save.keyboard.primary_attack) {
                 any_weapon_used = true;
-                queue.push_back(basic(crate::player::attack::Attack {
+                queue.push_back(basic(EmulateAttack {
                     entity: primary_weapon,
+                    kind: EmulateAttackKind::Begin,
                 }));
             } else if key.just_released(save.keyboard.primary_attack) {
-                queue.push_back(basic(crate::player::attack::AttackRelease {
+                queue.push_back(basic(EmulateAttack {
                     entity: primary_weapon,
+                    kind: EmulateAttackKind::End,
                 }));
             }
         }
@@ -193,13 +245,15 @@ fn keyboard_controls(
             && weapons.len() >= 2
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
-            if key.pressed(save.keyboard.secondary_attack) {
-                queue.push_back(basic(crate::player::attack::Attack {
+            if key.just_pressed(save.keyboard.secondary_attack) {
+                queue.push_back(basic(EmulateAttack {
                     entity: secondary_weapon,
+                    kind: EmulateAttackKind::Begin,
                 }));
             } else if key.just_released(save.keyboard.secondary_attack) {
-                queue.push_back(basic(crate::player::attack::AttackRelease {
+                queue.push_back(basic(EmulateAttack {
                     entity: secondary_weapon,
+                    kind: EmulateAttackKind::End,
                 }));
             }
         }
@@ -398,14 +452,16 @@ fn gamepad_controls(
         }
         let mut any_weapon_used = false;
         if let Some(primary_weapon) = weapons.first().copied().flatten() {
-            if gamepad.pressed(save.gamepad.primary_attack) {
+            if gamepad.just_pressed(save.gamepad.primary_attack) {
                 any_weapon_used = true;
-                queue.push_back(basic(crate::player::attack::Attack {
+                queue.push_back(basic(EmulateAttack {
                     entity: primary_weapon,
+                    kind: EmulateAttackKind::Begin,
                 }));
             } else if gamepad.just_released(save.gamepad.primary_attack) {
-                queue.push_back(basic(crate::player::attack::AttackRelease {
+                queue.push_back(basic(EmulateAttack {
                     entity: primary_weapon,
+                    kind: EmulateAttackKind::End,
                 }));
             }
         }
@@ -413,13 +469,15 @@ fn gamepad_controls(
             && weapons.len() >= 2
             && let Some(secondary_weapon) = weapons.last().copied().flatten()
         {
-            if gamepad.pressed(save.gamepad.secondary_attack) {
-                queue.push_back(basic(crate::player::attack::Attack {
+            if gamepad.just_pressed(save.gamepad.secondary_attack) {
+                queue.push_back(basic(EmulateAttack {
                     entity: secondary_weapon,
+                    kind: EmulateAttackKind::Begin,
                 }));
             } else if gamepad.just_released(save.gamepad.secondary_attack) {
-                queue.push_back(basic(crate::player::attack::AttackRelease {
+                queue.push_back(basic(EmulateAttack {
                     entity: secondary_weapon,
+                    kind: EmulateAttackKind::End,
                 }));
             }
         }

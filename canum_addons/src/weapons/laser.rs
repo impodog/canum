@@ -13,7 +13,7 @@ impl Plugin for LaserPlugin {
 }
 
 #[derive(Component, Debug, Clone, Copy)]
-#[require(Transform, Visibility, LaserArgs)]
+#[require(Weapon, Transform, Visibility, LaserArgs)]
 pub struct Laser {
     pub charge_time: f32,
     pub linger_time: f32,

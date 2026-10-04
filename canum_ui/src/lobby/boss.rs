@@ -81,7 +81,7 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
         },
         panel,
         BossPanelAdded(time.elapsed()),
-        BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.8)),
+        Animation::new("Mark_BossPanel", vec2(400.0, 225.0)),
         BoxShadow::default(),
         children![title, marks],
     )

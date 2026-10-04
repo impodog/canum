@@ -27,7 +27,7 @@ impl Plugin for SpreadPlugin {
 
 /// Shoots three spreading bullets with high DPS (if all hit), but the spread angle increases as player gains speed.
 #[derive(Component, Debug, Clone)]
-#[require(SpreadArgs, Transform, Visibility)]
+#[require(Weapon, SpreadArgs, Transform, Visibility)]
 pub struct Spread {
     pub interval: f32,
     pub damage: math::ApproxFloat,

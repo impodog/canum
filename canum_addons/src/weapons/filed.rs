@@ -11,7 +11,7 @@ impl Plugin for FiledPlugin {
 
 // NOTE: The visibility here is for the WeaponSoundCue child, which emits a warning if without.
 #[derive(Component, Debug)]
-#[require(FiledTimer, Transform, Visibility)]
+#[require(Weapon, FiledTimer, Transform, Visibility)]
 pub struct Filed {
     pub interval: f32,
     pub damage: math::ApproxFloat,

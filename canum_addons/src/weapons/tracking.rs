@@ -30,7 +30,7 @@ impl Plugin for TrackingPlugin {
 
 /// Shoots homing missiles with a very low DPS.
 #[derive(Component, Debug, Clone)]
-#[require(TrackingArgs, Transform, Visibility)]
+#[require(Weapon, TrackingArgs, Transform, Visibility)]
 pub struct Tracking {
     pub interval: f32,
     pub damage: math::ApproxFloat,

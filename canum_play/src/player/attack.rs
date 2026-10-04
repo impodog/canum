@@ -20,6 +20,10 @@ impl Plugin for PlayerAttackPlugin {
     }
 }
 
+/// Marks a player's weapon. This must be added to enable other tracking code.
+#[derive(Component, Default)]
+pub struct Weapon;
+
 /// Calls the player to use attack. How to respond depends on weapon itself.
 #[derive(EntityEvent, Debug)]
 pub struct Attack {
