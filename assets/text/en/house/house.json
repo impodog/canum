@@ -30,6 +30,8 @@
 
       "Weapon_C_Tracking_ShopDesc": "Tracks the closest enemy.\nWorks even if you misalign a bit.",
       "Charm_S2A_Thermostat_ShopDesc": "With this you measure into your\nenemy to show their health.",
+      "Charm_S2B_Aerodynamics_ShopDesc": "Move and shoot projectiles faster.",
+      "Charm_S2C_CentralPlay_ShopDesc": "Stay close to the center to\nenhance your damage.",
 
       "House_RulerCheckpoint": "Defeat Laser Pen and The Loaf so that this gate will open!",
       "House_NextStageCheckpoint": "Defeat Divine Ruler to enter the next stage!"

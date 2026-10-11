@@ -9,5 +9,5 @@ bevy = { version = "0.19", default-features = false, features = ["gamepad", "bev
 canum_fx = { path = "../canum_fx" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
-rand = "0.10.1"
+rand = "0.10.3"
 rand_distr = "0.6.0"

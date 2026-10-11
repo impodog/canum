@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 canum_res = { path = "../canum_res" }
-ron = "0.12.1"
-serde = { version = "1.0.228", features = ["derive"] }
+ron = "0.12.2"
+serde = { version = "1.0.229", features = ["derive"] }
 
 [dependencies.bevy]
 version = "0.19"
