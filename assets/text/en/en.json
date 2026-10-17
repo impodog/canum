@@ -5,6 +5,7 @@
     "ui/ui.json",
     "achievements/achievements.json",
     "gate/gate.json",
-    "house/house.json"
+    "house/house.json",
+    "cyber/cyber.json"
   ]
 }

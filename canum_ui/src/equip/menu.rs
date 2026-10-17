@@ -176,7 +176,14 @@ fn update_menu_style(
     }
 }
 
-fn play_select_input_sound(event: On<MenuSelect>, mut commands: Commands) {
+fn play_select_input_sound(
+    event: On<MenuSelect>,
+    mut commands: Commands,
+    q_menu: Query<(), With<EquipMenu>>,
+) {
+    if q_menu.iter().next().is_none() {
+        return;
+    }
     match *event {
         MenuSelect::Next | MenuSelect::Prev => {
             commands.spawn(canum_res::sound::Sound::new("Ui_Navigate"));

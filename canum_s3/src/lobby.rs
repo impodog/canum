@@ -42,10 +42,10 @@ fn handle_lobby_select(
                 canum_ui::lobby::boss::boss_panel(
                     fonts,
                     canum_ui::lobby::boss::BossPanel {
-                        name: lang.get("Laser_UiName").to_owned(),
-                        fight_name: "Laser".to_owned(),
-                        marks: get_marks(&save, "Laser"),
-                        enter_color: Color::linear_rgb(0.8, 0.05, 0.05),
+                        name: lang.get("Factory_UiName").to_owned(),
+                        fight_name: "Factory".to_owned(),
+                        marks: get_marks(&save, "Factory"),
+                        enter_color: Color::linear_rgb(0.6, 0.04, 0.1),
                     },
                     time,
                 ),

@@ -38,7 +38,7 @@ fn main() {
             canum_addons::CanumAddonsPlugin,
             canum_tool::CanumToolPlugin,
         ))
-        .add_plugins((canum_s1::CanumS1Plugin, canum_s2::CanumS2Plugin))
+        .add_plugins((canum_s1::CanumS1Plugin, canum_s2::CanumS2Plugin, canum_s3::CanumS3Plugin))
         .insert_resource(Time::<Fixed>::from_hz(
             canum_res::config::CONFIG.client.update_freq as f64,
         )).insert_resource(ClearColor(Color::BLACK))

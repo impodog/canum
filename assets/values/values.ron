@@ -5,6 +5,7 @@
     "charms.ron",
     "achievements.ron",
     "house.ron",
-    "weapons.ron"
+    "weapons.ron",
+    "cyber.ron"
   ],
 )

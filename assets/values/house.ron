@@ -21,6 +21,7 @@
       complete_prereqs: ["Laser", "Bread", "Ruler"],
       full_size: (4800.0, 450.0),
       prev_stage: Some("Gate"),
+      next_stage: Some("Cyber"),
       locks: [
         (
           prereqs: ["Laser", "Bread"],
