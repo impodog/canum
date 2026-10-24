@@ -9,7 +9,7 @@ members = ["canum_*"]
 
 [dependencies]
 avian2d = {
-  version = "0.7",
+  version = "0.8",
   default-features = false,
   features = [
     "default-collider",
@@ -21,7 +21,7 @@ avian2d = {
   ]
 }
 bevy = {
-  version = "0.19",
+  version = "0.20",
   default-features = false,
   features = [
     "2d",

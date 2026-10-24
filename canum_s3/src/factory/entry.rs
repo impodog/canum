@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 use super::*;
 
@@ -37,7 +37,7 @@ fn setup_factory(
 ) {
     window_title.0 = lang.get("Factory_WindowTitle").to_owned();
 
-    canum_fx::session_observers!(commands, spawn_box);
+    canum_fx::session_observers!(commands, spawn_box, spawn_title);
     canum_fx::wait_then_trigger!(use commands, FactoryInit, 0.5);
     canum_fx::wait_then_trigger!(use commands, FactoryStart, 2.0);
 }
@@ -95,7 +95,7 @@ fn spawn_box(
         Restitution::new(0.5),
         health::Friendly::FRIENDLY,
         health::AlwaysCollide(players),
-        movements::SpeedDecay(0.012),
+        movements::SpeedDecay(0.008),
     ));
 }
 
@@ -117,6 +117,23 @@ fn scale_factory_box(
                 .remove::<projectile::NoCollideBoundary>();
         }
     }
+}
+
+fn spawn_title(
+    _event: On<FactoryInit>,
+    lang: Res<Lang>,
+    fonts: Res<canum_ui::Fonts>,
+    bottom_left: Single<Entity, With<canum_ui::BottomLeft>>,
+    mut commands: Commands,
+) {
+    commands.spawn((
+        ChildOf(bottom_left.entity()),
+        canum_ui::text::popup_title(
+            fonts.title.clone(),
+            lang.get("Factory_BossTitle"),
+            Duration::from_secs_f32(1.4),
+        ),
+    ));
 }
 
 fn keep_in(transform: &mut Transform, diff: Vec2, size: Vec2) {

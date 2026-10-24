@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-avian2d = "0.7"
-bevy = { version = "0.19", default-features = false, features = ["gamepad", "bevy_gilrs"] }
+avian2d = "0.8"
+bevy = { version = "0.20", default-features = false, features = ["gamepad", "bevy_gilrs"] }
 canum_fx = { path = "../canum_fx" }
 canum_res = { path = "../canum_res" }
 canum_save = { path = "../canum_save" }
