@@ -9,7 +9,10 @@ impl Plugin for WeaponIndicPlugin {
             .add_observer(spawn_charge_indic)
             .add_observer(update_player_charge_indic);
         app.add_systems(Startup, init_weapon_requires_charging);
-        app.add_systems(FixedUpdate, update_charge_indic);
+        app.add_systems(
+            FixedUpdate,
+            (update_charge_indic, update_player_attack_info),
+        );
         app.add_systems(Update, move_charge_indic);
     }
 }
@@ -138,4 +141,12 @@ fn update_player_charge_indic(
         return;
     };
     indic.0 = event.value;
+}
+
+fn update_player_attack_info(
+    mut info: ResMut<player::attack::PlayerAttackInfo>,
+    q_indic: Query<&ChargeIndicValue>,
+) {
+    let value = q_indic.iter().fold(0.0f32, |prev, new| prev.max(new.0));
+    info.charge_ratio = value;
 }

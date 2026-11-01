@@ -32,13 +32,17 @@ impl Plugin for CanumResPlugin {
             PostUpdate,
             (tick_animation, modify_animation)
                 .chain()
-                .before(RenderSystems::ExtractCommands),
+                .in_set(BaseAnimationSystems),
         );
         app.add_systems(
             PostUpdate,
             (update_sprite_sheet_meta, update_sprite_sheet_index)
                 .chain()
-                .before(RenderSystems::ExtractCommands),
+                .in_set(BaseAnimationSystems),
+        );
+        app.configure_sets(
+            PostUpdate,
+            BaseAnimationSystems.before(RenderSystems::ExtractCommands),
         );
         app.add_systems(
             Last,

@@ -4,17 +4,23 @@ use std::{
     collections::{BTreeMap, btree_map},
 };
 
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
-pub struct BTreeMultiSet(BTreeMap<String, usize>);
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BTreeMultiSet<K: Ord = String>(BTreeMap<K, usize>);
 
-impl BTreeMultiSet {
-    pub fn insert(&mut self, value: impl Into<String>) {
+impl<K: Ord> Default for BTreeMultiSet<K> {
+    fn default() -> Self {
+        Self(BTreeMap::new())
+    }
+}
+
+impl<K: Ord> BTreeMultiSet<K> {
+    pub fn insert(&mut self, value: impl Into<K>) {
         *self.0.entry(value.into()).or_default() += 1;
     }
 
     pub fn remove<Q>(&mut self, value: &Q) -> bool
     where
-        String: Borrow<Q>,
+        K: Borrow<Q>,
         Q: Ord + ?Sized,
     {
         if let Some(count) = self.0.get_mut(value) {
@@ -28,7 +34,7 @@ impl BTreeMultiSet {
         }
     }
 
-    pub fn iter<'a>(&'a self) -> Iter<'a> {
+    pub fn iter<'a>(&'a self) -> Iter<'a, K> {
         Iter {
             internal: self.0.iter(),
             current: None,
@@ -38,7 +44,7 @@ impl BTreeMultiSet {
 
     pub fn contains<Q>(&self, value: &Q) -> bool
     where
-        String: Borrow<Q>,
+        K: Borrow<Q>,
         Q: Ord + ?Sized,
     {
         self.0.contains_key(value)
@@ -49,9 +55,9 @@ impl BTreeMultiSet {
     }
 
     /// Gets an iterator over multiset values falling into the given range.
-    pub fn range<'a, Q, R>(&'a self, range: R) -> Range<'a>
+    pub fn range<'a, Q, R>(&'a self, range: R) -> Range<'a, K>
     where
-        String: Borrow<Q>,
+        K: Borrow<Q>,
         Q: Ord + ?Sized,
         R: std::ops::RangeBounds<Q>,
     {
@@ -61,9 +67,11 @@ impl BTreeMultiSet {
             remaining: 0,
         }
     }
+}
 
+impl BTreeMultiSet<String> {
     /// Gets an iterator over multiset values whose prefix is the given string.
-    pub fn range_starting_with<'a>(&'a self, prefix: impl Into<String>) -> Range<'a> {
+    pub fn range_starting_with<'a>(&'a self, prefix: impl Into<String>) -> Range<'a, String> {
         let prefix = prefix.into();
         let prefix_end = format!("{prefix}~");
         self.range(prefix..=prefix_end)
@@ -71,14 +79,14 @@ impl BTreeMultiSet {
 }
 
 #[derive(Debug, Clone)]
-pub struct Iter<'a> {
-    internal: btree_map::Iter<'a, String, usize>,
-    current: Option<&'a String>,
+pub struct Iter<'a, K: Ord> {
+    internal: btree_map::Iter<'a, K, usize>,
+    current: Option<&'a K>,
     remaining: usize,
 }
 
-impl<'a> Iterator for Iter<'a> {
-    type Item = &'a String;
+impl<'a, K: Ord> Iterator for Iter<'a, K> {
+    type Item = &'a K;
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = if let Some(current) = self.current {
@@ -101,14 +109,14 @@ impl<'a> Iterator for Iter<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Range<'a> {
-    internal: btree_map::Range<'a, String, usize>,
-    current: Option<&'a String>,
+pub struct Range<'a, K: Ord> {
+    internal: btree_map::Range<'a, K, usize>,
+    current: Option<&'a K>,
     remaining: usize,
 }
 
-impl<'a> Iterator for Range<'a> {
-    type Item = &'a String;
+impl<'a, K: Ord> Iterator for Range<'a, K> {
+    type Item = &'a K;
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = if let Some(current) = self.current {

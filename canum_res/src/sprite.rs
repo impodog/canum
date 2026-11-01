@@ -9,6 +9,9 @@ use std::{
     time::Duration,
 };
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BaseAnimationSystems;
+
 /// A cut-down version of `Animation` that does not roll frames itself. You have the freedom over the sprite sheet.
 ///
 /// To make common modifications like in `Animation`, you need to set values in the `Sprite`. The sprite sheet only modifies the sprite's image and texture atlas.

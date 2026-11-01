@@ -1,3 +1,4 @@
+pub mod animation;
 pub mod prelude;
 pub mod weapon;
 
@@ -7,6 +8,6 @@ pub struct CanumToolPlugin;
 
 impl Plugin for CanumToolPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((weapon::WeaponPlugin,));
+        app.add_plugins((weapon::WeaponPlugin, animation::AnimationPlugin));
     }
 }

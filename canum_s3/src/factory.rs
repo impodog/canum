@@ -13,7 +13,7 @@ pub struct FactorySystems;
 
 impl Plugin for FactoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((entry::EntryPlugin, robot::BehaviorsPlugin));
+        app.add_plugins((entry::EntryPlugin, robot::RobotPlugin));
         app.configure_sets(
             FixedUpdate,
             FactorySystems.run_if(in_state(FACTORY_STATE.clone())),
@@ -23,7 +23,7 @@ impl Plugin for FactoryPlugin {
 
 #[derive(Component, Default)]
 #[require(
-    Animation::new("Factory_Robot", Vec2::new(64.0, 64.0)),
+    SpriteSheet::new("Factory_Robot"),
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(32.0, 32.0),

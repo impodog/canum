@@ -45,7 +45,7 @@ pub fn normalize_angle_signed(angle: f32) -> f32 {
 ///   The two quadratic halves meet at x = 0.5 with matched value and slope.
 ///
 /// This overshoots [0, 1] if any of the slopes is outside [0, 2]
-macro_rules! quadratic_curve {
+macro_rules! quadratic_simple_curve {
     ($start_slope:expr, $end_slope:expr) => {{
         const S0: f32 = $start_slope as f32;
         const S1: f32 = $end_slope as f32;
@@ -63,5 +63,58 @@ macro_rules! quadratic_curve {
         }
 
         __curve as fn(f32) -> f32
+    }};
+}
+
+#[macro_export]
+/// Builds a `fn(f32) -> f32` for a derivable piecewise-quadratic curve on \[0, 1\].
+///
+/// Requires:
+///   start_slope, end_slope >= 0
+///
+/// Guarantees:
+///   f(0) = 0,  f(1) = 1
+///   f'(0) = start_slope,  f'(1) = end_slope
+///   f'(x) >= 0
+macro_rules! quadratic_curve {
+    ($start_slope:expr, $end_slope:expr) => {{
+        fn f(x: f32) -> f32 {
+            const START_SLOPE: f32 = $start_slope;
+            const END_SLOPE: f32 = $end_slope;
+            debug_assert!(
+                START_SLOPE >= 0.0 && END_SLOPE >= 0.0,
+                "slopes must be non-negative"
+            );
+
+            // Exact endpoint values (avoid f32 rounding near 0 and 1).
+            if x <= 0.0 {
+                return 0.0;
+            }
+            if x >= 1.0 {
+                return 1.0;
+            }
+
+            // t = half-width of each quadratic end segment.
+            const T: f32 = 1.0 / (2.0 * (START_SLOPE + END_SLOPE + 2.0));
+            // Middle linear slope (always strictly positive).
+            const M: f32 = (1.0 - 0.5 * T * (START_SLOPE + END_SLOPE)) / (1.0 - T);
+
+            // Left quadratic:  fL(x) = a·x + α·x²            on [0, t]
+            // Right quadratic: fR(x) = yR + m·w + β·w², w=x−(1−t) on [1−t, 1]
+            const ALPHA: f32 = (M - START_SLOPE) / (2.0 * T);
+            const BETA: f32 = (END_SLOPE - M) / (2.0 * T);
+            const YL: f32 = 0.5 * T * (START_SLOPE + M);
+            const YR: f32 = 1.0 - 0.5 * T * (END_SLOPE + M);
+
+            if x <= T {
+                START_SLOPE * x + ALPHA * x * x
+            } else if x <= 1.0 - T {
+                YL + M * (x - T)
+            } else {
+                let w = x - (1.0 - T);
+                YR + M * w + BETA * w * w
+            }
+        }
+        f as fn(f32) -> f32
     }};
 }

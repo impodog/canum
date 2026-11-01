@@ -15,7 +15,6 @@ avian2d = {
     "default-collider",
     "2d",
     "debug-plugin",
-    "f32",
     "parallel",
     "parry-f32",
   ]
@@ -32,7 +31,7 @@ bevy = {
     "wav",
   ]
 }
-bevy_image_font = {git = "https://github.com/impodog/bevy_image_font"}
+bevy_image_font = { git = "https://github.com/impodog/bevy_image_font" }
 canum_addons = { path = "canum_addons" }
 canum_fx = { path = "canum_fx" }
 canum_play = { path = "canum_play" }
@@ -41,10 +40,10 @@ canum_s1 = { path = "canum_s1" }
 canum_s2 = { path = "canum_s2" }
 canum_s3 = { path = "canum_s3" }
 canum_save = { path = "canum_save" }
-canum_ui = { path = "canum_ui" }
 canum_tool = { path = "canum_tool" }
-rand = "0.10.3"
+canum_ui = { path = "canum_ui" }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
+rand = "0.10.3"
 
 [profile.dev]
 opt-level = 1

@@ -16,7 +16,8 @@ impl Plugin for PlayerAttackPlugin {
                     .observe(sound_weapon_cue_end);
             });
         app.add_observer(propagate_attack_down)
-            .add_observer(propagate_attack_release_down);
+            .add_observer(propagate_attack_release_down)
+            .add_observer(init_player_attack_info);
     }
 }
 
@@ -98,4 +99,15 @@ fn sound_weapon_cue_end(event: On<AttackRelease>, mut q_sound: Query<&mut Sound>
     if !sound.paused {
         sound.paused = true;
     }
+}
+
+/// Used by enemies to heuristically determine their behaviors.
+#[derive(Resource, Default)]
+pub struct PlayerAttackInfo {
+    /// [0.0, 1.0] If there are many charged weapons, this takes the maximum value.
+    pub charge_ratio: f32,
+}
+
+fn init_player_attack_info(_event: On<setup::StartSessionFirst>, mut commands: Commands) {
+    commands.insert_resource(PlayerAttackInfo::default());
 }
