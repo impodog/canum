@@ -15,6 +15,7 @@ impl Plugin for PlayerAttackPlugin {
                     .observe(sound_weapon_cue_start)
                     .observe(sound_weapon_cue_end);
             });
+        app.init_resource::<PlayerAttackInfo>();
         app.add_observer(propagate_attack_down)
             .add_observer(propagate_attack_release_down)
             .add_observer(init_player_attack_info);

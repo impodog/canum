@@ -97,9 +97,9 @@ fn setup_ui(mut commands: Commands) {
         Center,
         Node {
             position_type: PositionType::Absolute,
-            justify_content: JustifyContent::Center,
-            align_content: AlignContent::Center,
+            align_self: AlignSelf::Center,
             margin: UiRect::all(Val::Auto),
+            left: percent(10),
             width: percent(80),
             height: percent(80),
             ..default()

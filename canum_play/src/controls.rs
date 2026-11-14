@@ -433,7 +433,7 @@ fn gamepad_controls(
     }
 
     if !override_main_controls {
-        if direction_length_sq >= 1e-2 {
+        if direction_length_sq >= save.gamepad.joystick_limit {
             queue.push_back(basic(crate::player::PlayerMove {
                 entity: primary_player,
                 rot: direction.to_angle(),

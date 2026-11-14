@@ -73,8 +73,8 @@ pub fn boss_panel(fonts: impl AsRef<Fonts>, panel: BossPanel, time: Res<Time>) -
         Node {
             position_type: PositionType::Absolute,
             flex_direction: FlexDirection::Column,
-            margin: UiRect::horizontal(Val::Auto),
-            padding: UiRect::vertical(px(10.0)),
+            margin: UiRect::all(Val::Auto),
+            // padding: UiRect::vertical(px(10.0)),
             width: percent(100),
             height: percent(100),
             ..default()

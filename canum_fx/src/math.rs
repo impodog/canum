@@ -1,12 +1,18 @@
 pub use rand::{random_bool as rand_bool, random_range as rand_range};
 
-/// This will ensure the result falls between mean +/- 3 * std_dev
+/// this will ensure the result falls between mean `mean` +/- 3 * `std_dev`
+#[inline(always)]
 pub fn rand_normal(mean: f32, std_dev: f32) -> f32 {
+    rand_normal_clamp(mean, std_dev, 3.0)
+}
+
+/// this will ensure the result falls between mean `mean` +/- `multiply` * `std_dev`
+pub fn rand_normal_clamp(mean: f32, std_dev: f32, multiply: f32) -> f32 {
     use rand_distr::Distribution;
     let result = rand_distr::Normal::new(mean, std_dev)
         .unwrap()
         .sample(&mut rand::rng());
-    result.clamp(mean - 3.0 * std_dev, mean + 3.0 * std_dev)
+    result.clamp(mean - multiply * std_dev, mean + multiply * std_dev)
 }
 
 /// Returns a random sign (1.0 or -1.0) with equal probability.
@@ -34,6 +40,17 @@ pub fn normalize_angle_signed(angle: f32) -> f32 {
     use std::f32::consts::{PI, TAU};
     let a = normalize_angle(angle);
     if a > PI { a - TAU } else { a }
+}
+
+/// Returns the longer coordinate relative to screen size, while the other one is set to `0.0`.
+pub fn long_side_relative_to_screen(vec: bevy::prelude::Vec2) -> bevy::prelude::Vec2 {
+    use canum_res::config::CONFIG;
+    if (vec.x * CONFIG.display.screen_size.y).abs() >= (vec.y * CONFIG.display.screen_size.x).abs()
+    {
+        bevy::prelude::vec2(vec.x, 0.0)
+    } else {
+        bevy::prelude::vec2(0.0, vec.y)
+    }
 }
 
 #[macro_export]

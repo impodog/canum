@@ -37,7 +37,7 @@ fn setup_factory(
 ) {
     window_title.0 = lang.get("Factory_WindowTitle").to_owned();
 
-    canum_fx::session_observers!(commands, spawn_box, spawn_title);
+    canum_fx::session_observers!(commands, spawn_box, spawn_title, spawn_robot);
     canum_fx::wait_then_trigger!(use commands, FactoryInit, 0.5);
     canum_fx::wait_then_trigger!(use commands, FactoryStart, 2.0);
 }
@@ -92,8 +92,9 @@ fn spawn_box(
         AngularInertia(1.0),
         LockedAxes::ROTATION_LOCKED,
         Friction::new(0.3),
-        Restitution::new(0.5),
+        Restitution::new(0.05),
         health::Friendly::FRIENDLY,
+        health::DisableOpposingCollision,
         health::AlwaysCollide(players),
         movements::SpeedDecay(0.008),
     ));
@@ -166,4 +167,8 @@ fn move_player_and_factory_box_back(
         let position = global_transform.translation().xy();
         keep_in(&mut transform, position - box_position, FACTORY_BOX_SIZE);
     }
+}
+
+fn spawn_robot(_event: On<FactoryStart>, mut commands: Commands) {
+    commands.spawn((RobotBoss, robot::RobotBehaviors));
 }

@@ -86,6 +86,8 @@ fn work_displacement(
                         .is_none_or(|notify_entity| notify_entity != entity)
                     {
                         commands.entity(entity).despawn();
+                    } else {
+                        commands.entity(entity).remove::<Displacement>();
                     }
                     if let Some(notify_entity) = displacement.notify {
                         commands.trigger(DisplacementComplete {

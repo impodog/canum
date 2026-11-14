@@ -15,6 +15,10 @@ impl Plugin for FactoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((entry::EntryPlugin, robot::RobotPlugin));
         app.configure_sets(
+            FixedPreUpdate,
+            FactorySystems.run_if(in_state(FACTORY_STATE.clone())),
+        );
+        app.configure_sets(
             FixedUpdate,
             FactorySystems.run_if(in_state(FACTORY_STATE.clone())),
         );
@@ -24,10 +28,12 @@ impl Plugin for FactoryPlugin {
 #[derive(Component, Default)]
 #[require(
     SpriteSheet::new("Factory_Robot"),
+    canum_tool::animation::SpriteSheetQueue::new_with("Factory_Robot"),
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(32.0, 32.0),
     Mass(9.0),
+    AngularInertia(1.0),
     LockedAxes::ROTATION_LOCKED,
     Restitution::new(0.6),
     health::Friendly(false),

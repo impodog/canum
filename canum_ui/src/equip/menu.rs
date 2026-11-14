@@ -90,7 +90,6 @@ pub fn select_menu(kind: String, group: String, fonts: &crate::Fonts) -> impl Bu
         children![
             (
                 Node {
-                    margin: UiRect::all(Val::Auto),
                     width: px(SELECT_MENU_SIZE.x),
                     height: px(SELECT_MENU_SIZE.y),
                     ..default()
@@ -224,8 +223,8 @@ fn update_options_display(
                 justify_content: JustifyContent::Start,
                 flex_direction: FlexDirection::Column,
                 margin: UiRect::all(Val::Auto),
-                left: px(-SELECT_MENU_SIZE.x * 0.5),
-                top: px(-SELECT_MENU_SIZE.y * 0.5),
+                // left: px(-SELECT_MENU_SIZE.x * 0.5),
+                // top: px(-SELECT_MENU_SIZE.y * 0.5),
                 ..default()
             },
         ))

@@ -102,6 +102,9 @@ impl LeaveTrail {
             pure_color: false,
         }
     }
+    pub fn new_enabled(interval: f32, linger: f32) -> Self {
+        Self::new(interval, linger).enabled()
+    }
     pub fn new_rotate_color(interval: f32, linger: f32) -> Self {
         Self::new(interval, linger).rotate_color()
     }

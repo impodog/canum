@@ -67,6 +67,9 @@ impl<K: Ord> BTreeMultiSet<K> {
             remaining: 0,
         }
     }
+    pub fn last(&self) -> Option<&K> {
+        self.0.iter().last().map(|(k, _)| k)
+    }
 }
 
 impl BTreeMultiSet<String> {

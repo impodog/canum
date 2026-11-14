@@ -40,6 +40,7 @@ pub struct Gamepad {
     pub cancel: GamepadButton,
     pub shop: GamepadButton,
     pub equip: GamepadButton,
+    pub joystick_limit: f32,
 }
 impl Default for Gamepad {
     fn default() -> Self {
@@ -51,6 +52,7 @@ impl Default for Gamepad {
             cancel: GamepadButton::East,
             shop: GamepadButton::RightThumb,
             equip: GamepadButton::LeftThumb,
+            joystick_limit: 2.5e-2,
         }
     }
 }

@@ -9,7 +9,7 @@ impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
-            (init_sprite_sheet_player,).in_set(AnimationSystems::Init),
+            (init_sprite_sheet_player, queue_sprite_sheet).in_set(AnimationSystems::Init),
         );
         app.add_systems(
             PostUpdate,
@@ -25,6 +25,7 @@ impl Plugin for AnimationPlugin {
             )
                 .chain(),
         );
+        app.add_observer(update_sprite_sheet_queue);
     }
 }
 
@@ -99,20 +100,87 @@ fn sprite_sheet_player(
         });
 }
 
+/// Queues sprite sheet changes in a stack-like structure, where only the top priority item takes effect.
 #[derive(Component, Debug, Default)]
+#[require(SpriteSheet)]
 pub struct SpriteSheetQueue {
     set: BTreeMultiSet<QueueItem>,
 }
 impl SpriteSheetQueue {
+    pub fn new_with(name: impl Into<String>) -> Self {
+        let mut queue = Self::default();
+        queue.push(0, name);
+        queue
+    }
     pub fn push(&mut self, priority: u32, name: impl Into<String>) {
         self.set.insert(QueueItem {
             priority,
             name: name.into(),
         });
     }
+    pub fn pop(&mut self, priority: u32, name: impl Into<String>) -> bool {
+        let item = QueueItem {
+            priority,
+            name: name.into(),
+        };
+        self.set.remove(&item)
+    }
 }
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 struct QueueItem {
     priority: u32,
     name: String,
+}
+/// Convenient event call to update a specific sprite sheet
+#[derive(Debug, EntityEvent)]
+pub struct SpriteSheetQueueUpdate {
+    pub entity: Entity,
+    pub priority: u32,
+    pub name: String,
+    /// Push if false, pop if true
+    pub pop: bool,
+}
+impl SpriteSheetQueueUpdate {
+    pub fn new(entity: Entity, priority: u32, name: impl Into<String>) -> Self {
+        Self {
+            entity,
+            priority,
+            name: name.into(),
+            pop: false,
+        }
+    }
+    pub fn pop(mut self) -> Self {
+        self.pop = true;
+        self
+    }
+}
+
+fn update_sprite_sheet_queue(
+    event: On<SpriteSheetQueueUpdate>,
+    mut q_queue: Query<&mut SpriteSheetQueue>,
+) {
+    let Ok(mut queue) = q_queue.get_mut(event.entity) else {
+        return;
+    };
+    if event.pop {
+        queue.pop(event.priority, event.name.clone());
+    } else {
+        queue.push(event.priority, event.name.clone());
+    }
+}
+
+fn queue_sprite_sheet(
+    mut q_sprite_sheet: Query<(&mut SpriteSheet, &SpriteSheetIndex, &SpriteSheetQueue)>,
+) {
+    q_sprite_sheet
+        .par_iter_mut()
+        .for_each(|(mut sprite_sheet, index, queue)| {
+            if let Some(last) = queue.set.last()
+                && sprite_sheet.name != last.name
+            {
+                sprite_sheet.name = last.name.clone();
+                // TODO: Is it necessary to allow custom starting positions?
+                index.set(0);
+            }
+        });
 }
