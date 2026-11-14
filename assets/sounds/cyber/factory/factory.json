@@ -1,0 +1,5 @@
+{
+  "sounds": {
+    "Factory_Saw": { "path": "saw.ogg", "volume": 2.0, "loop_point": 0.0 }
+  }
+}

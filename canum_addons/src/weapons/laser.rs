@@ -27,6 +27,11 @@ struct LaserArgs {
 #[derive(Component, Default)]
 struct LaserLinger {
     pub time: Timer,
+    pub rotation_base: f32,
+    pub rotation_limit: f32,
+}
+impl LaserLinger {
+    const ROTATION_LIMIT_BASE: f32 = std::f32::consts::PI / 11.0;
 }
 impl Default for Laser {
     fn default() -> Self {
@@ -72,7 +77,7 @@ fn laser_charge(
 fn laser_release(
     event: On<AttackRelease>,
     mut q_laser: Query<(&Laser, &mut LaserArgs, &ChildOf)>,
-    q_player: Query<&player::PlayerShoot>,
+    q_player: Query<(&player::PlayerShoot, &LinearVelocity)>,
     mut commands: Commands,
 ) {
     const COLLIDER_SIZE: Vec2 = vec2(32.0, 12.0);
@@ -81,7 +86,7 @@ fn laser_release(
         return;
     };
     if args.charge.is_finished() {
-        let Ok(shoot) = q_player.get(parent.0) else {
+        let Ok((shoot, linear_velocity)) = q_player.get(parent.0) else {
             return;
         };
         let add = 5.0 * Vec2::from_angle(shoot.0);
@@ -103,6 +108,9 @@ fn laser_release(
             },
             LaserLinger {
                 time: Timer::from_seconds(laser.linger_time, TimerMode::Once),
+                rotation_base: shoot.0,
+                rotation_limit: LaserLinger::ROTATION_LIMIT_BASE
+                    * (1.0 - linear_velocity.length() / 200.0).max(0.5),
             },
             canum_fx::transform::Follow::new(parent.0)
                 .with_follow_behavior(canum_fx::transform::FollowBehavior::NoRotation),
@@ -123,15 +131,31 @@ fn laser_release(
 }
 
 fn laser_linger(
-    mut q_linger: Query<(Entity, &mut LaserLinger)>,
+    mut q_linger: Query<(
+        Entity,
+        &mut LaserLinger,
+        &mut Transform,
+        &canum_fx::transform::Follow,
+    )>,
+    q_player_shoot: Query<&player::PlayerShoot>,
     commands: ParallelCommands,
     time: Res<Time>,
 ) {
-    q_linger.par_iter_mut().for_each(|(entity, mut linger)| {
-        if linger.time.tick(time.delta()).just_finished() {
-            commands.command_scope(|mut commands| {
-                commands.entity(entity).try_despawn();
-            });
-        }
-    });
+    q_linger
+        .par_iter_mut()
+        .for_each(|(entity, mut linger, mut transform, follow)| {
+            if linger.time.tick(time.delta()).just_finished() {
+                commands.command_scope(|mut commands| {
+                    commands.entity(entity).try_despawn();
+                });
+            } else {
+                let Ok(player_shoot) = q_player_shoot.get(follow.target) else {
+                    return;
+                };
+                let angle_diff = normalize_angle_signed(player_shoot.0 - linger.rotation_base);
+                let rotation = angle_diff.clamp(-linger.rotation_limit, linger.rotation_limit)
+                    + linger.rotation_base;
+                transform.rotation = Quat::from_rotation_z(rotation);
+            }
+        });
 }

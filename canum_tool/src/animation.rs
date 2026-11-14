@@ -37,17 +37,33 @@ pub enum AnimationSystems {
 }
 
 /// Auto advances the sprite sheet index. You can override the interval if needed.
-#[derive(Component, Default, Debug)]
+#[derive(Component, Debug)]
 #[require(SpriteSheetPlayerTimer)]
 pub struct SpriteSheetPlayer {
     pub interval: Option<Duration>,
     pub repeat: bool,
 }
+impl Default for SpriteSheetPlayer {
+    fn default() -> Self {
+        Self {
+            interval: None,
+            repeat: true,
+        }
+    }
+}
+impl SpriteSheetPlayer {
+    /// The player ends after the last frame.
+    pub fn once() -> Self {
+        Self {
+            interval: None,
+            repeat: false,
+        }
+    }
+}
 #[derive(Component, Default, Deref, DerefMut, Debug)]
 struct SpriteSheetPlayerTimer {
     #[deref]
     timer: Timer,
-    timestamp: u32,
     initialized: bool,
 }
 
@@ -62,12 +78,12 @@ fn init_sprite_sheet_player(
         let player_tick = player.last_changed().get();
         let meta_tick = meta.last_changed().get();
         let latest = player_tick.max(meta_tick);
-        if player.is_changed_after(Tick::new(latest)) {
+        if player.is_changed_after(Tick::new(latest)) || meta.is_changed_after(timer.last_changed())
+        {
             let duration = player.interval.unwrap_or_else(|| {
                 Duration::from_millis(meta.0.map(|meta| meta.interval).unwrap_or_default() as u64)
             });
             timer.timer = Timer::new(duration, TimerMode::Repeating);
-            timer.timestamp = latest;
             timer.initialized = true;
         }
     });
@@ -93,7 +109,7 @@ fn sprite_sheet_player(
                 let current_index = index.get();
                 let next_index = current_index + 1;
                 let next_index = next_index % meta.count as usize;
-                if player.repeat || next_index == 0 {
+                if player.repeat || next_index != 0 {
                     index.set(next_index);
                 }
             }

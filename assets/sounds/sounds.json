@@ -4,6 +4,7 @@
     "ui/ui.json",
     "general/general.json",
     "gate/gate.json",
-    "house/house.json"
+    "house/house.json",
+    "cyber/cyber.json"
   ]
 }

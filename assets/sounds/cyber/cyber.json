@@ -1,0 +1,5 @@
+{
+  "include": [
+    "factory/factory.json"
+  ]
+}

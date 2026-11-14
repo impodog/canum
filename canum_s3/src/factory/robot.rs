@@ -26,11 +26,11 @@ impl Plugin for RobotPlugin {
 pub struct RobotBehaviors;
 
 fn robot_behaviors_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
-    // world
-    //     .commands()
-    //     .spawn((ChildOf(entity), DashAway::default()))
-    //     .observe(start_dash_away)
-    //     .observe(end_dash_away);
+    world
+        .commands()
+        .spawn((ChildOf(entity), DashAway::default()))
+        .observe(start_dash_away)
+        .observe(end_dash_away);
     world
         .commands()
         .spawn((ChildOf(entity), SawWipe::default()))
@@ -38,7 +38,7 @@ fn robot_behaviors_hook(mut world: DeferredWorld, HookContext { entity, .. }: Ho
 }
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Factory_Robot_DashAway", 0.35, ["Move", "DashAway"]), MultiplierManual)]
+#[require(Behavior::new("Factory_Robot_DashAway", 0.35, ["Move", "DashAway"]), MultiplierManual, MultiplierWhenResourceOccupied::new([("Main", 0.0)]))]
 pub struct DashAway {
     target: Option<Entity>,
 }
@@ -70,7 +70,7 @@ fn start_dash_away(
     event: On<BehaveStart>,
     mut commands: Commands,
     mut q_dash_away: Query<&mut DashAway>,
-    player: Res<player::PrimaryPlayer>,
+    player: If<Res<player::PrimaryPlayer>>,
     q_transform: Query<&GlobalTransform>,
 ) {
     let Ok(mut dash_away) = q_dash_away.get_mut(event.entity) else {
@@ -80,7 +80,7 @@ fn start_dash_away(
     let Ok(transform) = q_transform.get(event.entity) else {
         return;
     };
-    let Ok(player_transform) = q_transform.get(player.0) else {
+    let Ok(player_transform) = q_transform.get(player.entity()) else {
         return;
     };
     commands.trigger(canum_tool::animation::SpriteSheetQueueUpdate::new(
@@ -99,10 +99,11 @@ fn start_dash_away(
         enemy::movements::Displacement {
             curve: canum_fx::quadratic_curve!(1.0, 0.2),
             displace,
-            duration: Duration::from_secs_f32(distance / 300.0),
+            duration: Duration::from_secs_f32(distance / 550.0),
             notify: Some(event.entity),
         },
     ));
+    commands.spawn(Sound::new("Bread_Dash").with_volume_add(-5.0));
 }
 
 fn end_dash_away(
@@ -144,16 +145,17 @@ fn end_dash_away(
     health::Friendly(false),
     health::ContactDamage { value: consts::damage::ONE_STRONG, projectile: false, order: consts::order::ENEMY_BOSS },
     projectile::NoCollideBoundary,
-    canum_fx::emphasis::LeaveTrail::new_enabled(0.1, 0.12),
+    canum_fx::emphasis::LeaveTrail::new_enabled(0.25, 0.12),
 )]
 pub struct RobotSaw;
 
 #[derive(Component, Default)]
-#[require(Behavior::new("Factory_Robot_SawWipe", 0.8, ["Main", "SawWipe"]))]
+#[require(Behavior::new("Factory_Robot_SawWipe", 0.6, ["Main", "SawWipe"]))]
 struct SawWipe {
     target: Option<Entity>,
     saw: Option<Entity>,
     velocity: Option<Entity>,
+    wait: Timer,
     timer: Timer,
     resting: Timer,
 }
@@ -178,6 +180,10 @@ fn start_saw_wipe(
         ))
         .id();
     saw_wipe.saw = Some(saw_entity);
+    commands.spawn((
+        Sound::new("Factory_Saw"),
+        canum_fx::util::DespawnCheck::new(saw_entity),
+    ));
     if saw_wipe.velocity.is_none() {
         let velocity_entity = commands
             .spawn((
@@ -188,7 +194,8 @@ fn start_saw_wipe(
             .id();
         saw_wipe.velocity = Some(velocity_entity);
     }
-    saw_wipe.timer = Timer::from_seconds(rand_normal(8.0, 1.0).max(5.0), TimerMode::Once);
+    saw_wipe.wait = Timer::from_seconds(0.25, TimerMode::Once);
+    saw_wipe.timer = Timer::from_seconds(rand_normal(9.0, 1.0).max(7.0), TimerMode::Once);
 }
 
 fn end_saw_wipe(
@@ -217,13 +224,14 @@ fn end_saw_wipe(
 fn saw_wipe(
     mut q_saw_wipe: Query<&mut SawWipe>,
     mut q_velocity: Query<&mut movements::PartialVelocity, With<SawWipeVelocity>>,
+    q_linear_velocity: Query<&LinearVelocity>,
     q_no_displacement: Query<(), Without<enemy::movements::Displacement>>,
     q_transform: Query<&GlobalTransform>,
-    player: Res<player::RandomPlayer>,
+    player: If<Res<player::RandomPlayer>>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    let Ok(player_transform) = q_transform.get(player.0) else {
+    let Ok(player_transform) = q_transform.get(player.entity()) else {
         return;
     };
     let player_position = player_transform.translation().xy();
@@ -242,6 +250,9 @@ fn saw_wipe(
             continue;
         } else if saw_wipe.timer.is_finished() {
             continue;
+        } else if !saw_wipe.wait.is_finished() {
+            saw_wipe.wait.tick(time.delta());
+            continue;
         }
         if !q_no_displacement.get(velocity_entity).is_ok() {
             continue;
@@ -257,8 +268,17 @@ fn saw_wipe(
             continue;
         };
         let saw_position = transform.translation().xy();
-        let diff = player_position - saw_position;
-        let displace = canum_fx::math::long_side_relative_to_screen(diff) * rand_normal(1.0, 0.035);
+        let Ok(player_velocity) = q_linear_velocity.get(player.entity()) else {
+            return;
+        };
+        let diff =
+            player_position - saw_position + **player_velocity + rand_normal_clamp(0.1, 0.05, 2.0);
+        let diff = diff.clamp_length(0.0, 150.0);
+        let displace = if rand_bool(0.3) {
+            random_side(diff)
+        } else {
+            canum_fx::math::long_side_relative_to_screen(diff)
+        } * rand_normal(1.0, 0.035);
         saw_wipe.resting = Timer::from_seconds(
             displace.length() / 600.0 + rand_normal_clamp(0.06, 0.01, 2.0),
             TimerMode::Once,
@@ -266,9 +286,9 @@ fn saw_wipe(
         commands
             .entity(velocity_entity)
             .insert(enemy::movements::Displacement {
-                curve: canum_fx::quadratic_curve!(4.0, 0.3),
+                curve: canum_fx::cubic_curve!(1.5, 0.8),
                 displace,
-                duration: Duration::from_secs_f32(displace.length() / rand_range(240.0..260.0)),
+                duration: Duration::from_secs_f32(displace.length() / rand_range(300.0..340.0)),
                 notify: Some(velocity_entity),
             });
     }
@@ -277,13 +297,17 @@ fn saw_wipe(
 fn rotate_robot_saw(
     mut q_saw: Query<(&mut Transform, &canum_fx::transform::Follow), With<RobotSaw>>,
     q_velocity: Query<&LinearVelocity>,
+    time: Res<Time>,
 ) {
+    const ANGULAR_VELOCITY: f32 = 10.0;
     for (mut transform, follow) in q_saw.iter_mut() {
         let Ok(velocity) = q_velocity.get(follow.target) else {
             return;
         };
-        let new_translation = 64.0 * velocity.normalize_or_zero();
-        transform.translation.x = new_translation.x;
-        transform.translation.y = new_translation.y;
+        let target = velocity.normalize_or(vec2(1.0, 0.0));
+        let position = transform.translation.xy();
+        let position = position.rotate_towards(target, time.delta_secs() * ANGULAR_VELOCITY);
+        transform.translation.x = position.x;
+        transform.translation.y = position.y;
     }
 }
