@@ -3,10 +3,13 @@ use bevy::ecs::change_detection::Tick;
 use crate::prelude::*;
 use canum_save::util::BTreeMultiSet;
 
+pub mod fade;
+
 pub(super) struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(fade::FadePlugin);
         app.add_systems(
             PostUpdate,
             (init_sprite_sheet_player, queue_sprite_sheet).in_set(AnimationSystems::Init),

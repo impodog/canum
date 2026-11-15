@@ -92,7 +92,10 @@ fn spawn_box(
         AngularInertia(1.0),
         LockedAxes::ROTATION_LOCKED,
         Friction::new(0.3),
-        Restitution::new(0.05),
+        Restitution {
+            coefficient: 0.05,
+            combine_rule: CoefficientCombine::Min,
+        },
         health::Friendly::FRIENDLY,
         health::DisableOpposingCollision,
         health::AlwaysCollide(players),

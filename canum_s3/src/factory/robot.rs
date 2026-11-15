@@ -424,6 +424,7 @@ struct ConveyorSweep {
     target: Option<Entity>,
     lane: Option<usize>,
     conveyors: Vec<Entity>,
+    saws: Vec<Entity>,
     timer: Option<Timer>,
 }
 
@@ -448,7 +449,7 @@ fn conveyor_lane_at(y: f32) -> usize {
 
 fn conveyor_size() -> Vec2 {
     vec2(
-        CONFIG.display.screen_size.x * 0.35,
+        CONFIG.display.screen_size.x * 0.85,
         conveyor_lane_height() * 0.6,
     )
 }
@@ -478,7 +479,7 @@ fn start_conveyor_sweep(
     let lane = (current_lane + rand_range(1..CONVEYOR_LANE_COUNT)) % CONVEYOR_LANE_COUNT;
     sweep.lane = Some(lane);
 
-    let max_x = CONFIG.display.screen_size.x * 0.8;
+    let max_x = CONFIG.display.screen_size.x * 0.6;
     let target = rand_range(-max_x..=max_x);
     let displace = vec2(target - position.x, conveyor_lane_center(lane) - position.y);
     commands.spawn((
@@ -507,8 +508,8 @@ fn spawn_conveyor_sweep(
 
     let size = conveyor_size();
     let half_width = CONFIG.display.screen_size.x * 0.5;
+
     // The two conveyors come from opposite sides.
-    //
     let direction = vec2(rand_sign(), 0.0);
     let other_lanes = (0..CONVEYOR_LANE_COUNT).filter(|other| *other != lane);
     for other_lane in other_lanes {
@@ -528,12 +529,37 @@ fn spawn_conveyor_sweep(
         sweep.conveyors.push(conveyor);
     }
 
-    // Spawn multiple saws to block movement.
-
     // Let the conveyors fully cross the screen before ending the behavior.
     let travel = CONFIG.display.screen_size.x + size.x;
     let duration = travel / Conveyor::SPEED + 0.2;
     sweep.timer = Some(Timer::from_seconds(duration, TimerMode::Once));
+
+    // Spawn multiple saws to block movement.
+    let count = (CONFIG.display.screen_size.y * 0.5 / 64.0).ceil() as i32;
+    for x in [
+        -CONFIG.display.half_virtual_size.0 + 32.0,
+        CONFIG.display.half_virtual_size.0 - 32.0,
+    ] {
+        for index in -count..=count {
+            let y = index as f32 * 64.0;
+            sweep.saws.push(
+                commands
+                    .spawn((
+                        Transform::from_translation(vec3(x, y, 1.0)),
+                        RobotSaw,
+                        movements::ForcedVelocity::default(),
+                        canum_tool::animation::fade::SpriteFade::fade_in(),
+                        children![enemy::movements::Displacement {
+                            curve: canum_fx::quadratic_curve!(0.0, 3.0),
+                            displace: vec2(-CONFIG.display.screen_size.x * 0.32 * x.signum(), 0.0),
+                            duration: Duration::from_secs_f32(duration),
+                            notify: None,
+                        }],
+                    ))
+                    .id(),
+            );
+        }
+    }
 }
 
 fn update_conveyor_sweep(
@@ -556,6 +582,11 @@ fn update_conveyor_sweep(
         for conveyor in sweep.conveyors.drain(..) {
             commands.entity(conveyor).try_despawn();
         }
+        for saw in sweep.saws.drain(..) {
+            commands
+                .entity(saw)
+                .insert(canum_tool::animation::fade::SpriteFade::fade_out());
+        }
         commands.trigger(BehaveEnd {
             entity,
             cooldown: Duration::from_secs_f32(0.8),
@@ -577,6 +608,9 @@ fn intervene_conveyor_sweep(
     };
     for conveyor in sweep.conveyors.drain(..) {
         commands.entity(conveyor).try_despawn();
+    }
+    for saw in sweep.saws.drain(..) {
+        commands.entity(saw).try_despawn();
     }
     sweep.target = None;
     sweep.lane = None;
