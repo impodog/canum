@@ -47,3 +47,8 @@ rand = "0.10.3"
 
 [profile.dev]
 opt-level = 1
+
+[lints.clippy]
+# Bevy functions and typing are complex.
+too_many_arguments = "allow"
+type_complexity = "allow"
