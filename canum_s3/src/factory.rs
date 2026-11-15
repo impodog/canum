@@ -25,10 +25,13 @@ impl Plugin for FactoryPlugin {
     }
 }
 
+pub const ROBOT_HEALTH: i32 = 3200;
+
 #[derive(Component, Default)]
 #[require(
     SpriteSheet::new("Factory_Robot"),
     canum_tool::animation::SpriteSheetQueue::new_with("Factory_Robot"),
+    canum_tool::animation::four_way::FourWay,
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(32.0, 32.0),
@@ -38,8 +41,8 @@ impl Plugin for FactoryPlugin {
     Restitution::new(0.6),
     health::Friendly(false),
     health::ContactDamage { value: consts::damage::ONE_MID, projectile: false, order: consts::order::ENEMY_BOSS },
-    movements::SpeedDecay(0.5),
-    enemy::health::EnemyHealth::new(3200),
+    movements::SpeedDecay(0.3),
+    enemy::health::EnemyHealth::new(ROBOT_HEALTH),
     enemy::health::DamageSound::new("Wcat_Damage"),
     canum_fx::emphasis::LeaveTrail::new(0.1, 0.12),
 )]

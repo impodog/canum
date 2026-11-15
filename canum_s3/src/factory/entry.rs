@@ -20,6 +20,9 @@ pub struct FactoryInit;
 #[derive(Event, Default)]
 pub struct FactoryStart;
 
+#[derive(Event, Default)]
+pub struct FactorySpawnHealthBar;
+
 #[derive(Component, Default)]
 #[require(SessionOnly, Collider, RigidBody::Dynamic)]
 pub struct FactoryBox {
@@ -37,9 +40,16 @@ fn setup_factory(
 ) {
     window_title.0 = lang.get("Factory_WindowTitle").to_owned();
 
-    canum_fx::session_observers!(commands, spawn_box, spawn_title, spawn_robot);
+    canum_fx::session_observers!(
+        commands,
+        spawn_box,
+        spawn_title,
+        spawn_robot,
+        spawn_robot_health_bar
+    );
     canum_fx::wait_then_trigger!(use commands, FactoryInit, 0.5);
     canum_fx::wait_then_trigger!(use commands, FactoryStart, 2.0);
+    canum_fx::wait_then_trigger!(use commands, FactorySpawnHealthBar, 2.1);
 }
 
 fn spawn_box(
@@ -88,9 +98,8 @@ fn spawn_box(
         .with_translation(vec3(0.0, 0.0, -5.5)),
         RigidBody::Dynamic,
         collider,
-        Mass(3.0),
+        Mass(2.0),
         AngularInertia(1.0),
-        LockedAxes::ROTATION_LOCKED,
         Friction::new(0.3),
         Restitution {
             coefficient: 0.05,
@@ -143,16 +152,16 @@ fn spawn_title(
 fn keep_in(transform: &mut Transform, diff: Vec2, size: Vec2) {
     let size = size * 0.5;
     if diff.x > size.x {
-        transform.translation.x -= 25.0;
+        transform.translation.x -= 15.0;
     }
     if diff.x < -size.x {
-        transform.translation.x += 25.0;
+        transform.translation.x += 15.0;
     }
     if diff.y > size.y {
-        transform.translation.y -= 25.0;
+        transform.translation.y -= 15.0;
     }
     if diff.y < -size.y {
-        transform.translation.y += 25.0;
+        transform.translation.y += 15.0;
     }
 }
 
@@ -173,5 +182,34 @@ fn move_player_and_factory_box_back(
 }
 
 fn spawn_robot(_event: On<FactoryStart>, mut commands: Commands) {
-    commands.spawn((RobotBoss, robot::RobotBehaviors));
+    let robot = commands.spawn((RobotBoss, robot::RobotBehaviors)).id();
+    commands.spawn((
+        ChildOf(robot),
+        enemy::health::EnemySensor,
+        Collider::rectangle(60.0, 60.0),
+    ));
+}
+
+fn spawn_robot_health_bar(
+    _event: On<FactorySpawnHealthBar>,
+    save: Res<Save>,
+    mut commands: Commands,
+    bottom_center: Single<Entity, With<canum_ui::BottomCenter>>,
+    robot: Single<Entity, With<RobotBoss>>,
+) {
+    if save.progress.selected_effects.contains("ShowHealth") {
+        commands.spawn((
+            ChildOf(bottom_center.entity()),
+            canum_ui::bar::AssociatedBoss(robot.entity()),
+            canum_ui::bar::health_bar(
+                Color::Srgba(Srgba::hex("#2eb6ff").unwrap()),
+                Color::Srgba(Srgba::hex("#2d065a").unwrap()),
+                canum_ui::bar::HealthBar {
+                    total: ROBOT_HEALTH as f32,
+                    current: ROBOT_HEALTH as f32,
+                    ..default()
+                },
+            ),
+        ));
+    }
 }

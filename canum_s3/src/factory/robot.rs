@@ -15,6 +15,7 @@ impl Plugin for RobotPlugin {
             FixedUpdate,
             (rotate_robot_saw, (end_saw_wipe, saw_wipe).chain()).in_set(FactorySystems),
         );
+        app.add_systems(FixedUpdate, update_robot_sine_saw.in_set(FactorySystems));
         app.add_systems(
             FixedUpdate,
             (
@@ -37,21 +38,25 @@ impl Plugin for RobotPlugin {
 pub struct RobotBehaviors;
 
 fn robot_behaviors_hook(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
-    // world
-    //     .commands()
-    //     .spawn((ChildOf(entity), DashAway::default()))
-    //     .observe(start_dash_away)
-    //     .observe(end_dash_away);
-    // world
-    //     .commands()
-    //     .spawn((ChildOf(entity), SawWipe::default()))
-    //     .observe(start_saw_wipe);
+    world
+        .commands()
+        .spawn((ChildOf(entity), DashAway::default()))
+        .observe(start_dash_away)
+        .observe(end_dash_away);
+    world
+        .commands()
+        .spawn((ChildOf(entity), SawWipe::default()))
+        .observe(start_saw_wipe);
     world
         .commands()
         .spawn((ChildOf(entity), ConveyorSweep::default()))
         .observe(start_conveyor_sweep)
         .observe(spawn_conveyor_sweep)
         .observe(intervene_conveyor_sweep);
+    world
+        .commands()
+        .spawn((ChildOf(entity), RobotSineWaveSaw::default()))
+        .observe(start_robot_sine_wave_saw);
 }
 
 #[derive(Component, Default)]
@@ -100,11 +105,6 @@ fn start_dash_away(
     let Ok(player_transform) = q_transform.get(player.entity()) else {
         return;
     };
-    commands.trigger(canum_tool::animation::SpriteSheetQueueUpdate::new(
-        event.target,
-        10,
-        "Factory_Robot_Dash",
-    ));
     let position = transform.translation().xy();
     let player_position = player_transform.translation().xy();
     let diff = (position - player_position).normalize_or(vec2(1.0, 0.0));
@@ -134,11 +134,6 @@ fn end_dash_away(
     let Some(target) = dash_away.target else {
         return;
     };
-    commands.trigger(canum_tool::animation::SpriteSheetQueueUpdate::new(
-        target,
-        10,
-        "Factory_Robot_Dash",
-    ));
     commands.trigger(BehaveEnd {
         entity: event.entity,
         cooldown: Duration::from_secs_f32(rand_range(0.1..0.15)),
@@ -329,6 +324,110 @@ fn rotate_robot_saw(
     }
 }
 
+/// Forward speed of `RobotSineSaw` projectiles.
+const SINE_SAW_SPEED: f32 = 225.0;
+/// Peak sideways displacement of the sine wave.
+const SINE_SAW_AMPLITUDE: f32 = 80.0;
+/// Distance from the robot center at which the saws spawn.
+const SINE_SAW_SPAWN_OFFSET: f32 = 56.0;
+/// How much of the player's velocity is predicted when aiming.
+const SINE_SAW_PREDICTION: f32 = 0.2;
+/// Backwards velocity kick applied to the robot when it shoots.
+const SINE_SAW_RECOIL: f32 = 800.0;
+
+#[derive(Component, Default)]
+#[require(RobotSaw, projectile::RemoveOutOfBounds)]
+struct RobotSineSaw {
+    origin: Vec2,
+    direction: Vec2,
+    perpendicular: Vec2,
+    phase: f32,
+    elapsed: f32,
+    frequency: f32,
+}
+
+#[derive(Component, Default)]
+#[require(Behavior::new("Factory_Robot_SineWaveSaw", 0.8, ["Main", "SineWaveSaw"]), BaseByDistance::new(300.0, 75.0))]
+struct RobotSineWaveSaw {
+    target: Option<Entity>,
+}
+
+fn start_robot_sine_wave_saw(
+    event: On<BehaveStart>,
+    mut commands: Commands,
+    mut q_sine_wave_saw: Query<&mut RobotSineWaveSaw>,
+    mut q_linear_velocity: Query<&mut LinearVelocity>,
+    q_transform: Query<&GlobalTransform>,
+    player: If<Res<player::RandomPlayer>>,
+) {
+    let Ok(mut sine_wave_saw) = q_sine_wave_saw.get_mut(event.entity) else {
+        return;
+    };
+    sine_wave_saw.target = Some(event.target);
+
+    let Ok(transform) = q_transform.get(event.target) else {
+        return;
+    };
+    let Ok(player_transform) = q_transform.get(player.entity()) else {
+        return;
+    };
+
+    let position = transform.translation().xy();
+    let player_position = player_transform.translation().xy();
+    let player_velocity = q_linear_velocity
+        .get(player.entity())
+        .map(|velocity| velocity.0)
+        .unwrap_or(Vec2::ZERO);
+    let predicted_position = player_position + player_velocity * SINE_SAW_PREDICTION;
+    let direction = (predicted_position - position).normalize_or(vec2(1.0, 0.0));
+    let perpendicular = direction.perp();
+    let origin = position + direction * SINE_SAW_SPAWN_OFFSET;
+    let frequency = rand_range(1.8..2.2);
+
+    // Two saws with opposite sine phases, so their curves are 180 degrees apart.
+    for phase in [0.0, std::f32::consts::PI] {
+        commands.spawn((
+            RobotSineSaw {
+                origin,
+                direction,
+                perpendicular,
+                phase,
+                elapsed: 0.0,
+                frequency,
+            },
+            Transform::from_translation(vec3(origin.x, origin.y, 4.0)),
+        ));
+    }
+
+    if let Ok(mut robot_velocity) = q_linear_velocity.get_mut(event.target) {
+        **robot_velocity -= direction * SINE_SAW_RECOIL;
+    }
+
+    commands.spawn(Sound::new("Factory_Shot"));
+
+    commands.trigger(BehaveEnd {
+        entity: event.entity,
+        cooldown: Duration::from_secs_f32(rand_normal(0.9, 0.1)),
+        occupies: occupies![
+            ("SineWaveSaw", rand_normal(2.5, 0.4)),
+            ("Main", rand_normal(0.4, 0.1).clamp(0.1, 1.0))
+        ],
+    });
+}
+
+fn update_robot_sine_saw(mut q_saw: Query<(&mut Transform, &mut RobotSineSaw)>, time: Res<Time>) {
+    let delta = time.delta_secs();
+    for (mut transform, mut saw) in q_saw.iter_mut() {
+        saw.elapsed += delta;
+        let forward = saw.direction * (saw.elapsed * SINE_SAW_SPEED);
+        let wave = saw.perpendicular
+            * (SINE_SAW_AMPLITUDE * (saw.elapsed * saw.frequency + saw.phase).sin());
+        let position = saw.origin + forward + wave;
+        transform.translation.x = position.x;
+        transform.translation.y = position.y;
+    }
+}
+
 #[derive(Component, Default)]
 #[require(
     SpriteSheet::new("Factory_Conveyor"),
@@ -482,12 +581,13 @@ fn start_conveyor_sweep(
     let max_x = CONFIG.display.screen_size.x * 0.6;
     let target = rand_range(-max_x..=max_x);
     let displace = vec2(target - position.x, conveyor_lane_center(lane) - position.y);
+    commands.spawn(Sound::new("Windy_Warning"));
     commands.spawn((
         ChildOf(event.target),
         enemy::movements::Displacement {
             curve: canum_fx::quadratic_curve!(1.5, 0.2),
             displace,
-            duration: Duration::from_secs_f32((displace.length() / 600.0).max(0.1)),
+            duration: Duration::from_secs_f32((displace.length() / 390.0).max(0.5)),
             notify: Some(event.entity),
         },
     ));

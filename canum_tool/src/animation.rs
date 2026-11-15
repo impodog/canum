@@ -4,15 +4,20 @@ use crate::prelude::*;
 use canum_save::util::BTreeMultiSet;
 
 pub mod fade;
+pub mod four_way;
 
 pub(super) struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(fade::FadePlugin);
+        app.add_plugins((fade::FadePlugin, four_way::FourWayPlugin));
         app.add_systems(
             PostUpdate,
-            (init_sprite_sheet_player, queue_sprite_sheet).in_set(AnimationSystems::Init),
+            (init_sprite_sheet_player,).in_set(AnimationSystems::Init),
+        );
+        app.add_systems(
+            PostUpdate,
+            queue_sprite_sheet.in_set(AnimationSystems::Dequeue),
         );
         app.add_systems(
             PostUpdate,
@@ -22,7 +27,9 @@ impl Plugin for AnimationPlugin {
             PostUpdate,
             (
                 AnimationSystems::Init,
+                AnimationSystems::Dequeue,
                 AnimationSystems::Update,
+                AnimationSystems::Suffix,
                 AnimationSystems::Final,
                 canum_res::BaseAnimationSystems,
             )
@@ -35,7 +42,9 @@ impl Plugin for AnimationPlugin {
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AnimationSystems {
     Init,
+    Dequeue,
     Update,
+    Suffix,
     Final,
 }
 
@@ -138,9 +147,10 @@ impl SpriteSheetQueue {
         });
     }
     pub fn pop(&mut self, priority: u32, name: impl Into<String>) -> bool {
+        let name = name.into();
         let item = QueueItem {
             priority,
-            name: name.into(),
+            name: name.clone(),
         };
         self.set.remove(&item)
     }
@@ -189,13 +199,20 @@ fn update_sprite_sheet_queue(
 }
 
 fn queue_sprite_sheet(
-    mut q_sprite_sheet: Query<(&mut SpriteSheet, &SpriteSheetIndex, &SpriteSheetQueue)>,
+    mut q_sprite_sheet: Query<(
+        &mut SpriteSheet,
+        &SpriteSheetIndex,
+        &SpriteSheetQueue,
+        Option<&four_way::FourWay>,
+    )>,
 ) {
     q_sprite_sheet
         .par_iter_mut()
-        .for_each(|(mut sprite_sheet, index, queue)| {
+        .for_each(|(mut sprite_sheet, index, queue, four_way)| {
             if let Some(last) = queue.set.last()
                 && sprite_sheet.name != last.name
+                && !(four_way.is_some()
+                    && four_way::is_four_way_name(&sprite_sheet.name, &last.name))
             {
                 sprite_sheet.name = last.name.clone();
                 // TODO: Is it necessary to allow custom starting positions?

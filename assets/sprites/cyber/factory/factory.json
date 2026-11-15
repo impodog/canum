@@ -1,6 +1,11 @@
 {
   "sprites": {
     "Factory_Box": [{"path": "box.png", "size": [100, 50]}],
-    "Factory_Robot_Saw": [{"path": "saw.png", "size": [64, 64], "count": 3, "interval": 70}]
+    "Factory_Robot_Saw": [{"path": "saw.png", "size": [64, 64], "count": 3, "interval": 70}],
+    "Factory_Robot": [{"path": "robot.png", "size": [64, 64], "count": 2, "interval": 350}],
+    "Factory_Robot_FWLeft": [{"path": "robot.png", "size": [64, 64], "count": 2, "interval": 150, "offset": [128, 0]}],
+    "Factory_Robot_FWRight": [{"path": "robot.png", "size": [64, 64], "count": 2, "interval": 150, "offset": [256, 0]}],
+    "Factory_Robot_FWUp": [{"path": "robot.png", "size": [64, 64], "count": 2, "interval": 150, "offset": [384, 0]}],
+    "Factory_Robot_FWDown": [{"path": "robot.png", "size": [64, 64], "count": 2, "interval": 150, "offset": [512, 0]}]
   }
 }
