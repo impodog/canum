@@ -29,6 +29,8 @@ bevy = {
     "mp3",
     "multi_threaded",
     "wav",
+    "bevy_curve",
+    "bevy_state"
   ]
 }
 bevy_image_font = { git = "https://github.com/impodog/bevy_image_font" }

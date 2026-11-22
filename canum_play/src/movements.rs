@@ -303,7 +303,7 @@ fn update_forced_velocity(
                     && q_ok.get(linked).is_err()
                 {
                     commands.command_scope(|mut commands| {
-                        commands.entity(child).despawn();
+                        commands.entity(child).try_despawn();
                     });
                     any_changed = true;
                     continue;

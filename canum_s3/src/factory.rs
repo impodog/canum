@@ -32,6 +32,7 @@ pub const ROBOT_HEALTH: i32 = 3200;
     SpriteSheet::new("Factory_Robot"),
     canum_tool::animation::SpriteSheetQueue::new_with("Factory_Robot"),
     canum_tool::animation::four_way::FourWay,
+    canum_tool::animation::four_way::FourWaySelector,
     Transform::from_translation(Vec3::new(0.0, 0.0, 14.37)),
     RigidBody::Dynamic,
     Collider::rectangle(32.0, 32.0),

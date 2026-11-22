@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{collections::BTreeSet, sync::Mutex};
 
 use crate::prelude::*;
 
@@ -85,7 +85,7 @@ fn remove_out_of_bound(
 
 /// Projectiles are removed one fixed frame after collision detected.
 #[derive(Resource, Default, Deref, DerefMut)]
-struct DisposeQueue(Vec<Entity>);
+struct DisposeQueue(BTreeSet<Entity>);
 
 fn dispose_after_collision(
     mut commands: Commands,
@@ -94,11 +94,12 @@ fn dispose_after_collision(
     q_projectile: Query<(Entity, &Projectile)>,
     q_no_dispose_projectile: Query<(), With<NoDisposeProjectile>>,
 ) {
-    for entity in queue.drain(..) {
+    for entity in queue.iter().copied() {
         if let Ok(mut commands) = commands.get_entity(entity) {
             commands.try_despawn();
         }
     }
+    queue.clear();
     let queue = Mutex::new(queue);
     q_projectile.par_iter().for_each(|(entity, projectile)| {
         if !projectile.no_dispose
@@ -111,7 +112,7 @@ fn dispose_after_collision(
                 !q_no_dispose_projectile.get(other).is_ok()
             })
         {
-            queue.lock().unwrap().push(entity);
+            queue.lock().unwrap().insert(entity);
         }
     });
 }

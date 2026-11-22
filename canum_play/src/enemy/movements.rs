@@ -85,7 +85,7 @@ fn work_displacement(
                         .notify
                         .is_none_or(|notify_entity| notify_entity != entity)
                     {
-                        commands.entity(entity).despawn();
+                        commands.entity(entity).try_despawn();
                     } else {
                         commands.entity(entity).remove::<Displacement>();
                     }

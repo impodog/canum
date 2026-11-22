@@ -6,7 +6,9 @@ impl Plugin for FourWayPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
-            sprite_sheet_four_way.in_set(super::AnimationSystems::Suffix),
+            (select_four_way, sprite_sheet_four_way)
+                .chain()
+                .in_set(super::AnimationSystems::Suffix),
         );
     }
 }
@@ -30,6 +32,26 @@ impl FourWayDirection {
             Self::Down => "_FWDown",
         }
     }
+
+    /// Picks the cardinal direction closest to `velocity` using the dominant axis.
+    ///
+    /// Returns `None` if both velocity components are at or below `threshold`.
+    pub fn from_velocity(velocity: Vec2, threshold: f32) -> Option<Self> {
+        if velocity.x.abs().max(velocity.y.abs()) <= threshold {
+            return None;
+        }
+        if velocity.x.abs() >= velocity.y.abs() {
+            Some(if velocity.x > 0.0 {
+                Self::Right
+            } else {
+                Self::Left
+            })
+        } else if velocity.y > 0.0 {
+            Some(Self::Up)
+        } else {
+            Some(Self::Down)
+        }
+    }
 }
 
 /// Selects one of four directional sprite sheets based on [`FourWay::direction`].
@@ -43,6 +65,27 @@ pub struct FourWay {
 impl FourWay {
     pub const fn new(direction: FourWayDirection) -> Self {
         Self { direction }
+    }
+}
+
+/// Automatically updates [`FourWay`] from the entity's `ForcedVelocity`, so
+/// that the sprite faces where it is going.
+///
+/// Velocities at or below [`FourWaySelector::threshold`] keep the previous
+/// direction, preventing the animation from flickering when the entity stops.
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+#[require(FourWay)]
+pub struct FourWaySelector {
+    pub threshold: f32,
+}
+impl FourWaySelector {
+    pub const fn new(threshold: f32) -> Self {
+        Self { threshold }
+    }
+}
+impl Default for FourWaySelector {
+    fn default() -> Self {
+        Self { threshold: 10.0 }
     }
 }
 
@@ -65,6 +108,23 @@ fn base_sprite_name(name: &str) -> &str {
         .iter()
         .find_map(|suffix| name.strip_suffix(suffix))
         .unwrap_or(name)
+}
+
+fn select_four_way(
+    mut q_four_way: Query<(&mut FourWay, &FourWaySelector, &movements::ForcedVelocity)>,
+) {
+    q_four_way
+        .par_iter_mut()
+        .for_each(|(mut four_way, selector, forced_velocity)| {
+            let Some(direction) =
+                FourWayDirection::from_velocity(**forced_velocity, selector.threshold)
+            else {
+                return;
+            };
+            if four_way.direction != direction {
+                four_way.direction = direction;
+            }
+        });
 }
 
 fn sprite_sheet_four_way(mut q_sprite_sheet: Query<(&mut SpriteSheet, &FourWay)>) {

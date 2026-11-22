@@ -92,7 +92,7 @@ fn work_invincibility_timer(
         timer.tick(time.delta());
         if timer.just_finished() {
             q_shields.get_mut(parent.0)?.remove(&timer.linked_shield);
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
         }
     }
     Ok(())

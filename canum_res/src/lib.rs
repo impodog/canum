@@ -25,6 +25,7 @@ impl Plugin for CanumResPlugin {
             .init_resource::<AnimationImageHandles>()
             .init_resource::<UpdateHandleStrongQueue>()
             .init_resource::<UpdateTimes>()
+            .init_resource::<AnimationDespawnQueue>()
             .init_resource::<camera::VirtualResolution>()
             .init_resource::<window::WindowTitle>()
             .init_resource::<sound::LoadedSounds>();
@@ -34,12 +35,14 @@ impl Plugin for CanumResPlugin {
                 .chain()
                 .in_set(BaseAnimationSystems),
         );
+        app.add_systems(Update, apply_animation_despawn_queue);
         app.add_systems(
             PostUpdate,
             (update_sprite_sheet_meta, update_sprite_sheet_index)
                 .chain()
                 .in_set(BaseAnimationSystems),
         );
+        app.add_systems(ExtractSchedule, apply_animation_despawn_queue);
         app.configure_sets(
             PostUpdate,
             BaseAnimationSystems.before(RenderSystems::ExtractCommands),
@@ -74,6 +77,7 @@ impl Plugin for CanumResPlugin {
             ),
         );
         app.add_observer(sprite::update_handle);
+        app.add_observer(sprite::init_added_sprite_sheet);
         app.add_plugins(background::BackgroundPlugin);
     }
 }

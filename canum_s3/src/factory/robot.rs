@@ -156,7 +156,9 @@ fn end_dash_away(
     Restitution::new(0.5),
     health::Friendly(false),
     health::ContactDamage { value: consts::damage::ONE_STRONG, projectile: false, order: consts::order::ENEMY_BOSS },
+    projectile::Projectile {no_dispose: true},
     projectile::NoCollideBoundary,
+    canum_tool::weapon::laser::LaserLayer::LASER_PROJECTILE,
     canum_fx::emphasis::LeaveTrail::new_enabled(0.25, 0.12),
 )]
 pub struct RobotSaw;

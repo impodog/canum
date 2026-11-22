@@ -1,7 +1,7 @@
 use crate::config;
 use bevy::prelude::*;
 use std::{
-    collections::HashMap,
+    collections::{BTreeSet, HashMap},
     sync::{
         Mutex,
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -16,7 +16,7 @@ pub struct BaseAnimationSystems;
 ///
 /// To make common modifications like in `Animation`, you need to set values in the `Sprite`. The sprite sheet only modifies the sprite's image and texture atlas.
 #[derive(Debug, Component, Default, Clone)]
-#[require(Sprite, SpriteSheetIndex, SpriteSheetMeta)]
+#[require(Sprite, SpriteSheetIndex, SpriteSheetMeta, SpriteSheetResolved)]
 pub struct SpriteSheet {
     pub name: String,
 }
@@ -45,9 +45,65 @@ impl SpriteSheetIndex {
     }
 }
 
-/// This is initialized after the sprite sheet runs rhrough `PostUpdate` once.
+/// This is initialized when the sprite sheet is added or changed.
 #[derive(Debug, Component, Default, Deref, DerefMut)]
 pub struct SpriteSheetMeta(pub Option<&'static config::SpriteAtlas>);
+
+/// Remembers which name the sprite was resolved from. This prevents the
+/// `PostUpdate` resolver from resolving a sheet twice when it was already
+/// resolved when the component was added.
+#[derive(Debug, Component, Default)]
+pub(crate) struct SpriteSheetResolved(Option<String>);
+
+#[allow(clippy::too_many_arguments)]
+fn apply_sprite_sheet(
+    sprite: &mut Sprite,
+    sheet: &SpriteSheet,
+    index: &SpriteSheetIndex,
+    meta: &mut SpriteSheetMeta,
+    resolved: &mut SpriteSheetResolved,
+    asset_server: &AssetServer,
+    layouts: &mut Assets<TextureAtlasLayout>,
+    atlas_handles: &mut AnimationAtlasHandles,
+    image_handles: &mut AnimationImageHandles,
+    default_sprite: Option<&Sprite>,
+) {
+    // An empty name means the real name will be queued later.
+    if sheet.name.is_empty() {
+        return;
+    }
+    resolved.0 = Some(sheet.name.clone());
+
+    let Some(config) = config::CONFIG.assets.sprites.get(&sheet.name) else {
+        if let Some(default_sprite) = default_sprite {
+            *sprite = default_sprite.clone();
+        }
+        return;
+    };
+    if config.is_empty() {
+        if let Some(default_sprite) = default_sprite {
+            *sprite = default_sprite.clone();
+        }
+        return;
+    }
+    let atlas_index = rand::random_range(0..config.len());
+    let atlas = &config[atlas_index];
+    let atlas_name = format!("{}{atlas_index}", sheet.name);
+
+    meta.0 = Some(atlas);
+
+    convert_to_sprite(
+        sprite,
+        sheet.name.clone(),
+        asset_server,
+        atlas_name,
+        atlas,
+        index.value.load(Ordering::Acquire),
+        layouts,
+        atlas_handles,
+        image_handles,
+    );
+}
 
 pub(super) fn update_sprite_sheet_meta(
     mut q_sprite_sheet: Query<
@@ -55,6 +111,7 @@ pub(super) fn update_sprite_sheet_meta(
             &SpriteSheet,
             &SpriteSheetIndex,
             &mut SpriteSheetMeta,
+            &mut SpriteSheetResolved,
             &mut Sprite,
         ),
         Changed<SpriteSheet>,
@@ -68,35 +125,66 @@ pub(super) fn update_sprite_sheet_meta(
     let mutex = Mutex::new((layouts, atlas_handles, image_handles));
     q_sprite_sheet
         .par_iter_mut()
-        .for_each(|(sheet, index, mut meta, mut sprite)| {
-            let Some(config) = config::CONFIG.assets.sprites.get(&sheet.name) else {
-                *sprite = default_sprite.clone();
-                return;
-            };
-            if config.is_empty() {
-                *sprite = default_sprite.clone();
+        .for_each(|(sheet, index, mut meta, mut resolved, mut sprite)| {
+            let already_resolved = resolved.0.as_deref() == Some(sheet.name.as_str())
+                && sprite
+                    .texture_atlas
+                    .as_ref()
+                    .is_some_and(|atlas| atlas.index == index.get());
+            if already_resolved {
                 return;
             }
-            let atlas_index = rand::random_range(0..config.len());
-            let atlas = &config[atlas_index];
-            let atlas_name = format!("{}{atlas_index}", sheet.name);
-
-            meta.0 = Some(atlas);
-
             let mut guard = mutex.lock().unwrap();
             let (layouts, atlas_handles, image_handles) = &mut *guard;
-            convert_to_sprite(
+            apply_sprite_sheet(
                 sprite.as_mut(),
-                sheet.name.clone(),
+                sheet,
+                index,
+                meta.as_mut(),
+                &mut resolved,
                 &asset_server,
-                atlas_name.clone(),
-                atlas,
-                index.value.load(Ordering::Acquire),
                 layouts,
                 atlas_handles,
                 image_handles,
+                Some(&default_sprite),
             );
         });
+}
+
+/// Resolves newly added sprite sheets right away, before Bevy's sprite mesh
+/// systems can build a material from the default (white) `Sprite`.
+pub(super) fn init_added_sprite_sheet(
+    event: On<Add<SpriteSheet>>,
+    mut q_sprite_sheet: Query<(
+        &SpriteSheet,
+        &SpriteSheetIndex,
+        &mut SpriteSheetMeta,
+        &mut SpriteSheetResolved,
+        &mut Sprite,
+    )>,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut atlas_handles: ResMut<AnimationAtlasHandles>,
+    mut image_handles: ResMut<AnimationImageHandles>,
+    default_sprite: Option<Res<DefaultSprite>>,
+) {
+    let Ok((sheet, index, mut meta, mut resolved, mut sprite)) =
+        q_sprite_sheet.get_mut(event.entity)
+    else {
+        return;
+    };
+    apply_sprite_sheet(
+        sprite.as_mut(),
+        sheet,
+        index,
+        meta.as_mut(),
+        &mut resolved,
+        &asset_server,
+        &mut layouts,
+        &mut atlas_handles,
+        &mut image_handles,
+        default_sprite.as_deref().map(|default| &**default),
+    );
 }
 
 pub(super) fn update_sprite_sheet_index(
@@ -383,11 +471,28 @@ pub struct AnimationComplete {
     pub index: usize,
 }
 
+#[derive(Resource, Debug, Default, Deref, DerefMut)]
+pub struct AnimationDespawnQueue(BTreeSet<Entity>);
+
+pub(crate) fn apply_animation_despawn_queue(
+    mut commands: Commands,
+    mut queue: ResMut<AnimationDespawnQueue>,
+) {
+    for entity in queue.iter().copied() {
+        if let Ok(mut commands) = commands.get_entity(entity) {
+            commands.try_despawn();
+        }
+    }
+    queue.clear();
+}
+
 pub(crate) fn tick_animation(
     commands: ParallelCommands,
     mut query: Query<(Entity, Ref<Animation>, &mut Sprite, &mut AnimationClock)>,
+    queue: ResMut<AnimationDespawnQueue>,
     time: Res<Time>,
 ) {
+    let queue = Mutex::new(queue);
     query
         .par_iter_mut()
         .for_each(|(entity, animation, mut sprite, mut clock)| {
@@ -435,9 +540,7 @@ pub(crate) fn tick_animation(
                 }
                 if clock.paused && animation.self_despawn {
                     // This is checked after triggering AnimationComplete for further operations, if any.
-                    commands.command_scope(|mut commands| {
-                        commands.entity(entity).despawn();
-                    });
+                    queue.lock().unwrap().insert(entity);
                 }
             }
         });
